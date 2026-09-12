@@ -1,0 +1,123 @@
+name: Bootstrap RC6 and validate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "bootstrap_rc6.sh"
+      - "rc6_tar/**"
+      - ".github/workflows/bootstrap-and-validate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Materialize ValiStruct 3.0 RC6
+        run: bash bootstrap_rc6.sh
+
+      - name: Commit materialized RC6 source
+        run: |
+          git config user.name "ValiStruct CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add . ':!rc6_tar' ':!rc6_bundle'
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "Materialize ValiStruct 3.0 RC6 source"
+            git push origin HEAD:main
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::lavaan
+            any::jsonlite
+            any::psych
+            any::naniar
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-dev.txt
+
+      - name: Static release checks
+        run: python tests/release_check.py
+
+      - name: Backend pytest
+        working-directory: backend
+        run: pytest -q tests
+
+      - name: Statistical equivalence vs direct lavaan
+        run: python tests/run_statistical_validation.py
+
+      - name: Start Gunicorn backend
+        working-directory: backend
+        env:
+          VALISTRUCT_AUTH_ENABLED: "false"
+          VALISTRUCT_PROJECT_LIBRARY_ENABLED: "false"
+          VALISTRUCT_ENV: "development"
+        run: |
+          gunicorn --workers 2 --threads 4 --timeout 360 --bind 127.0.0.1:8765 api:app > /tmp/valistruct.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/valistruct.log
+          exit 1
+
+      - name: Backend smoke tests
+        run: VALISTRUCT_BASE_URL=http://127.0.0.1:8765 deployment/docker_smoke_test.sh
+
+      - name: Install Chromium for Playwright
+        run: playwright install --with-deps chromium
+
+      - name: Start frontend
+        run: python -m http.server 8000 > /tmp/valistruct-frontend.log 2>&1 &
+
+      - name: Browser E2E
+        env:
+          VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
+        run: pytest -q tests/test_e2e_playwright.py
+
+      - name: Generate beta-gate report
+        env:
+          VALISTRUCT_RUN_E2E: "1"
+        run: |
+          python tests/validate_release.py
+          python tests/beta_gate.py
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-rc6-validation
+          path: |
+            tests/*VERIFICATION*.json
+            tests/RC6_VALIDATION_REPORT.json
+            tests/RC6_INTEGRITY_MANIFEST.json
+            /tmp/valistruct.log
+            /tmp/valistruct-frontend.log
