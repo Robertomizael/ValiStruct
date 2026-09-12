@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# RC6 bootstrap trigger: reconstruct source, validate package identity, and materialize it.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 TMP="$(mktemp -d)"
@@ -41,7 +42,5 @@ assert v.get('version') == '3.0.0-rc.6', v
 print('Paquete identificado:', v.get('name'), v.get('version'))
 PY
 
-# Copiar el código fuente RC6 a la raíz sin borrar archivos existentes del repositorio.
 cp -a "$SRC"/. "$ROOT"/
-
 echo "RC6 materializado correctamente en la raíz del repositorio."
