@@ -1,25 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# RC6 bootstrap trigger: reconstruct source, validate package identity, and materialize it.
+# RC6 bootstrap: reconstruct source, validate package identity, and materialize it.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 TMP="$(mktemp -d)"
 
+# During the initial upload, parts 12-16 were consolidated into part_12_16.b64.
 parts=(
   rc6_tar/part_00.b64 rc6_tar/part_01.b64 rc6_tar/part_02.b64 rc6_tar/part_03.b64
   rc6_tar/part_04.b64 rc6_tar/part_05.b64 rc6_tar/part_06.b64 rc6_tar/part_07.b64
   rc6_tar/part_08.b64 rc6_tar/part_09.b64 rc6_tar/part_10.b64 rc6_tar/part_11.b64
-  rc6_tar/part_12.b64 rc6_tar/part_13.b64 rc6_tar/part_14.b64 rc6_tar/part_15.b64
+  rc6_tar/part_12_16.b64
 )
-if [[ -f rc6_tar/part_16.b64 ]]; then
-  parts+=(rc6_tar/part_16.b64)
-elif [[ -f rc6_tar/part_12_16.b64 ]]; then
-  parts+=(rc6_tar/part_12_16.b64)
-else
-  echo "ERROR: falta el fragmento final del paquete RC6" >&2
-  exit 1
-fi
 
 for p in "${parts[@]}"; do
   [[ -f "$p" ]] || { echo "ERROR: falta $p" >&2; exit 1; }
