@@ -1,4 +1,4 @@
-name: ValiStruct Desktop Build
+name: ValiStruct Desktop Autonomous Build
 
 on:
   workflow_dispatch:
@@ -18,58 +18,76 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: desktop
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install dependencies
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: true
+          channels: conda-forge
+          channel-priority: strict
+      - name: Build integrated Windows runtime
+        shell: pwsh
+        run: ./desktop/scripts/build_runtime_windows.ps1
+      - name: Install desktop dependencies
+        working-directory: desktop
         run: npm install
       - name: Build Windows installer
+        working-directory: desktop
         run: npm run dist:win
-      - name: Upload Windows installer
+      - name: Upload Windows autonomous installer
         uses: actions/upload-artifact@v4
         with:
-          name: valistruct-desktop-windows
+          name: valistruct-desktop-windows-autonomous
           path: desktop/dist/*.exe
           if-no-files-found: error
+          compression-level: 0
 
   build-macos:
     runs-on: macos-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: desktop
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install dependencies
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: true
+          channels: conda-forge
+          channel-priority: strict
+      - name: Build integrated macOS runtime
+        shell: bash -el {0}
+        run: bash ./desktop/scripts/build_runtime_macos.sh
+      - name: Install desktop dependencies
+        working-directory: desktop
         run: npm install
       - name: Build unpacked macOS app
+        working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run pack:mac
       - name: Ad-hoc sign macOS app for internal testing
+        working-directory: desktop
         shell: bash
         run: |
           APP_PATH="$(find dist -maxdepth 2 -type d -name 'ValiStruct.app' | head -n 1)"
           test -n "$APP_PATH"
           codesign --force --deep --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+          echo "APP_PATH=$PWD/$APP_PATH" >> "$GITHUB_ENV"
       - name: Build macOS DMG from signed app
+        working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npx electron-builder --mac dmg --prepackaged "$APP_PATH"
-      - name: Upload macOS DMG
+      - name: Upload macOS autonomous DMG
         uses: actions/upload-artifact@v4
         with:
-          name: valistruct-desktop-macos
+          name: valistruct-desktop-macos-autonomous
           path: desktop/dist/*.dmg
           if-no-files-found: error
+          compression-level: 0
