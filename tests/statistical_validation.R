@@ -13,7 +13,7 @@ tmp <- tempdir()
 run_engine <- function(request, stem){
   req_file <- file.path(tmp,paste0(stem,"_request.json"))
   out_file <- file.path(tmp,paste0(stem,"_response.json"))
-  write(toJSON(request,auto_unbox=TRUE),req_file)
+  write(toJSON(request,auto_unbox=TRUE,digits=15),req_file)
   status <- system2("Rscript",c(engine,req_file,out_file))
   if(status != 0) stop(paste("ValiStruct engine failed:",stem))
   ans <- fromJSON(out_file,simplifyVector=FALSE)
@@ -23,13 +23,22 @@ run_engine <- function(request, stem){
 
 check_close <- function(got, expected, tol=1e-8){
   if(is.null(got) || length(got)==0 || is.na(expected)) return(NULL)
+  got <- as.numeric(got)[1]
+  expected <- as.numeric(expected)[1]
+  abs_diff <- abs(got-expected)
   list(
-    got=as.numeric(got),
-    expected=as.numeric(expected),
-    abs_diff=abs(as.numeric(got)-as.numeric(expected)),
-    pass=abs(as.numeric(got)-as.numeric(expected)) <= tol
+    got=got,
+    expected=expected,
+    abs_diff=abs_diff,
+    tolerance=tol,
+    pass=is.finite(got) && is.finite(expected) && abs_diff <= tol
   )
 }
+
+# Regression checks for indices that can legitimately exceed 1.0 (e.g., TLI).
+stopifnot(isTRUE(check_close(1.0102,1.0102)$pass))
+stopifnot(isTRUE(check_close(1.0171,1.0171)$pass))
+stopifnot(isTRUE(check_close(1.010200001,1.010200000)$pass))
 
 # --------------------------------------------------
 # Scenario 1: continuous CFA with MLR
@@ -131,5 +140,5 @@ out <- list(
   )
 )
 
-cat(toJSON(out,auto_unbox=TRUE,pretty=TRUE))
+cat(toJSON(out,auto_unbox=TRUE,pretty=TRUE,digits=15))
 if(!all_pass) quit(status=1)
