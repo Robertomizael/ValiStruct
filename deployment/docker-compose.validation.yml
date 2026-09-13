@@ -1,0 +1,17 @@
+services:
+  valistruct-backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    environment:
+      VALISTRUCT_ENV: development
+      VALISTRUCT_AUTH_ENABLED: "false"
+      VALISTRUCT_PROJECT_LIBRARY_ENABLED: "false"
+      VALISTRUCT_PROJECT_DIR: /app/data/projects
+    ports:
+      - "8765:8765"
+    volumes:
+      - valistruct-validation-data:/app/data
+
+volumes:
+  valistruct-validation-data:

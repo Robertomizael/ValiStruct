@@ -1,0 +1,27 @@
+{
+  "version": "2.2",
+  "smoke": [
+    "frontend loads",
+    "navigation buttons exist",
+    "localStorage available",
+    "project save/restore",
+    "AES-GCM encrypt/decrypt",
+    "CSV import",
+    "XLSX backend endpoints",
+    "SAV/DTA backend endpoint",
+    "Motor Pro health",
+    "PWA service worker"
+  ],
+  "regression": [
+    "Aiken calculations",
+    "Reliability module",
+    "AFE module",
+    "CFA prototype",
+    "SEM editor",
+    "APA report",
+    "DOCX export",
+    "XLSX export",
+    "guided project",
+    "result center"
+  ]
+}
