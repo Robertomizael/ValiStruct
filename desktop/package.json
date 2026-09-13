@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dist:win": "electron-builder --win nsis",
+    "pack:mac": "electron-builder --mac dir",
     "dist:mac": "electron-builder --mac dmg",
     "dist": "electron-builder --win nsis --mac dmg"
   },
