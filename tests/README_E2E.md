@@ -1,5 +1,7 @@
 # Pruebas E2E
 
+Las utilidades, fixtures y pruebas automatizadas se mantienen de forma canónica dentro de `tests/`. Los duplicados históricos de la raíz del repositorio fueron retirados durante la limpieza posterior a Beta 1.
+
 Instalación:
 ```bash
 pip install pytest playwright
