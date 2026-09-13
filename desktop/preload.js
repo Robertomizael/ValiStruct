@@ -9,5 +9,8 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
   parseSpreadsheet: async (name, bytes) => {
     const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     return ipcRenderer.invoke('valistruct:parse-spreadsheet', { name, data });
+  },
+  createSpreadsheet: async (csv, format = 'xlsx') => {
+    return ipcRenderer.invoke('valistruct:create-spreadsheet', { csv, format });
   }
 });
