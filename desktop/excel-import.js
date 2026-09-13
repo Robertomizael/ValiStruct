@@ -19,6 +19,46 @@
     originalRevokeObjectURL(url);
   };
 
+  function aikenTemplateMeta() {
+    const judges = Math.max(2, Number(document.getElementById('judgeCount')?.value || 5));
+    const items = Math.max(1, Number(document.getElementById('itemCount')?.value || 1));
+    const min = Number(document.getElementById('scaleMin')?.value || 1);
+    const max = Number(document.getElementById('scaleMax')?.value || 5);
+    const criteria = [...document.querySelectorAll('.criterion-check:checked')].map(el => el.value);
+    const itemNames = [];
+    for (let i = 1; i <= items; i++) {
+      const el = document.querySelector(`.item-name[data-item="${i}"]`);
+      itemNames.push((el?.value || `Ítem ${i}`).trim() || `Ítem ${i}`);
+    }
+    return {
+      profile: 'aiken-template',
+      judges,
+      items,
+      min,
+      max,
+      criteria: criteria.length ? criteria : ['Claridad', 'Coherencia', 'Relevancia'],
+      itemNames,
+      institution: 'Universidad Autónoma de Sinaloa',
+      faculty: 'Facultad de Enfermería Culiacán',
+      responsible: 'Dr. Roberto Joel Tirado Reyes'
+    };
+  }
+
+  function applySpreadsheetConfig(config) {
+    if (!config) return;
+    const judgeCount = document.getElementById('judgeCount');
+    const scaleMin = document.getElementById('scaleMin');
+    const scaleMax = document.getElementById('scaleMax');
+    if (judgeCount && Number.isFinite(Number(config.judges))) judgeCount.value = Number(config.judges);
+    if (scaleMin && Number.isFinite(Number(config.min))) scaleMin.value = Number(config.min);
+    if (scaleMax && Number.isFinite(Number(config.max))) scaleMax.value = Number(config.max);
+    if (Array.isArray(config.criteria) && config.criteria.length) {
+      document.querySelectorAll('.criterion-check').forEach(el => {
+        el.checked = config.criteria.includes(el.value);
+      });
+    }
+  }
+
   function enhanceFileInputs(root = document) {
     root.querySelectorAll('input[type="file"]').forEach(input => {
       const accept = (input.getAttribute('accept') || '').toLowerCase();
@@ -29,11 +69,10 @@
     });
 
     root.querySelectorAll('button, label, span, p, div').forEach(el => {
-      if (el.children.length) return;
       const t = (el.textContent || '').trim();
-      if (t === 'Importar CSV') el.textContent = 'Importar CSV / Excel';
-      else if (t === 'Archivo CSV') el.textContent = 'Archivo CSV / Excel';
-      else if (t === 'Seleccionar CSV') el.textContent = 'Seleccionar CSV / Excel';
+      if (t === 'Importar CSV') el.textContent = 'Importar CSV / XLSX';
+      else if (t === 'Archivo CSV') el.textContent = 'Archivo CSV / XLSX';
+      else if (t === 'Seleccionar CSV') el.textContent = 'Seleccionar CSV / XLSX';
     });
 
     root.querySelectorAll('button[id]').forEach(button => {
@@ -71,15 +110,20 @@
       throw new Error(result?.error || 'No fue posible leer el archivo de Excel.');
     }
     const base = file.name.replace(/\.(xlsx|xls)$/i, '');
-    return new File(['\ufeff' + result.csv], `${base}.csv`, { type: 'text/csv;charset=utf-8' });
+    return {
+      file: new File(['\ufeff' + result.csv], `${base}.csv`, { type: 'text/csv;charset=utf-8' }),
+      config: result.config || null,
+      sheet: result.sheet || null
+    };
   }
 
-  async function exportCsvBlobAsExcel(blob, csvFilename, format) {
+  async function exportCsvBlobAsExcel(blob, csvFilename, format, request = {}) {
     if (!window.valistructDesktop?.createSpreadsheet) {
       throw new Error('El generador de Excel no está disponible en esta compilación de ValiStruct.');
     }
     const csv = await blob.text();
-    const result = await window.valistructDesktop.createSpreadsheet(csv, format);
+    const options = request.sourceId === 'downloadTemplate' ? aikenTemplateMeta() : {};
+    const result = await window.valistructDesktop.createSpreadsheet(csv, format, options);
     if (!result?.ok || !result.data) {
       throw new Error(result?.error || 'No fue posible crear el archivo de Excel.');
     }
@@ -126,7 +170,7 @@
     const request = pendingExcelExport;
     pendingExcelExport = null;
 
-    exportCsvBlobAsExcel(blob, filename, request.format).catch(err => {
+    exportCsvBlobAsExcel(blob, filename, request.format, request).catch(err => {
       alert(`No fue posible exportar a Excel: ${err.message}`);
     });
   }, true);
@@ -144,9 +188,10 @@
 
     try {
       input.disabled = true;
-      const csvFile = await excelToCsvFile(file);
+      const converted = await excelToCsvFile(file);
+      applySpreadsheetConfig(converted.config);
       const dt = new DataTransfer();
-      dt.items.add(csvFile);
+      dt.items.add(converted.file);
       input.files = dt.files;
       input.disabled = false;
       input.dispatchEvent(new Event('change', { bubbles: true }));
