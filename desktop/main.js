@@ -11,6 +11,217 @@ const XLSX = require('xlsx');
 let backendProcess = null;
 let runtimeInfo = null;
 
+function normalizeExcelLabel(value) {
+  return String(value ?? '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function worksheetRows(sheet) {
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false, blankrows: false });
+}
+
+function findAikenHeader(rows) {
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const headers = (rows[i] || []).map(normalizeExcelLabel);
+    const hasCriterion = headers.includes('criterio');
+    const hasJudges = headers.filter(x => /^juez\s*\d+$/.test(x)).length >= 2;
+    const hasItem = headers.some(x => ['item', 'no item', 'numero item', 'numero de item'].includes(x));
+    if (hasCriterion && hasJudges && hasItem) return i;
+  }
+  return -1;
+}
+
+function detectAikenSheet(workbook) {
+  const preferred = workbook.SheetNames.find(name => /matriz[ _-]*aiken/i.test(name));
+  if (preferred && findAikenHeader(worksheetRows(workbook.Sheets[preferred])) >= 0) return preferred;
+
+  for (const name of workbook.SheetNames) {
+    const rows = worksheetRows(workbook.Sheets[name]);
+    if (findAikenHeader(rows) >= 0) return name;
+  }
+  return null;
+}
+
+function extractAikenConfig(workbook, fallbackJudges, fallbackCriteria) {
+  const config = {
+    judges: fallbackJudges,
+    min: null,
+    max: null,
+    criteria: fallbackCriteria
+  };
+  const instructionsName = workbook.SheetNames.find(name => normalizeExcelLabel(name).includes('instrucciones'));
+  if (!instructionsName) return config;
+
+  const rows = worksheetRows(workbook.Sheets[instructionsName]);
+  for (const row of rows) {
+    const key = normalizeExcelLabel(row?.[0]);
+    const value = row?.[1];
+    if (key === 'numero de jueces') {
+      const n = Number(value);
+      if (Number.isFinite(n) && n >= 2) config.judges = n;
+    } else if (key === 'escala minima') {
+      const n = Number(value);
+      if (Number.isFinite(n)) config.min = n;
+    } else if (key === 'escala maxima') {
+      const n = Number(value);
+      if (Number.isFinite(n)) config.max = n;
+    } else if (key === 'criterios' && String(value || '').trim()) {
+      config.criteria = String(value)
+        .split(/[,;]+/)
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+  }
+  return config;
+}
+
+function canonicalizeAikenWorkbook(workbook, sheetName) {
+  const rows = worksheetRows(workbook.Sheets[sheetName]);
+  const headerRow = findAikenHeader(rows);
+  if (headerRow < 0) throw new Error('No se encontró una matriz compatible de V de Aiken.');
+
+  const originalHeaders = (rows[headerRow] || []).map(x => String(x ?? '').trim());
+  const normalized = originalHeaders.map(normalizeExcelLabel);
+  const criterionIdx = normalized.findIndex(x => x === 'criterio');
+  const itemTextIdx = normalized.findIndex(x => x === 'item');
+  const itemNumberIdx = normalized.findIndex(x => ['no item', 'numero item', 'numero de item'].includes(x));
+  const commentIdx = normalized.findIndex(x => /^(observacion|observaciones|comentario|comentarios|comentario cualitativo)$/.test(x));
+  const judgeCols = normalized
+    .map((x, idx) => {
+      const m = x.match(/^juez\s*(\d+)$/);
+      return m ? { idx, num: Number(m[1]) } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.num - b.num);
+
+  if (criterionIdx < 0 || judgeCols.length < 2 || (itemTextIdx < 0 && itemNumberIdx < 0)) {
+    throw new Error('La hoja debe contener Ítem, Criterio y al menos dos columnas de jueces.');
+  }
+
+  const output = [[
+    'Item',
+    'Criterio',
+    ...judgeCols.map((_, i) => `Juez${i + 1}`),
+    'Comentario'
+  ]];
+  const criteria = [];
+
+  for (const row of rows.slice(headerRow + 1)) {
+    if (!row || !row.some(v => String(v ?? '').trim() !== '')) continue;
+    const criterion = String(row[criterionIdx] ?? '').trim();
+    if (!criterion) continue;
+
+    const itemText = itemTextIdx >= 0 ? String(row[itemTextIdx] ?? '').trim() : '';
+    const itemNo = itemNumberIdx >= 0 ? String(row[itemNumberIdx] ?? '').trim() : '';
+    const item = itemText || (itemNo ? `Ítem ${itemNo}` : '');
+    if (!item) continue;
+
+    if (!criteria.includes(criterion)) criteria.push(criterion);
+    output.push([
+      item,
+      criterion,
+      ...judgeCols.map(col => String(row[col.idx] ?? '').trim()),
+      commentIdx >= 0 ? String(row[commentIdx] ?? '').trim() : ''
+    ]);
+  }
+
+  if (output.length < 2) throw new Error('La matriz de V de Aiken no contiene filas evaluadas.');
+
+  const temp = XLSX.utils.aoa_to_sheet(output);
+  const csv = XLSX.utils.sheet_to_csv(temp, { FS: ',', RS: '\n', blankrows: false });
+  const config = extractAikenConfig(workbook, judgeCols.length, criteria);
+  return { csv, config };
+}
+
+function buildAikenTemplateWorkbook(options = {}) {
+  const judges = Math.max(2, Math.floor(Number(options.judges) || 5));
+  const items = Math.max(1, Math.floor(Number(options.items) || 1));
+  const min = Number.isFinite(Number(options.min)) ? Number(options.min) : 1;
+  const max = Number.isFinite(Number(options.max)) && Number(options.max) > min ? Number(options.max) : 5;
+  const criteria = Array.isArray(options.criteria) && options.criteria.length
+    ? options.criteria.map(x => String(x).trim()).filter(Boolean)
+    : ['Claridad', 'Coherencia', 'Relevancia'];
+  const itemNames = Array.isArray(options.itemNames) ? options.itemNames : [];
+  const responsible = String(options.responsible || 'Dr. Roberto Joel Tirado Reyes');
+  const institution = String(options.institution || 'Universidad Autónoma de Sinaloa');
+  const faculty = String(options.faculty || 'Facultad de Enfermería Culiacán');
+
+  const workbook = XLSX.utils.book_new();
+
+  const instructions = [
+    [`${institution.toUpperCase()} · ${faculty.toUpperCase()}`],
+    [''],
+    ['JUICIO DE EXPERTOS · V DE AIKEN'],
+    ['Plantilla compatible con ValiStruct para validación de contenido'],
+    [''],
+    ['Responsable', responsible],
+    ['Propósito', 'Validación de contenido por juicio de expertos mediante V de Aiken.'],
+    ['Número de jueces', judges],
+    ['Escala mínima', min],
+    ['Escala máxima', max],
+    ['Criterios', criteria.join(', ')],
+    ['Fórmula', 'V = Σ(r - lo) / [n(c - 1)]'],
+    ['Referencia', 'Aiken, L. R. (1985). Educational and Psychological Measurement, 45(1), 131–142. https://doi.org/10.1177/0013164485451012'],
+    [''],
+    ['Puntuación', 'Interpretación general', 'Claridad', 'Coherencia/Relevancia'],
+    [min, 'Nivel mínimo de cumplimiento', 'El ítem requiere revisión importante.', 'La relación con el constructo o dimensión es insuficiente.'],
+    [max, 'Nivel máximo de cumplimiento', 'Redacción clara, precisa y comprensible.', 'Relación directa, pertinente y suficiente con el contenido evaluado.'],
+    [''],
+    ['Importante', 'No deje celdas vacías en la columna de juez que le corresponda.', `Use únicamente valores dentro del rango ${min} a ${max}.`, 'Puede agregar observaciones en la última columna.'],
+    [''],
+    ['INSTRUCCIONES PARA EL JUEZ'],
+    [`En la hoja “Matriz_Aiken”, localice la columna correspondiente a su número de juez (Juez 1 a Juez ${judges}). Asigne una puntuación de ${min} a ${max} a cada ítem en cada criterio. No modifique el texto de los ítems, el número de ítem ni el nombre del criterio. Si considera necesario proponer un cambio, escríbalo en la columna Observaciones. Al concluir, guarde este mismo archivo .xlsx; posteriormente podrá cargarse directamente en ValiStruct para calcular la V de Aiken.`]
+  ];
+  const wsInstructions = XLSX.utils.aoa_to_sheet(instructions);
+  wsInstructions['!cols'] = [{ wch: 24 }, { wch: 78 }, { wch: 52 }, { wch: 52 }];
+  wsInstructions['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } },
+    { s: { r: 20, c: 0 }, e: { r: 20, c: 3 } },
+    { s: { r: 21, c: 0 }, e: { r: 21, c: 3 } }
+  ];
+  XLSX.utils.book_append_sheet(workbook, wsInstructions, 'Instrucciones');
+
+  const headers = ['Dimensión', 'No. ítem', 'Ítem', 'Criterio', ...Array.from({ length: judges }, (_, i) => `Juez ${i + 1}`), 'Observaciones'];
+  const matrix = [headers];
+  for (let i = 1; i <= items; i++) {
+    const itemName = String(itemNames[i - 1] || `Ítem ${i}`).trim() || `Ítem ${i}`;
+    for (const criterion of criteria) {
+      matrix.push(['', i, itemName, criterion, ...Array(judges).fill(''), '']);
+    }
+  }
+  const wsMatrix = XLSX.utils.aoa_to_sheet(matrix);
+  wsMatrix['!cols'] = [
+    { wch: 34 }, { wch: 10 }, { wch: 72 }, { wch: 18 },
+    ...Array.from({ length: judges }, () => ({ wch: 12 })),
+    { wch: 44 }
+  ];
+  wsMatrix['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: matrix.length - 1, c: headers.length - 1 } }) };
+  XLSX.utils.book_append_sheet(workbook, wsMatrix, 'Matriz_Aiken');
+
+  const dictionary = [
+    ['Campo', 'Descripción', 'Regla para importación'],
+    ['Dimensión', 'Dimensión teórica a la que pertenece el ítem.', 'Opcional para el cálculo; puede completarse sin modificar las demás columnas.'],
+    ['No. ítem', 'Identificador numérico del ítem.', 'No duplicar un mismo número con textos de ítem diferentes.'],
+    ['Ítem', 'Texto completo del reactivo que evaluarán los jueces.', 'No modificar después de distribuir la plantilla a jueces.'],
+    ['Criterio', `Criterio de evaluación: ${criteria.join(', ')}.`, 'Debe conservar exactamente el nombre del criterio.'],
+    ['Juez 1…n', `Puntuación entera entre ${min} y ${max}.`, 'No dejar vacía la columna correspondiente al juez que responde.'],
+    ['Observaciones', 'Comentarios cualitativos y propuestas de modificación.', 'Texto libre; puede quedar vacío.'],
+    ['Compatibilidad', 'La hoja Matriz_Aiken es leída automáticamente por ValiStruct.', 'Conservar el nombre de la hoja y los encabezados.']
+  ];
+  const wsDictionary = XLSX.utils.aoa_to_sheet(dictionary);
+  wsDictionary['!cols'] = [{ wch: 22 }, { wch: 66 }, { wch: 72 }];
+  XLSX.utils.book_append_sheet(workbook, wsDictionary, 'Diccionario');
+
+  return workbook;
+}
+
 ipcMain.handle('valistruct:parse-spreadsheet', async (_event, payload) => {
   try {
     const name = String(payload?.name || 'archivo.xlsx');
@@ -21,8 +232,15 @@ ipcMain.handle('valistruct:parse-spreadsheet', async (_event, payload) => {
     if (!bytes) return { ok: false, error: 'El archivo está vacío.' };
     const buffer = Buffer.from(bytes);
     const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-    const firstSheet = workbook.SheetNames?.[0];
-    if (!firstSheet) return { ok: false, error: 'El libro de Excel no contiene hojas.' };
+    if (!workbook.SheetNames?.length) return { ok: false, error: 'El libro de Excel no contiene hojas.' };
+
+    const aikenSheet = detectAikenSheet(workbook);
+    if (aikenSheet) {
+      const converted = canonicalizeAikenWorkbook(workbook, aikenSheet);
+      return { ok: true, csv: converted.csv, sheet: aikenSheet, config: converted.config, profile: 'aiken' };
+    }
+
+    const firstSheet = workbook.SheetNames[0];
     const sheet = workbook.Sheets[firstSheet];
     const csv = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n', blankrows: false });
     if (!csv.trim()) return { ok: false, error: 'La primera hoja no contiene datos.' };
@@ -36,15 +254,21 @@ ipcMain.handle('valistruct:create-spreadsheet', async (_event, payload) => {
   try {
     const csv = String(payload?.csv || '').replace(/^\uFEFF/, '');
     const format = String(payload?.format || 'xlsx').toLowerCase();
+    const options = payload?.options && typeof payload.options === 'object' ? payload.options : {};
     if (!csv.trim()) return { ok: false, error: 'No hay datos para exportar.' };
     if (!['xlsx', 'xls'].includes(format)) {
       return { ok: false, error: 'Formato de exportación no compatible.' };
     }
 
-    const workbook = XLSX.read(csv, { type: 'string', raw: true });
-    const firstSheet = workbook.SheetNames?.[0];
-    if (!firstSheet) return { ok: false, error: 'No fue posible crear la hoja de Excel.' };
-    workbook.Sheets[firstSheet]['!cols'] = Array.from({ length: 24 }, () => ({ wch: 18 }));
+    let workbook;
+    if (options.profile === 'aiken-template') {
+      workbook = buildAikenTemplateWorkbook(options);
+    } else {
+      workbook = XLSX.read(csv, { type: 'string', raw: true });
+      const firstSheet = workbook.SheetNames?.[0];
+      if (!firstSheet) return { ok: false, error: 'No fue posible crear la hoja de Excel.' };
+      workbook.Sheets[firstSheet]['!cols'] = Array.from({ length: 24 }, () => ({ wch: 18 }));
+    }
 
     const bookType = format === 'xls' ? 'biff8' : 'xlsx';
     const output = XLSX.write(workbook, { type: 'buffer', bookType, compression: true });
