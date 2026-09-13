@@ -51,10 +51,22 @@ jobs:
           node-version: "20"
       - name: Install dependencies
         run: npm install
-      - name: Build macOS DMG
+      - name: Build unpacked macOS app
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist:mac
+        run: npm run pack:mac
+      - name: Ad-hoc sign macOS app for internal testing
+        shell: bash
+        run: |
+          APP_PATH="$(find dist -maxdepth 2 -type d -name 'ValiStruct.app' | head -n 1)"
+          test -n "$APP_PATH"
+          codesign --force --deep --sign - "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+      - name: Build macOS DMG from signed app
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --mac dmg --prepackaged "$APP_PATH"
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
