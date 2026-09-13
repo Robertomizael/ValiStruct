@@ -13,6 +13,9 @@
     "dist:mac": "electron-builder --mac dmg",
     "dist": "electron-builder --win nsis --mac dmg"
   },
+  "dependencies": {
+    "tar": "^7.4.3"
+  },
   "devDependencies": {
     "electron": "^32.1.2",
     "electron-builder": "^25.1.8"
@@ -34,7 +37,8 @@
       { "from": "../styles.css", "to": "app/styles.css" },
       { "from": "../manifest.webmanifest", "to": "app/manifest.webmanifest" },
       { "from": "../icons", "to": "app/icons" },
-      { "from": "../backend", "to": "backend" }
+      { "from": "../backend", "to": "backend" },
+      { "from": "runtime/valistruct-runtime.tar.gz", "to": "runtime/valistruct-runtime.tar.gz" }
     ],
     "win": {
       "target": ["nsis"]
