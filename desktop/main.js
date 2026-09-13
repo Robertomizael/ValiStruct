@@ -32,6 +32,28 @@ ipcMain.handle('valistruct:parse-spreadsheet', async (_event, payload) => {
   }
 });
 
+ipcMain.handle('valistruct:create-spreadsheet', async (_event, payload) => {
+  try {
+    const csv = String(payload?.csv || '').replace(/^\uFEFF/, '');
+    const format = String(payload?.format || 'xlsx').toLowerCase();
+    if (!csv.trim()) return { ok: false, error: 'No hay datos para exportar.' };
+    if (!['xlsx', 'xls'].includes(format)) {
+      return { ok: false, error: 'Formato de exportación no compatible.' };
+    }
+
+    const workbook = XLSX.read(csv, { type: 'string', raw: true });
+    const firstSheet = workbook.SheetNames?.[0];
+    if (!firstSheet) return { ok: false, error: 'No fue posible crear la hoja de Excel.' };
+    workbook.Sheets[firstSheet]['!cols'] = Array.from({ length: 24 }, () => ({ wch: 18 }));
+
+    const bookType = format === 'xls' ? 'biff8' : 'xlsx';
+    const output = XLSX.write(workbook, { type: 'buffer', bookType, compression: true });
+    return { ok: true, data: new Uint8Array(output), format };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
+
 function resourcePath(...parts) {
   const base = app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '..');
   return path.join(base, ...parts);
@@ -83,9 +105,6 @@ function runtimeExecutables(runtimeDir) {
 }
 
 function bundledRuntimeDir() {
-  // Conda's relocated R launcher on macOS is not reliable when the target
-  // prefix contains spaces (for example ~/Library/Application Support/...).
-  // Keep the embedded runtime in a private, space-free folder under $HOME.
   if (process.platform === 'darwin') {
     return path.join(app.getPath('home'), '.valistruct', 'runtime-v2');
   }
@@ -160,7 +179,6 @@ async function ensureBundledRuntime() {
 
     fs.writeFileSync(marker, new Date().toISOString(), 'utf8');
 
-    // Remove the failed legacy macOS runtime only after v2 is proven healthy.
     if (process.platform === 'darwin') {
       const legacyRuntime = path.join(app.getPath('userData'), 'runtime-v1');
       if (legacyRuntime !== runtimeDir) {
