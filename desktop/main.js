@@ -82,6 +82,16 @@ function runtimeExecutables(runtimeDir) {
   return { python, rscript, rHome, env };
 }
 
+function bundledRuntimeDir() {
+  // Conda's relocated R launcher on macOS is not reliable when the target
+  // prefix contains spaces (for example ~/Library/Application Support/...).
+  // Keep the embedded runtime in a private, space-free folder under $HOME.
+  if (process.platform === 'darwin') {
+    return path.join(app.getPath('home'), '.valistruct', 'runtime-v2');
+  }
+  return path.join(app.getPath('userData'), 'runtime-v2');
+}
+
 async function ensureBundledRuntime() {
   if (!app.isPackaged) return null;
 
@@ -90,7 +100,7 @@ async function ensureBundledRuntime() {
     throw new Error('El instalador no contiene el motor autónomo de ValiStruct.');
   }
 
-  const runtimeDir = path.join(app.getPath('userData'), 'runtime-v1');
+  const runtimeDir = bundledRuntimeDir();
   const marker = path.join(runtimeDir, '.valistruct-runtime-ready');
 
   if (!fs.existsSync(marker)) {
@@ -149,6 +159,14 @@ async function ensureBundledRuntime() {
     }
 
     fs.writeFileSync(marker, new Date().toISOString(), 'utf8');
+
+    // Remove the failed legacy macOS runtime only after v2 is proven healthy.
+    if (process.platform === 'darwin') {
+      const legacyRuntime = path.join(app.getPath('userData'), 'runtime-v1');
+      if (legacyRuntime !== runtimeDir) {
+        fs.rmSync(legacyRuntime, { recursive: true, force: true });
+      }
+    }
   }
 
   return runtimeExecutables(runtimeDir);
