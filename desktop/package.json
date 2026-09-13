@@ -14,7 +14,8 @@
     "dist": "electron-builder --win nsis --mac dmg"
   },
   "dependencies": {
-    "tar": "^7.4.3"
+    "tar": "^7.4.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "electron": "^32.1.2",
@@ -31,7 +32,8 @@
       "main.js",
       "preload.js",
       "ux-shell.js",
-      "ux-shell.css"
+      "ux-shell.css",
+      "excel-import.js"
     ],
     "extraResources": [
       { "from": "../index.html", "to": "app/index.html" },
