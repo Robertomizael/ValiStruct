@@ -59,6 +59,60 @@
     }
   }
 
+  function downloadBytes(bytes, filename, mime) {
+    const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    const blob = new Blob([data], { type: mime });
+    const url = originalCreateObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => originalRevokeObjectURL(url), 1500);
+  }
+
+  async function downloadJudgeTemplateXlsx() {
+    if (!window.valistructDesktop?.createSpreadsheet) {
+      alert('La generación de plantillas XLSX está disponible en la aplicación de escritorio de ValiStruct.');
+      return;
+    }
+    const meta = aikenTemplateMeta();
+    const placeholder = 'Item,Criterio,Juez1,Juez2,Comentario\n';
+    try {
+      const result = await window.valistructDesktop.createSpreadsheet(placeholder, 'xlsx', meta);
+      if (!result?.ok || !result.data) throw new Error(result?.error || 'No fue posible crear la plantilla.');
+      downloadBytes(
+        result.data,
+        `ValiStruct_Plantilla_Jueces_V_Aiken_${meta.items}_items_${meta.judges}_jueces.xlsx`,
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+    } catch (err) {
+      alert(`No fue posible generar la plantilla para jueces: ${err.message}`);
+    }
+  }
+
+  function ensureJudgeTemplatePanel() {
+    if (document.getElementById('valistructJudgeTemplatePanel')) return;
+    const aiken = document.getElementById('aiken');
+    const importBox = aiken?.querySelector('.import-box');
+    if (!aiken || !importBox) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'valistructJudgeTemplatePanel';
+    panel.className = 'import-box';
+    panel.innerHTML = `
+      <div>
+        <h3>Plantilla para juicio de expertos</h3>
+        <p>Genere el archivo <strong>.xlsx antes de realizar cualquier cálculo</strong>, entréguelo a los jueces y, cuando esté respondido, vuelva a cargar el mismo archivo en ValiStruct.</p>
+      </div>
+      <div class="button-row compact">
+        <button id="downloadJudgeTemplateXlsx" type="button" class="primary">Generar plantilla para jueces (.xlsx)</button>
+      </div>`;
+    importBox.insertAdjacentElement('beforebegin', panel);
+    panel.querySelector('#downloadJudgeTemplateXlsx')?.addEventListener('click', downloadJudgeTemplateXlsx);
+  }
+
   function enhanceFileInputs(root = document) {
     root.querySelectorAll('input[type="file"]').forEach(input => {
       const accept = (input.getAttribute('accept') || '').toLowerCase();
@@ -98,6 +152,8 @@
       button.insertAdjacentElement('afterend', xlsBtn);
       button.insertAdjacentElement('afterend', xlsxBtn);
     });
+
+    ensureJudgeTemplatePanel();
   }
 
   async function excelToCsvFile(file) {
@@ -132,16 +188,7 @@
       ? 'application/vnd.ms-excel'
       : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const filename = String(csvFilename || 'ValiStruct_resultados.csv').replace(/\.csv$/i, `.${ext}`);
-    const bytes = result.data instanceof Uint8Array ? result.data : new Uint8Array(result.data);
-    const excelBlob = new Blob([bytes], { type: mime });
-    const url = originalCreateObjectURL(excelBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => originalRevokeObjectURL(url), 1500);
+    downloadBytes(result.data, filename, mime);
   }
 
   document.addEventListener('click', event => {
