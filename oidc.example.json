@@ -1,0 +1,11 @@
+{
+  "issuer": "https://login.institucion.edu/",
+  "client_id": "valistruct",
+  "redirect_uri": "https://valistruct.institucion.edu/auth/callback",
+  "scopes": [
+    "openid",
+    "profile",
+    "email"
+  ],
+  "note": "Configuración de ejemplo. Requiere implementación de autorización en el backend."
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ValiStruct",
+  "short_name": "ValiStruct",
+  "description": "Plataforma open access para validación de instrumentos y modelamiento estructural.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#7c1f2a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

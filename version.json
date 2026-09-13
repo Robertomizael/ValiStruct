@@ -1,0 +1,13 @@
+{
+  "name": "ValiStruct",
+  "version": "3.0.0-rc.6",
+  "displayVersion": "3.0 RC6",
+  "projectFormat": "3.0",
+  "minimumReadableProject": "0.7",
+  "author": "Dr. Roberto Joel Tirado Reyes",
+  "institution": "Universidad Autónoma de Sinaloa",
+  "releaseChannel": "release-candidate",
+  "featureFreeze": true,
+  "focus": "automated empirical validation and beta gate",
+  "betaGate": "tests/beta_gate.py"
+}

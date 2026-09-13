@@ -1,0 +1,3086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ValiStruct</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#7c1f2a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ValiStruct" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
+  <header class="topbar">
+    <div>
+      <h1>ValiStruct</h1>
+      <p>Plataforma inteligente para validación de instrumentos y modelamiento estructural</p>
+    </div>
+    <div class="author">Dr. Roberto Joel Tirado Reyes<br><button id="headerInstallButton" class="mini-install">Instalar app</button></div>
+  </header>
+
+  <nav aria-label="Navegación principal" class="nav">
+    <button data-section="inicio" class="active">Inicio</button>
+    <button data-section="aiken">V de Aiken</button>
+    <button data-section="reliability">Confiabilidad</button>
+    <button data-section="efa">AFE</button>
+    <button data-section="cfa">AFC</button>
+    <button data-section="validacion">Ruta de validación</button>
+    <button data-section="latencia">Latencia</button>
+    <button data-section="motorpro">Motor Pro</button>
+    <button data-section="advanced">Validación avanzada</button>
+    <button data-section="projects">Proyectos</button>
+    <button data-section="reportapa">Reporte APA 7</button>
+    <button data-section="modelcompare">Comparar modelos</button>
+    <button data-section="diagnostics">Diagnóstico de datos</button>
+    <button data-section="multidiag">Diagnóstico multivariado</button>
+    <button data-section="articletables">Tablas para artículo</button>
+    <button data-section="missingpro">Datos faltantes Pro</button>
+    <button data-section="qualitydashboard">Dashboard de validación</button>
+    <button data-section="estimadorguide">Asistente de estimador</button>
+    <button data-section="samplesize">Tamaño muestral / Monte Carlo</button>
+    <button data-section="syntaxpro">Sintaxis avanzada</button>
+    <button data-section="semmontecarlo">Monte Carlo SEM</button>
+    <button data-section="modelcheck">Diagnóstico del modelo</button>
+    <button data-section="helpcenter">Centro de ayuda</button>
+    <button data-section="assistantflow">Asistente paso a paso</button>
+    <button data-section="resultcenter">Centro de resultados</button>
+    <button data-section="conclusionassistant">Conclusiones metodológicas</button>
+    <button data-section="finalcheck">Checklist final</button>
+    <button data-section="journalready">Preparación para revista</button>
+    <button data-section="guidedproject">Proyecto guiado</button>
+    <button data-section="profiles">Perfil de usuario</button>
+    <button data-section="systemcheck">Verificación del sistema</button>
+    <button data-section="advancedsettings">Configuración avanzada</button>
+    <button data-section="dataimport">Importación de datos</button>
+    <button data-section="templates">Plantillas de modelos</button>
+    <button data-section="migration">Migración de proyectos</button>
+    <button data-section="privacy">Privacidad y seguridad</button>
+    <button data-section="legacyimport">Importación SAV/DTA</button>
+    <button data-section="encryption">Cifrado de proyectos</button>
+    <button data-section="accessibility">Accesibilidad</button>
+    <button data-section="updates">Actualizaciones y versión</button>
+    <button data-section="auth">Acceso institucional</button>
+    <button data-section="institutionlib">Biblioteca institucional</button>
+    <button data-section="sync">Sincronización</button>
+    <button data-section="backendtests">Pruebas del backend</button>
+    <button data-section="teams">Equipos y permisos</button>
+    <button data-section="versions">Versiones de proyecto</button>
+    <button data-section="adminpanel">Panel administrativo</button>
+    <button data-section="oidc">Preparación SSO/OIDC</button>
+    <button data-section="peerreview">Comentarios y revisión</button>
+    <button data-section="activitylog">Bitácora colaborativa</button>
+    <button data-section="notifications">Notificaciones</button>
+    <button data-section="betaready">Preparación beta</button>
+    <button data-section="conflicts">Resolver conflictos</button>
+    <button data-section="tasks">Tareas y revisión</button>
+    <button data-section="collabexport">Exportar colaboración</button>
+    <button data-section="telemetry">Telemetría técnica</button>
+    <button data-section="kanban">Kanban de tareas</button>
+    <button data-section="approvals">Firmas y aprobaciones</button>
+    <button data-section="releases">Versiones y releases</button>
+    <button data-section="auditpackage">Paquete de auditoría</button>
+    <button data-section="servermonitor">Monitoreo del servidor</button>
+    <button data-section="backuprestore">Respaldo y restauración</button>
+    <button data-section="serverwizard">Asistente de servidor</button>
+    <button data-section="incidents">Incidencias</button>
+    <button data-section="userdocs">Documentación</button>
+    <button data-section="e2e">Pruebas end-to-end</button>
+    <button data-section="installer">Instalador asistido</button>
+    <button data-section="scheduledbackup">Respaldos programados</button>
+    <button data-section="loadtesting">Pruebas de carga</button>
+    <button data-section="a11yaudit">Auditoría de accesibilidad</button>
+    <button data-section="betametrics">Métricas beta</button>
+    <button data-section="releasecandidate">Centro Release Candidate</button>
+    <button data-section="regression">Pruebas de regresión</button>
+    <button data-section="securityreview">Revisión de seguridad</button>
+    <button data-section="history">Historial</button>
+    <button data-section="methodguide">Guía Tirado-Reyes</button>
+    <button data-section="appsettings">Dispositivo / PWA</button>
+    <button data-section="guia">Guía metodológica</button>
+    <button data-section="referencias">Referencias</button>
+    <button data-section="acerca">Acerca de</button>
+  </nav>
+
+  <main id="mainContent" tabindex="-1">
+  <div class="rc-banner"><strong>ValiStruct 3.0 RC6</strong> · Release Candidate para beta institucional controlada. Se priorizan estabilidad y corrección sobre nuevas funcionalidades.</div>
+    <section id="inicio" class="panel visible">
+      <div class="hero">
+        <h2>Bienvenido a ValiStruct</h2>
+        <p>
+          ValiStruct es una aplicación científica de acceso abierto creada para apoyar a estudiantes,
+          docentes e investigadores en el diseño, validación y evaluación de instrumentos de medición,
+          así como en el análisis factorial y el modelamiento de ecuaciones estructurales.
+        </p>
+        <p>
+          La aplicación se desarrolla como un aporte académico del
+          <strong>Dr. Roberto Joel Tirado Reyes</strong>, profesor-investigador de la
+          <strong>Universidad Autónoma de Sinaloa</strong>, con el propósito de facilitar el aprendizaje,
+          la toma de decisiones metodológicas y el uso responsable de técnicas psicométricas y de modelamiento.
+        </p>
+      </div>
+
+      <div class="cards">
+        <article class="card action-card" data-go="aiken">
+          <h3>V de Aiken</h3>
+          <p>Captura evaluaciones de jueces, calcula V por ítem y criterio, e interpreta los resultados.</p>
+          <button>Iniciar módulo</button>
+        </article>
+        <article class="card action-card" data-go="reliability"><h3>Confiabilidad</h3><p>Alfa de Cronbach, omega, correlación ítem-total y análisis de reactivos.</p><button>Iniciar módulo</button></article>
+        <article class="card action-card" data-go="efa">
+          <h3>Análisis Factorial Exploratorio</h3>
+          <p>KMO, Bartlett, autovalores, scree plot, análisis paralelo, cargas y rotación.</p>
+          <button>Iniciar AFE</button>
+        </article>
+        <article class="card action-card" data-go="cfa">
+          <h3>Análisis Factorial Confirmatorio</h3>
+          <p>Especificación del modelo, cargas estandarizadas, SRMR, CR, AVE, HTMT y diagrama.</p>
+          <button>Iniciar AFC</button>
+        </article>
+        <article class="card">
+          <h3>Latencia</h3>
+          <p>Modelos SEM, variables latentes, diagramas, mediación e invariancia.</p>
+        </article>
+        <article class="card action-card" data-go="guidedproject">
+          <h3>Proyecto guiado de inicio a fin</h3>
+          <p>Recorre de forma secuencial la construcción, validación, AFC/SEM, reporte y cierre del proyecto.</p>
+          <button>Iniciar proyecto guiado</button>
+        </article>
+        <article class="card action-card" data-go="profiles">
+          <h3>Perfiles de uso</h3>
+          <p>Adapta la cantidad de ayuda y detalle para estudiante, investigador o docente.</p>
+          <button>Configurar perfil</button>
+        </article>
+        <article class="card action-card" data-go="finalcheck">
+          <h3>Checklist final</h3>
+          <p>Comprueba si el proyecto está metodológicamente documentado para tesis o artículo.</p>
+          <button>Revisar checklist</button>
+        </article>
+        <article class="card action-card" data-go="journalready">
+          <h3>Preparación para revista</h3>
+          <p>Evalúa tablas, reporte, referencias, trazabilidad y elementos previos al envío científico.</p>
+          <button>Evaluar preparación</button>
+        </article>
+        <article class="card action-card" data-go="assistantflow">
+          <h3>Asistente paso a paso</h3>
+          <p>Detecta el estado del proyecto y propone el siguiente análisis o revisión metodológica.</p>
+          <button>Abrir asistente</button>
+        </article>
+        <article class="card action-card" data-go="resultcenter">
+          <h3>Centro de resultados</h3>
+          <p>Consolida hallazgos, alertas, fortalezas y próximos pasos en un solo panel.</p>
+          <button>Ver resultados</button>
+        </article>
+        <article class="card action-card" data-go="estimadorguide">
+          <h3>Asistente de estimador</h3>
+          <p>Recomendaciones orientativas para ML, MLR y WLSMV según escala, normalidad y datos faltantes.</p>
+          <button>Abrir asistente</button>
+        </article>
+        <article class="card action-card" data-go="samplesize">
+          <h3>Tamaño muestral y Monte Carlo</h3>
+          <p>Evalúe suficiencia preliminar de N y simule potencia aproximada para rutas estructurales.</p>
+          <button>Analizar muestra</button>
+        </article>
+        <article class="card action-card" data-go="motorpro">
+          <h3>Motor Pro · lavaan</h3>
+          <p>Arquitectura preparada para ML, MLR, WLSMV, CFI, TLI, RMSEA, SRMR, χ² e índices de modificación.</p>
+          <button>Abrir Motor Pro</button>
+        </article>
+        <article class="card action-card" data-go="projects">
+          <h3>Gestión de proyectos</h3>
+          <p>Guarde, abra y transfiera proyectos completos con datos, modelos y resultados.</p>
+          <button>Abrir proyectos</button>
+        </article>
+        <article class="card action-card" data-go="reportapa">
+          <h3>Reporte APA 7</h3>
+          <p>Genere redacción automática de resultados con tablas y referencias metodológicas.</p>
+          <button>Generar reporte</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="aiken" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Validez de contenido · V de Aiken</h2>
+          <p>Capture o importe evaluaciones de jueces, calcule la V de Aiken con intervalo de confianza y documente observaciones cualitativas.</p>
+        </div>
+        <span class="badge">Módulo funcional v0.3</span>
+      </div>
+
+      <div class="notice">
+        <strong>Fórmula:</strong> V = Σ(r − l<sub>o</sub>) / [n(c − 1)].
+        <br><strong>Intervalo de confianza:</strong> aproximación tipo score/Wilson configurable.
+        Los puntos de corte son <strong>orientativos</strong>; ValiStruct no elimina ítems automáticamente.
+      </div>
+
+      <div class="config-grid">
+        <label>Número de jueces
+          <input id="judgeCount" type="number" min="2" max="50" value="5" />
+        </label>
+        <label>Número de ítems
+          <input id="itemCount" type="number" min="1" max="100" value="5" />
+        </label>
+        <label>Valor mínimo de escala
+          <input id="scaleMin" type="number" value="1" />
+        </label>
+        <label>Valor máximo de escala
+          <input id="scaleMax" type="number" value="5" />
+        </label>
+        <label>Nivel de confianza
+          <select id="confidenceLevel">
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="criteria-box">
+        <span>Criterios a evaluar</span>
+        <label><input type="checkbox" class="criterion-check" value="Claridad" checked /> Claridad</label>
+        <label><input type="checkbox" class="criterion-check" value="Coherencia" checked /> Coherencia</label>
+        <label><input type="checkbox" class="criterion-check" value="Relevancia" checked /> Relevancia</label>
+        <label><input type="checkbox" class="criterion-check" value="Suficiencia" /> Suficiencia</label>
+      </div>
+
+      <div class="thresholds">
+        <div><label>Favorable desde
+          <input id="goodThreshold" type="number" min="0" max="1" step="0.01" value="0.80" />
+        </label></div>
+        <div><label>Revisar desde
+          <input id="warnThreshold" type="number" min="0" max="1" step="0.01" value="0.70" />
+        </label></div>
+        <p>Debajo del umbral “Revisar” se marcará como problema potencial.</p>
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Importar datos</h3>
+          <p>Formato CSV: <strong>Item, Criterio, Juez1, Juez2, …, Comentario</strong></p>
+        </div>
+        <div class="button-row compact">
+          <button id="downloadTemplate">Descargar plantilla CSV</button>
+          <label class="file-button">Importar CSV
+            <input id="csvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="buildAiken" class="primary">Crear matriz de evaluación</button>
+        <button id="loadExample">Cargar ejemplo</button>
+        <button id="clearAiken">Limpiar</button>
+      </div>
+
+      <div id="aikenWorkspace" class="workspace"></div>
+
+      <div id="aikenActions" class="button-row hidden">
+        <button id="calculateAiken" class="primary">Calcular V de Aiken</button>
+        <button id="copyResults">Copiar resumen</button>
+        <button id="downloadCsv">Descargar resultados CSV</button>
+        <button id="downloadReport">Generar informe HTML</button>
+        <button id="printReport">Imprimir / Guardar PDF</button>
+      </div>
+
+      <div id="aikenResults"></div>
+    </section>
+
+    <section id="reliability" class="panel">
+<div class="section-heading"><div><h2>Confiabilidad y análisis de ítems</h2><p>Importe una matriz de respuestas y evalúe consistencia interna y desempeño de reactivos.</p></div><span class="badge">Módulo funcional v0.4</span></div>
+<div class="notice"><strong>Importante:</strong> la confiabilidad es evidencia complementaria; no demuestra por sí sola la validez. ValiStruct no elimina ítems automáticamente.</div>
+<div class="import-box"><div><h3>Matriz de respuestas</h3><p>CSV: primera columna ID opcional; las demás columnas son ítems.</p></div><div class="button-row compact"><button id="downloadRelTemplate">Descargar plantilla CSV</button><label class="file-button">Importar CSV<input id="relCsvFile" type="file" accept=".csv,text/csv" hidden></label><button id="loadRelExample">Cargar ejemplo</button></div></div>
+<div class="config-grid"><label>Umbral ítem-total corregida<input id="relItemTotalThreshold" type="number" step="0.01" value="0.30"></label><label>Umbral alfa favorable<input id="relAlphaThreshold" type="number" step="0.01" value="0.70"></label></div>
+<div id="relDatasetSummary" class="dataset-summary"></div><div id="relDataPreview" class="workspace"></div>
+<div id="relActions" class="button-row hidden"><button id="calculateReliability" class="primary">Calcular confiabilidad</button><button id="downloadRelResults">Descargar resultados CSV</button><button id="downloadRelReport">Generar informe HTML</button></div><div id="relResults"></div>
+</section>
+
+
+    <section id="efa" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Análisis Factorial Exploratorio (AFE)</h2>
+          <p>Diagnóstico de factorizabilidad, retención de factores, extracción exploratoria, rotación e interpretación guiada.</p>
+        </div>
+        <span class="badge">Módulo funcional v0.5</span>
+      </div>
+
+      <div class="notice">
+        <strong>ValiStruct orienta, no decide por el investigador.</strong>
+        KMO, Bartlett, autovalores, análisis paralelo, comunalidades y cargas factoriales deben interpretarse conjuntamente con la teoría del constructo.
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Matriz de datos</h3>
+          <p>CSV: una fila por participante y una columna por ítem. Puede incluir una primera columna ID.</p>
+        </div>
+        <div class="button-row compact">
+          <button id="downloadEfaTemplate">Descargar plantilla CSV</button>
+          <label class="file-button">Importar CSV
+            <input id="efaCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="loadEfaExample">Cargar ejemplo</button>
+        </div>
+      </div>
+
+      <div class="config-grid">
+        <label>Método de extracción
+          <select id="efaExtraction">
+            <option value="pca" selected>Componentes principales (prototipo)</option>
+          </select>
+        </label>
+        <label>Rotación
+          <select id="efaRotation">
+            <option value="varimax" selected>Varimax</option>
+            <option value="none">Sin rotación</option>
+          </select>
+        </label>
+        <label>Número de factores
+          <input id="efaFactors" type="number" min="1" max="20" value="2">
+        </label>
+        <label>Umbral de carga saliente
+          <input id="efaLoadingThreshold" type="number" min="0" max="1" step="0.05" value="0.40">
+        </label>
+        <label>Umbral carga cruzada
+          <input id="efaCrossThreshold" type="number" min="0" max="1" step="0.05" value="0.30">
+        </label>
+        <label>Simulaciones análisis paralelo
+          <input id="efaParallelRuns" type="number" min="20" max="500" value="100">
+        </label>
+      </div>
+
+      <div id="efaDatasetSummary" class="dataset-summary"></div>
+      <div id="efaDataPreview" class="workspace"></div>
+
+      <div id="efaActions" class="button-row hidden">
+        <button id="calculateEfa" class="primary">Ejecutar AFE</button>
+        <button id="downloadEfaResults">Descargar resultados CSV</button>
+        <button id="downloadEfaReport">Generar informe HTML</button>
+        <button id="printEfaReport">Imprimir / Guardar PDF</button>
+      </div>
+
+      <div id="efaResults"></div>
+    </section>
+
+    <section id="validacion" class="panel">
+      <h2>Ruta integral de validación</h2>
+      <div class="flow">
+        <div class="flow-step">1. Definición del constructo</div>
+        <div class="flow-step">2. Construcción de ítems</div>
+        <div class="flow-step active-flow">3. Validez de contenido · V de Aiken</div>
+        <div class="flow-step">4. Pilotaje y análisis de ítems</div>
+        <div class="flow-step active-flow">5. Confiabilidad</div>
+        <div class="flow-step active-flow">6. AFE</div>
+        <div class="flow-step active-flow">7. AFC</div>
+        <div class="flow-step">8. Validez convergente/discriminante</div>
+        <div class="flow-step">9. SEM · Latencia</div>
+        <div class="flow-step">10. Reporte científico</div>
+      </div>
+    </section>
+
+    
+    <section id="cfa" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Análisis Factorial Confirmatorio (AFC)</h2>
+          <p>Especifique un modelo de medición, estime cargas estandarizadas y evalúe confiabilidad y validez del constructo.</p>
+        </div>
+        <span class="badge">Módulo funcional v0.6</span>
+      </div>
+
+      <div class="notice">
+        <strong>Versión prototipo:</strong> esta etapa implementa un estimador confirmatorio simplificado en navegador para modelos de medición
+        con indicadores asignados a un solo factor. Reporta cargas estandarizadas, residuos, SRMR, CR, AVE y HTMT.
+        <strong>CFI, TLI, RMSEA y χ² de máxima verosimilitud quedarán reservados al motor estadístico de producción</strong>
+        para evitar entregar índices aproximados como si fueran equivalentes a lavaan/AMOS.
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Matriz de datos para AFC</h3>
+          <p>CSV: una fila por participante y una columna por ítem. Puede incluir una primera columna ID.</p>
+        </div>
+        <div class="button-row compact">
+          <button id="downloadCfaTemplate">Descargar plantilla CSV</button>
+          <label class="file-button">Importar CSV
+            <input id="cfaCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="loadCfaExample">Cargar ejemplo</button>
+        </div>
+      </div>
+
+      <div id="cfaDatasetSummary" class="dataset-summary"></div>
+      <div id="cfaDataPreview" class="workspace"></div>
+
+      <div class="model-builder">
+        <h3>Especificación del modelo de medición</h3>
+        <p>Escriba un factor por línea con el formato: <strong>Factor = Item1, Item2, Item3</strong>.</p>
+        <textarea id="cfaSyntax" rows="7" placeholder="Factor1 = I1, I2, I3, I4&#10;Factor2 = I5, I6, I7, I8"></textarea>
+        <div class="button-row">
+          <button id="validateCfaModel">Validar modelo</button>
+          <button id="estimateCfa" class="primary">Estimar AFC</button>
+          <button id="downloadCfaResults">Descargar resultados CSV</button>
+          <button id="downloadCfaReport">Generar informe HTML</button>
+        </div>
+        <div id="cfaModelStatus"></div>
+      </div>
+
+      <div id="cfaResults"></div>
+    </section>
+
+    
+    <section id="latencia" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>ValiStruct | Latencia</h2>
+          <p>Editor visual para construir modelos de medición y modelos estructurales con variables observadas y latentes.</p>
+        </div>
+        <span class="badge">Módulo funcional v0.7</span>
+      </div>
+
+      <div class="notice">
+        <strong>Objetivo de esta etapa:</strong> construir visualmente el modelo antes de estimarlo.
+        Puede crear variables, moverlas, conectarlas, definir covarianzas y exportar el diagrama como SVG.
+        La estimación SEM completa con CFI, TLI, RMSEA, χ², mediación bootstrap e invariancia se integrará con el motor estadístico de producción.
+      </div>
+
+      <div class="latencia-toolbar">
+        <button id="addObserved">▭ Variable observada</button>
+        <button id="addLatent">⬭ Variable latente</button>
+        <button id="addError">○ Error</button>
+        <button id="connectPath" class="primary">→ Ruta causal</button>
+        <button id="connectCov">↔ Covarianza</button>
+        <button id="renameNode">✎ Renombrar</button>
+        <button id="deleteSelected">⌫ Eliminar</button>
+        <button id="clearLatencia">Limpiar</button>
+        <button id="autoLayoutSem">Auto-layout</button>
+        <button id="zoomInSem">Zoom +</button>
+        <button id="zoomOutSem">Zoom −</button>
+        <button id="resetViewSem">Restablecer vista</button>
+      </div>
+
+      <div class="latencia-layout">
+        <aside class="latencia-side">
+          <h3>Propiedades</h3>
+          <div id="latenciaSelection">Seleccione un nodo o una relación.</div>
+
+          <h3>Plantillas</h3>
+          <div class="button-stack">
+            <button id="presetCfa">AFC 2 factores</button>
+            <button id="presetMediation">Mediación X → M → Y</button>
+            <button id="presetSecondOrder">Segundo orden</button>
+          </div>
+
+          <h3>Modelo</h3>
+          <div class="button-stack">
+            <button id="generateSyntax">Generar sintaxis</button>
+            <button id="exportSvg">Exportar SVG</button>
+            <button id="exportPng">Exportar PNG</button>
+            <button id="exportPdf">Exportar PDF</button>
+            <button id="saveModelJson">Guardar modelo JSON</button>
+            <label class="file-button">Cargar modelo JSON
+              <input id="loadModelJson" type="file" accept=".json,application/json" hidden>
+            </label>
+          </div>
+        </aside>
+
+        <div class="latencia-canvas-wrap">
+          <svg id="latenciaCanvas" viewBox="0 0 1200 700" aria-label="Editor visual SEM">
+            <defs>
+              <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#333"></path>
+              </marker>
+              <marker id="arrowHeadStart" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto">
+                <path d="M9,0 L9,6 L0,3 z" fill="#333"></path>
+              </marker>
+            </defs>
+            <g id="edgeLayer"></g>
+            <g id="nodeLayer"></g>
+          </svg>
+          <div class="canvas-help">Arrastre los nodos para moverlos. Para conectar, active un tipo de relación y haga clic en origen y destino.</div>
+        </div>
+      </div>
+
+      <div id="latenciaSyntaxBox" class="model-builder hidden">
+        <h3>Sintaxis del modelo</h3>
+        <textarea id="latenciaSyntax" rows="10" readonly></textarea>
+      </div>
+
+      <div class="efa-grid">
+        <div class="efa-guidance">
+          <h3>Convenciones visuales</h3>
+          <p><strong>Rectángulo:</strong> variable observada.</p>
+          <p><strong>Óvalo:</strong> variable latente.</p>
+          <p><strong>Círculo:</strong> error o perturbación.</p>
+          <p><strong>→:</strong> regresión o carga factorial.</p>
+          <p><strong>↔:</strong> covarianza/correlación.</p>
+        </div>
+        <div class="efa-guidance">
+          <h3>Orientación metodológica</h3>
+          <p>Construya primero el modelo teórico. Después conecte indicadores y factores. Las modificaciones posteriores deben estar sustentadas teóricamente, no solo por índices de ajuste.</p>
+        </div>
+      </div>
+    
+      <div class="model-builder" id="semEngineBox">
+        <h3>Motor estructural preliminar</h3>
+        <p>
+          Importe una base CSV y ValiStruct asociará las variables observadas por nombre.
+          Las variables latentes se aproximan temporalmente mediante puntajes compuestos estandarizados
+          construidos a partir de sus indicadores conectados en el diagrama.
+        </p>
+
+        <div class="import-box">
+          <div>
+            <h3>Datos para el modelo estructural</h3>
+            <p>CSV: una fila por participante; los nombres de columnas deben coincidir con las variables observadas del diagrama.</p>
+          </div>
+          <div class="button-row compact">
+            <button id="downloadSemTemplate">Descargar plantilla CSV</button>
+            <label class="file-button">Importar CSV
+              <input id="semCsvFile" type="file" accept=".csv,text/csv" hidden>
+            </label>
+            <button id="loadSemExample">Cargar ejemplo</button>
+          </div>
+        </div>
+
+        <div id="semDatasetSummary" class="dataset-summary"></div>
+
+        <div class="config-grid">
+          <label>Bootstrap mediación
+            <input id="semBootstrapRuns" type="number" min="100" max="5000" step="100" value="1000">
+          </label>
+          <label>Nivel de confianza
+            <select id="semConfidence">
+              <option value="0.90">90%</option>
+              <option value="0.95" selected>95%</option>
+              <option value="0.99">99%</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="estimateSem" class="primary">Estimar modelo estructural</button>
+          <button id="runMediation">Analizar mediación</button>
+          <button id="downloadSemResults">Descargar resultados CSV</button>
+          <button id="downloadSemReport">Generar informe HTML</button>
+        </div>
+
+        <div id="semResults"></div>
+      </div>
+</section>
+
+    
+    <section id="motorpro" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Motor estadístico profesional · lavaan</h2>
+          <p>Interfaz de conexión con el backend de producción para AFC, SEM, estimadores robustos y análisis avanzados.</p>
+        </div>
+        <span class="badge">Arquitectura funcional v0.9</span>
+      </div>
+
+      <div class="notice">
+        <strong>Estado de esta versión:</strong> la interfaz y el backend están preparados para ejecutarse con
+        <strong>R + lavaan + semTools + psych + plumber</strong>. El navegador consulta el servicio local o remoto.
+        Si el backend no está activo, ValiStruct conserva los módulos preliminares, pero no presenta índices confirmatorios como definitivos.
+      </div>
+
+      <div class="engine-status-box">
+        <div>
+          <h3>Conexión del motor</h3>
+          <p id="proEngineStatusText">Motor no comprobado.</p>
+        </div>
+        <div class="button-row compact">
+          <button id="checkProEngine">Comprobar motor</button>
+        </div>
+      </div>
+
+      <div class="config-grid">
+        <label>Estimador
+          <select id="proEstimator">
+            <option value="ML">ML</option>
+            <option value="MLR" selected>MLR · robusto</option>
+            <option value="WLSMV">WLSMV · ordinal</option>
+          </select>
+        </label>
+        <label>Tipo de datos
+          <select id="proDataType">
+            <option value="continuous" selected>Continuos</option>
+            <option value="ordinal">Ordinales / Likert</option>
+          </select>
+        </label>
+        <label>Variables ordinales (opcional)
+          <input id="proOrdinalVars" type="text" placeholder="Item1, Item2, Item3">
+          <small>Separe por comas. Permite excluir covariables continuas o la variable de agrupación.</small>
+        </label>
+        <label>Valores perdidos
+          <select id="proMissing">
+            <option value="fiml" selected>FIML</option>
+            <option value="listwise">Eliminación por lista</option>
+          </select>
+        </label>
+        <label>Bootstrap
+          <input id="proBootstrap" type="number" min="0" max="10000" step="100" value="1000">
+        </label>
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Datos y modelo</h3>
+          <p>Importe CSV y pegue sintaxis lavaan, o genere la sintaxis desde ValiStruct | Latencia.</p>
+        </div>
+        <div class="button-row compact">
+          <label class="file-button">Importar CSV
+            <input id="proCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="copyLatenciaSyntax">Usar sintaxis de Latencia</button>
+        </div>
+      </div>
+
+      <div id="proDatasetSummary" class="dataset-summary"></div>
+
+      <div class="model-builder">
+        <h3>Sintaxis lavaan</h3>
+        <textarea id="proSyntax" rows="12" placeholder="F1 =~ I1 + I2 + I3&#10;F2 =~ I4 + I5 + I6&#10;F2 ~ F1"></textarea>
+        <div class="button-row">
+          <button id="runProModel" class="primary">Ejecutar modelo profesional</button>
+          <button id="downloadProPayload">Descargar solicitud JSON</button>
+          <button id="downloadProReport">Descargar informe JSON</button>
+          <button id="applyProDiagram">Aplicar coeficientes al diagrama</button>
+        </div>
+      </div>
+
+      <div id="proResults"></div>
+      <div id="guidedMiPanel" class="model-builder hidden">
+        <h3>Índices de modificación guiados</h3>
+        <p>ValiStruct clasifica sugerencias por magnitud, pero exige justificación teórica antes de cualquier modificación.</p>
+        <div id="guidedMiContent"></div>
+      </div>
+
+      <div class="efa-grid">
+        <div class="efa-guidance">
+          <h3>Índices previstos</h3>
+          <p>χ² y gl, CFI, TLI, RMSEA con IC, SRMR, AIC, BIC, cargas estandarizadas, R², residuos e índices de modificación.</p>
+        </div>
+        <div class="efa-guidance">
+          <h3>Análisis avanzados</h3>
+          <p>MLR, WLSMV, datos ordinales, correlaciones policóricas, mediación bootstrap, invariancia factorial y modelos multigrupo.</p>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="advanced" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Validación avanzada del modelo</h2>
+          <p>CR, AVE, HTMT, correlaciones policóricas, invariancia factorial y análisis multigrupo mediante el Motor Pro.</p>
+        </div>
+        <span class="badge">ValiStruct v1.0</span>
+      </div>
+
+      <div class="notice">
+        Estos análisis requieren conexión con el backend R/lavaan de producción.
+        ValiStruct no simula resultados cuando el motor profesional no está disponible.
+      </div>
+
+      <div class="config-grid">
+        <label>Variable de grupo
+          <input id="advGroupVar" type="text" placeholder="Ej. sexo, facultad, país">
+        </label>
+        <label>Niveles ordinales (opcional)
+          <input id="advOrdinalVars" type="text" placeholder="Ej. I1,I2,I3,I4">
+        </label>
+        <label>Umbral HTMT
+          <input id="advHtmtThreshold" type="number" min="0.70" max="1" step="0.01" value="0.85">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="runQualityMetrics" class="primary">CR · AVE · HTMT</button>
+        <button id="runPolychoric">Correlaciones policóricas</button>
+        <button id="runInvariance">Invariancia factorial</button>
+        <button id="runMultigroup">Modelo multigrupo</button>
+        <button id="downloadAdvancedReport">Descargar informe JSON</button>
+      </div>
+
+      <div id="advancedResults"></div>
+    </section>
+
+    
+    <section id="projects" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Gestión de proyectos</h2>
+          <p>Guarde el estado de ValiStruct para continuar el trabajo posteriormente o moverlo entre dispositivos.</p>
+        </div>
+        <span class="badge">ValiStruct v1.1</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Nombre del proyecto
+          <input id="projectName" type="text" placeholder="Ej. Validación escala de competencia">
+        </label>
+        <label>Investigador / equipo
+          <input id="projectAuthor" type="text" value="Dr. Roberto Joel Tirado Reyes">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveProjectLocal" class="primary">Guardar en este dispositivo</button>
+        <button id="exportProject">Exportar proyecto .json</button>
+        <label class="file-button">Importar proyecto
+          <input id="importProjectFile" type="file" accept=".json,application/json" hidden>
+        </label>
+        <button id="newProject">Nuevo proyecto</button>
+      </div>
+
+      <div class="notice">
+        En iPhone/iPad, los proyectos guardados localmente permanecen en el navegador del dispositivo.
+        Para transferirlos a otro equipo, use <strong>Exportar proyecto</strong>.
+      </div>
+
+      <h3>Proyectos guardados en este dispositivo</h3>
+      <div id="projectList"></div>
+    </section>
+
+    <section id="reportapa" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Generador de reporte APA 7</h2>
+          <p>Integra resultados disponibles de validez de contenido, confiabilidad, AFE, AFC, SEM y Motor Pro.</p>
+        </div>
+        <span class="badge">Reporte científico v1.1</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Título del estudio
+          <input id="reportStudyTitle" type="text" placeholder="Título del estudio o instrumento">
+        </label>
+        <label>Idioma
+          <select id="reportLanguage">
+            <option value="es" selected>Español</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="generateApaReport" class="primary">Generar reporte</button>
+        <button id="copyApaReport">Copiar texto</button>
+        <button id="downloadApaHtml">Descargar HTML</button>
+        <button id="downloadApaDocx">Descargar Word/DOCX</button>
+        <button id="printApaReport">Imprimir / Guardar PDF</button>
+      </div>
+
+      <div id="apaReportOutput" class="apa-report"></div>
+    </section>
+
+    
+    <section id="modelcompare" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Comparación de modelos</h2>
+          <p>Compare modelos anidados o alternativas teóricas mediante índices de ajuste y cambios entre soluciones.</p>
+        </div>
+        <span class="badge">ValiStruct v1.2</span>
+      </div>
+
+      <div class="notice">
+        Guarde los resultados del Motor Pro como “Modelo A” y “Modelo B”. ValiStruct calcula diferencias en CFI,
+        RMSEA, SRMR, AIC y BIC y ofrece una interpretación orientativa. La selección final debe conservar sustento teórico.
+      </div>
+
+      <div class="button-row">
+        <button id="captureModelA">Capturar resultado actual como Modelo A</button>
+        <button id="captureModelB">Capturar resultado actual como Modelo B</button>
+        <button id="compareModels" class="primary">Comparar modelos</button>
+        <button id="clearComparison">Limpiar comparación</button>
+      </div>
+
+      <div id="modelComparisonStatus" class="dataset-summary"></div>
+      <div id="modelComparisonResults"></div>
+    </section>
+
+    <section id="methodguide" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Guía metodológica Tirado-Reyes</h2>
+          <p>Panel didáctico para orientar el proceso de validación de instrumentos y modelos factoriales.</p>
+        </div>
+        <span class="badge">Basada en criterios metodológicos publicados</span>
+      </div>
+
+      <div class="notice">
+        Esta guía incorpora criterios orientativos derivados del trabajo metodológico publicado por el
+        <strong>Dr. Roberto Joel Tirado Reyes</strong>. Los puntos de corte no sustituyen la valoración integral del modelo,
+        la teoría ni la evidencia empírica.
+        <br><strong>DOI:</strong> 10.37811/cl_rcm.v10i2.23827
+      </div>
+
+      <div class="method-tabs">
+        <button class="method-tab active" data-methodtab="afe">AFE</button>
+        <button class="method-tab" data-methodtab="afc">AFC</button>
+        <button class="method-tab" data-methodtab="validity">Validez y confiabilidad</button>
+        <button class="method-tab" data-methodtab="workflow">Ruta completa</button>
+      </div>
+
+      <div id="methodGuideContent"></div>
+    </section>
+
+    
+    <section id="diagnostics" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Diagnóstico previo de datos</h2>
+          <p>Revise calidad, distribución y posibles problemas antes de AFE, AFC o SEM.</p>
+        </div>
+        <span class="badge">ValiStruct v1.3</span>
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Base de datos</h3>
+          <p>CSV con una fila por participante y columnas numéricas para variables o ítems.</p>
+        </div>
+        <div class="button-row compact">
+          <label class="file-button">Importar CSV
+            <input id="diagCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="loadDiagExample">Cargar ejemplo</button>
+        </div>
+      </div>
+
+      <div class="config-grid">
+        <label>Umbral de datos faltantes por variable
+          <input id="diagMissingThreshold" type="number" min="0" max="100" step="1" value="5">
+        </label>
+        <label>|Asimetría| de alerta
+          <input id="diagSkewThreshold" type="number" min="0" max="5" step="0.1" value="2">
+        </label>
+        <label>|Curtosis| de alerta
+          <input id="diagKurtThreshold" type="number" min="0" max="10" step="0.1" value="7">
+        </label>
+        <label>z para posible valor atípico
+          <input id="diagOutlierZ" type="number" min="2" max="6" step="0.1" value="3.29">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="runDiagnostics" class="primary">Ejecutar diagnóstico</button>
+        <button id="downloadDiagnostics">Descargar resultados CSV</button>
+        <button id="downloadDiagnosticsReport">Generar informe HTML</button>
+      </div>
+
+      <div id="diagSummary" class="dataset-summary"></div>
+      <div id="diagResults"></div>
+      <div class="model-builder">
+        <h3>Manejo guiado de datos faltantes</h3>
+        <p id="missingGuidanceText">Ejecute el diagnóstico para recibir una recomendación orientativa.</p>
+        <div class="button-row">
+          <button id="applyListwiseGuide">Ver criterio eliminación por lista</button>
+          <button id="applyFimlGuide">Ver criterio FIML</button>
+          <button id="applyOrdinalGuide">Ver criterio para datos ordinales</button>
+        </div>
+      </div>
+
+    </section>
+
+    <section id="history" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Historial y auditoría reproducible</h2>
+          <p>Registre automáticamente las principales acciones y análisis realizados en ValiStruct.</p>
+        </div>
+        <span class="badge">Trazabilidad v1.3</span>
+      </div>
+
+      <div class="button-row">
+        <button id="exportHistory" class="primary">Exportar historial JSON</button>
+        <button id="exportHistoryCsv">Exportar historial CSV</button>
+        <button id="clearHistory">Limpiar historial</button>
+      </div>
+
+      <div class="notice">
+        El historial conserva fecha, módulo, acción y metadatos básicos. No sustituye un sistema formal de auditoría regulatoria,
+        pero mejora la reproducibilidad académica y la documentación del proceso analítico.
+      </div>
+
+      <div id="historyList"></div>
+    </section>
+
+    
+    <section id="multidiag" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Diagnóstico multivariado</h2>
+          <p>Evalúe normalidad multivariada, valores atípicos multivariados y patrones de correlación antes de AFC/SEM.</p>
+        </div>
+        <span class="badge">ValiStruct v1.4</span>
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Base de datos</h3>
+          <p>CSV con variables numéricas. Puede reutilizar la base del diagnóstico univariado o importar otra.</p>
+        </div>
+        <div class="button-row compact">
+          <label class="file-button">Importar CSV
+            <input id="multiCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="reuseDiagData">Reutilizar diagnóstico previo</button>
+          <button id="loadMultiExample">Cargar ejemplo</button>
+        </div>
+      </div>
+
+      <div class="config-grid">
+        <label>Percentil Mahalanobis
+          <select id="mahalPercentile">
+            <option value="0.975">97.5%</option>
+            <option value="0.99" selected>99%</option>
+            <option value="0.999">99.9%</option>
+          </select>
+        </label>
+        <label>Umbral correlación alta
+          <input id="corrHighThreshold" type="number" min="0.5" max="0.99" step="0.01" value="0.90">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="runMultiDiagnostics" class="primary">Ejecutar diagnóstico multivariado</button>
+        <button id="downloadMultiResults">Descargar resultados CSV</button>
+        <button id="downloadMultiReport">Generar informe HTML</button>
+        <button id="exportCorrPng">Exportar matriz como PNG</button>
+      </div>
+
+      <div id="multiSummary" class="dataset-summary"></div>
+      <div id="multiResults"></div>
+    </section>
+
+    <section id="articletables" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Tablas automáticas para artículo científico</h2>
+          <p>Genere tablas consolidadas a partir de los resultados disponibles en ValiStruct.</p>
+        </div>
+        <span class="badge">Exportación científica v1.4</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Estilo de tabla
+          <select id="articleTableStyle">
+            <option value="apa" selected>APA 7</option>
+            <option value="compact">Compacta</option>
+          </select>
+        </label>
+        <label>Decimales
+          <select id="articleDecimals">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="generateArticleTables" class="primary">Generar tablas</button>
+        <button id="downloadArticleHtml">Descargar HTML</button>
+        <button id="copyArticleTables">Copiar tablas</button>
+        <button id="downloadArticleCsv">Descargar paquete CSV</button>
+        <button id="downloadArticleDocx">Descargar tablas Word/DOCX</button>
+      </div>
+
+      <div id="articleTablesOutput" class="apa-report"></div>
+    </section>
+
+    
+    <section id="missingpro" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Datos faltantes · análisis profesional</h2>
+          <p>Explore patrones de ausencia y ejecute una prueba de MCAR mediante el Motor Pro.</p>
+        </div>
+        <span class="badge">ValiStruct v1.5</span>
+      </div>
+
+      <div class="notice">
+        La prueba MCAR es un apoyo diagnóstico, no una regla automática. La estrategia de manejo debe considerar
+        mecanismo de ausencia, proporción de datos faltantes, diseño del estudio y estimador seleccionado.
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Base de datos</h3>
+          <p>Puede reutilizar la base cargada en Diagnóstico de datos o importar un CSV.</p>
+        </div>
+        <div class="button-row compact">
+          <label class="file-button">Importar CSV
+            <input id="missingCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+          <button id="reuseMissingDiag">Reutilizar base diagnóstica</button>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="runMissingPattern">Analizar patrones</button>
+        <button id="runLittleMcar" class="primary">Ejecutar prueba MCAR</button>
+        <button id="downloadMissingReport">Descargar informe JSON</button>
+      </div>
+
+      <div id="missingSummary" class="dataset-summary"></div>
+      <div id="missingResults"></div>
+    </section>
+
+    <section id="qualitydashboard" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Dashboard integral de validación</h2>
+          <p>Visualice qué etapas del proceso ya cuentan con evidencia y cuáles requieren completar o revisar.</p>
+        </div>
+        <span class="badge">Cobertura metodológica v1.5</span>
+      </div>
+
+      <div class="notice">
+        <strong>Importante:</strong> este tablero mide <strong>avance y cobertura del proceso</strong>, no asigna una
+        “calificación científica” al instrumento. Un estudio puede tener muchas etapas completas y aun requerir revisión teórica o metodológica.
+      </div>
+
+      <div class="button-row">
+        <button id="refreshQualityDashboard" class="primary">Actualizar dashboard</button>
+        <button id="downloadQualitySummary">Descargar resumen JSON</button>
+        <button id="downloadConsolidatedXlsx">Exportar libro Excel/XLSX</button>
+      </div>
+
+      <div id="qualityDashboardSummary" class="dataset-summary"></div>
+      <div id="qualityDashboardContent"></div>
+    </section>
+
+    
+    <section id="estimadorguide" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Asistente para selección del estimador</h2>
+          <p>Orienta la elección entre ML, MLR y WLSMV con base en características de los datos y el modelo.</p>
+        </div>
+        <span class="badge">ValiStruct v1.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Tipo de variables
+          <select id="estVarType">
+            <option value="continuous">Continuas</option>
+            <option value="likert5" selected>Likert 5–7 categorías</option>
+            <option value="ordinal4">Ordinales ≤4 categorías</option>
+            <option value="mixed">Mixtas</option>
+          </select>
+        </label>
+        <label>Normalidad
+          <select id="estNormality">
+            <option value="normal">Sin desviaciones importantes</option>
+            <option value="mild" selected>Desviaciones leves/moderadas</option>
+            <option value="severe">Desviaciones importantes</option>
+          </select>
+        </label>
+        <label>Datos faltantes
+          <select id="estMissing">
+            <option value="none">Sin faltantes</option>
+            <option value="low" selected>Pocos faltantes</option>
+            <option value="moderate">Faltantes moderados</option>
+          </select>
+        </label>
+        <label>Tamaño muestral
+          <input id="estSampleN" type="number" min="20" max="100000" value="300">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="runEstimatorGuide" class="primary">Obtener recomendación</button>
+        <button id="applyEstimatorToPro">Aplicar al Motor Pro</button>
+      </div>
+
+      <div id="estimatorGuideResults"></div>
+    </section>
+
+    <section id="samplesize" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Tamaño muestral y simulación Monte Carlo</h2>
+          <p>Herramientas orientativas para planear AFC/SEM antes de recolectar o analizar los datos.</p>
+        </div>
+        <span class="badge">Planeación v1.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Número de variables observadas
+          <input id="ssObserved" type="number" min="3" max="200" value="20">
+        </label>
+        <label>Número de factores latentes
+          <input id="ssLatent" type="number" min="1" max="30" value="4">
+        </label>
+        <label>Parámetros libres aproximados
+          <input id="ssFreeParams" type="number" min="1" max="1000" value="45">
+        </label>
+        <label>N disponible
+          <input id="ssCurrentN" type="number" min="20" max="100000" value="300">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="evaluateSampleSize" class="primary">Evaluar N</button>
+      </div>
+
+      <div id="sampleSizeResults"></div>
+
+      <div class="model-builder">
+        <h3>Monte Carlo básico para una ruta estandarizada</h3>
+        <p>Simula una regresión simple estandarizada para estimar de forma aproximada la probabilidad de detectar una asociación.</p>
+        <div class="config-grid">
+          <label>β esperado
+            <input id="mcBeta" type="number" min="-0.9" max="0.9" step="0.05" value="0.30">
+          </label>
+          <label>N por simulación
+            <input id="mcN" type="number" min="30" max="5000" value="200">
+          </label>
+          <label>Simulaciones
+            <input id="mcRuns" type="number" min="100" max="5000" step="100" value="1000">
+          </label>
+          <label>α
+            <select id="mcAlpha">
+              <option value="0.05" selected>.05</option>
+              <option value="0.01">.01</option>
+            </select>
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="runMonteCarlo" class="primary">Ejecutar Monte Carlo</button>
+        </div>
+        <div id="monteCarloResults"></div>
+      </div>
+    </section>
+
+    <section id="syntaxpro" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Generador avanzado de sintaxis lavaan</h2>
+          <p>Construya modelos de medición, regresiones, covarianzas, mediaciones y parámetros definidos sin escribir toda la sintaxis manualmente.</p>
+        </div>
+        <span class="badge">Sintaxis Pro v1.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Factores de medición
+          <textarea id="synFactors" rows="6" placeholder="F1 = I1,I2,I3&#10;F2 = I4,I5,I6"></textarea>
+        </label>
+        <label>Rutas estructurales
+          <textarea id="synPaths" rows="6" placeholder="F2 ~ F1&#10;Y ~ F2 + F1"></textarea>
+        </label>
+        <label>Covarianzas
+          <textarea id="synCovs" rows="6" placeholder="F1 ~~ F2"></textarea>
+        </label>
+        <label>Parámetros definidos / mediación
+          <textarea id="synDefined" rows="6" placeholder="indirect := a*b&#10;total := cprime + indirect"></textarea>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="generateAdvancedSyntax" class="primary">Generar sintaxis</button>
+        <button id="sendSyntaxToPro">Enviar a Motor Pro</button>
+        <button id="copyAdvancedSyntax">Copiar</button>
+      </div>
+
+      <textarea id="advancedSyntaxOutput" rows="16" readonly></textarea>
+
+      <div class="notice">
+        El generador ayuda a reducir errores de escritura, pero no reemplaza la revisión del modelo teórico ni la identificación estadística del modelo.
+      </div>
+    </section>
+
+    
+    <section id="semmontecarlo" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Monte Carlo SEM profesional</h2>
+          <p>Simule modelos confirmatorios o estructurales mediante R/lavaan para estimar potencia y tasas de convergencia.</p>
+        </div>
+        <span class="badge">ValiStruct v1.7</span>
+      </div>
+
+      <div class="notice">
+        Esta herramienta requiere el Motor Pro. La simulación usa un modelo poblacional lavaan y un modelo de análisis.
+        Los resultados son orientativos para planeación y deben documentarse junto con los supuestos de simulación.
+      </div>
+
+      <div class="config-grid">
+        <label>N por réplica
+          <input id="semMcN" type="number" min="30" max="10000" value="300">
+        </label>
+        <label>Réplicas
+          <input id="semMcRuns" type="number" min="100" max="5000" step="100" value="500">
+        </label>
+        <label>α
+          <select id="semMcAlpha">
+            <option value="0.05" selected>.05</option>
+            <option value="0.01">.01</option>
+          </select>
+        </label>
+        <label>Semilla
+          <input id="semMcSeed" type="number" min="1" max="99999999" value="2026">
+        </label>
+      </div>
+
+      <div class="config-grid">
+        <label>Modelo poblacional
+          <textarea id="semMcPopulation" rows="12" placeholder="F1 =~ .80*I1 + .75*I2 + .70*I3&#10;F2 =~ .80*I4 + .75*I5 + .70*I6&#10;F2 ~ .30*F1"></textarea>
+        </label>
+        <label>Modelo de análisis
+          <textarea id="semMcAnalysis" rows="12" placeholder="F1 =~ I1 + I2 + I3&#10;F2 =~ I4 + I5 + I6&#10;F2 ~ F1"></textarea>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="useCurrentProSyntaxForMc">Usar sintaxis actual</button>
+        <button id="runSemMonteCarlo" class="primary">Ejecutar Monte Carlo SEM</button>
+        <button id="downloadSemMcJson">Descargar resultados JSON</button>
+      </div>
+
+      <div id="semMcResults"></div>
+    </section>
+
+    <section id="modelcheck" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Diagnóstico de identificabilidad y sintaxis</h2>
+          <p>Revise errores comunes del modelo antes de enviarlo al Motor Pro.</p>
+        </div>
+        <span class="badge">Model Check v1.7</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Sintaxis lavaan
+          <textarea id="modelCheckSyntax" rows="14" placeholder="Pegue o genere la sintaxis del modelo"></textarea>
+        </label>
+        <label>Variables disponibles (opcional)
+          <textarea id="modelCheckVars" rows="14" placeholder="I1, I2, I3, I4, I5, I6"></textarea>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="loadSyntaxToChecker">Usar sintaxis del Motor Pro</button>
+        <button id="runLocalModelCheck">Revisión rápida local</button>
+        <button id="runProModelCheck" class="primary">Revisión profunda con Motor Pro</button>
+      </div>
+
+      <div id="modelCheckResults"></div>
+    </section>
+
+    <section id="helpcenter" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Centro de ayuda contextual</h2>
+          <p>Explicaciones breves para interpretar decisiones, indicadores y advertencias dentro de ValiStruct.</p>
+        </div>
+        <span class="badge">Tutor metodológico v1.7</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Buscar concepto
+          <input id="helpSearch" type="text" placeholder="Ej. RMSEA, HTMT, WLSMV, cargas cruzadas">
+        </label>
+        <label>Módulo
+          <select id="helpModule">
+            <option value="all">Todos</option>
+            <option value="content">Validez de contenido</option>
+            <option value="reliability">Confiabilidad</option>
+            <option value="efa">AFE</option>
+            <option value="cfa">AFC</option>
+            <option value="sem">SEM</option>
+            <option value="missing">Datos faltantes</option>
+            <option value="invariance">Invariancia</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="searchHelp" class="primary">Buscar ayuda</button>
+        <button id="showHelpAll">Mostrar temas principales</button>
+      </div>
+
+      <div id="helpResults"></div>
+    </section>
+
+    
+    <section id="assistantflow" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Asistente metodológico paso a paso</h2>
+          <p>Analiza el estado actual del proyecto y orienta la siguiente decisión sin automatizar decisiones científicas.</p>
+        </div>
+        <span class="badge">ValiStruct v1.8</span>
+      </div>
+
+      <div class="notice">
+        El asistente combina resultados disponibles de V de Aiken, confiabilidad, AFE, AFC, SEM,
+        diagnóstico de datos, validez convergente/discriminante e invariancia.
+      </div>
+
+      <div class="button-row">
+        <button id="refreshAssistant" class="primary">Analizar proyecto actual</button>
+        <button id="goSuggestedModule">Ir al módulo recomendado</button>
+        <button id="downloadAssistantPlan">Descargar plan JSON</button>
+      </div>
+
+      <div id="assistantSummary" class="dataset-summary"></div>
+      <div id="assistantResults"></div>
+    </section>
+
+    <section id="resultcenter" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Centro integrado de resultados</h2>
+          <p>Resumen metodológico de fortalezas, alertas, hallazgos y decisiones pendientes.</p>
+        </div>
+        <span class="badge">Síntesis inteligente v1.8</span>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshResultCenter" class="primary">Actualizar síntesis</button>
+        <button id="downloadResultCenterJson">Descargar JSON</button>
+        <button id="copyResultCenterText">Copiar síntesis</button>
+      </div>
+
+      <div id="resultCenterSummary" class="dataset-summary"></div>
+      <div id="resultCenterContent"></div>
+    </section>
+
+    
+    <section id="conclusionassistant" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Asistente de conclusiones metodológicas</h2>
+          <p>Genera una síntesis prudente basada exclusivamente en los resultados actualmente disponibles.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="notice">
+        Este módulo no redacta conclusiones sustantivas sobre el fenómeno estudiado. Se limita a la calidad psicométrica,
+        ajuste del modelo, confiabilidad, validez y advertencias metodológicas.
+      </div>
+
+      <div class="config-grid">
+        <label>Nombre del instrumento / estudio
+          <input id="conclusionStudyName" type="text" placeholder="Ej. Escala de competencia clínica">
+        </label>
+        <label>Estilo
+          <select id="conclusionStyle">
+            <option value="article" selected>Artículo científico</option>
+            <option value="thesis">Tesis</option>
+            <option value="brief">Resumen breve</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="generateMethodConclusion" class="primary">Generar conclusión metodológica</button>
+        <button id="copyMethodConclusion">Copiar texto</button>
+        <button id="downloadMethodConclusion">Descargar TXT</button>
+      </div>
+
+      <div id="methodConclusionOutput" class="apa-report"></div>
+    </section>
+
+    <section id="finalcheck" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Checklist final para tesis o artículo</h2>
+          <p>Verifica la presencia de los principales elementos de documentación metodológica y estadística.</p>
+        </div>
+        <span class="badge">Control de cierre v1.9</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Tipo de producto
+          <select id="finalCheckType">
+            <option value="article" selected>Artículo científico</option>
+            <option value="thesis">Tesis</option>
+          </select>
+        </label>
+        <label>¿Incluye anexos del instrumento?
+          <select id="finalCheckAppendix">
+            <option value="yes">Sí</option>
+            <option value="no" selected>No / pendiente</option>
+          </select>
+        </label>
+        <label>¿Incluye aprobación ética cuando corresponde?
+          <select id="finalCheckEthics">
+            <option value="yes">Sí</option>
+            <option value="na">No aplica</option>
+            <option value="no" selected>No / pendiente</option>
+          </select>
+        </label>
+        <label>¿Incluye registro de versión final del instrumento?
+          <select id="finalCheckVersion">
+            <option value="yes">Sí</option>
+            <option value="no" selected>No / pendiente</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="runFinalChecklist" class="primary">Ejecutar checklist</button>
+        <button id="downloadFinalChecklist">Descargar checklist JSON</button>
+      </div>
+
+      <div id="finalCheckSummary" class="dataset-summary"></div>
+      <div id="finalCheckResults"></div>
+    </section>
+
+    <section id="journalready" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Panel de preparación para envío a revista</h2>
+          <p>Revisa elementos técnicos antes de preparar el manuscrito final y el envío editorial.</p>
+        </div>
+        <span class="badge">Journal Ready v1.9</span>
+      </div>
+
+      <div class="notice">
+        Este panel no garantiza aceptación editorial. Su objetivo es reducir omisiones metodológicas y facilitar la preparación del manuscrito.
+      </div>
+
+      <div class="config-grid">
+        <label>Revista objetivo
+          <input id="journalName" type="text" placeholder="Nombre de la revista">
+        </label>
+        <label>Estilo de referencias
+          <select id="journalRefStyle">
+            <option value="apa7" selected>APA 7</option>
+            <option value="vancouver">Vancouver</option>
+          </select>
+        </label>
+        <label>¿Requiere declaración de ética?
+          <select id="journalEthicsReq">
+            <option value="yes" selected>Sí</option>
+            <option value="no">No / no aplica</option>
+          </select>
+        </label>
+        <label>¿Requiere archivo suplementario?
+          <select id="journalSupplement">
+            <option value="yes">Sí</option>
+            <option value="no" selected>No / desconocido</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="evaluateJournalReadiness" class="primary">Evaluar preparación</button>
+        <button id="downloadJournalReadiness">Descargar informe JSON</button>
+      </div>
+
+      <div id="journalReadySummary" class="dataset-summary"></div>
+      <div id="journalReadyContent"></div>
+    </section>
+
+    
+    <section id="guidedproject" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Modo proyecto guiado</h2>
+          <p>Un flujo integral para acompañar la validación del instrumento desde la planeación hasta el manuscrito final.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Nombre del proyecto
+          <input id="guidedProjectName" type="text" placeholder="Ej. Validación escala de competencia clínica">
+        </label>
+        <label>Tipo de proyecto
+          <select id="guidedProjectType">
+            <option value="instrument" selected>Construcción/validación de instrumento</option>
+            <option value="adaptation">Adaptación transcultural</option>
+            <option value="cfa">Confirmación de instrumento existente</option>
+            <option value="sem">Modelo SEM</option>
+          </select>
+        </label>
+        <label>Población
+          <input id="guidedPopulation" type="text" placeholder="Ej. estudiantes de enfermería">
+        </label>
+        <label>N planeado
+          <input id="guidedPlannedN" type="number" min="20" max="100000" value="300">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="startGuidedProject" class="primary">Crear ruta de trabajo</button>
+        <button id="resumeGuidedProject">Retomar proyecto</button>
+        <button id="exportGuidedPlan">Exportar plan JSON</button>
+      </div>
+
+      <div id="guidedProjectSummary" class="dataset-summary"></div>
+      <div id="guidedProjectContent"></div>
+    </section>
+
+    <section id="profiles" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Perfil de usuario</h2>
+          <p>Ajusta la profundidad de las explicaciones y la visibilidad de ayudas metodológicas.</p>
+        </div>
+        <span class="badge">Personalización v2.0</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Perfil
+          <select id="userProfile">
+            <option value="student">Estudiante</option>
+            <option value="researcher" selected>Investigador</option>
+            <option value="teacher">Docente</option>
+          </select>
+        </label>
+        <label>Nivel de ayuda
+          <select id="helpLevel">
+            <option value="high">Alta</option>
+            <option value="medium" selected>Media</option>
+            <option value="low">Baja</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveUserProfile" class="primary">Guardar perfil</button>
+        <button id="applyUserProfile">Aplicar interfaz</button>
+      </div>
+
+      <div id="profilePreview"></div>
+    </section>
+
+    <section id="systemcheck" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Verificación del sistema</h2>
+          <p>Comprueba frontend, almacenamiento local, PWA, Motor Pro, funciones críticas y configuración.</p>
+        </div>
+        <span class="badge">Control de calidad v2.0</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runSystemCheck" class="primary">Ejecutar verificación</button>
+        <button id="downloadSystemCheck">Descargar informe JSON</button>
+      </div>
+
+      <div id="systemCheckSummary" class="dataset-summary"></div>
+      <div id="systemCheckResults"></div>
+    </section>
+
+    <section id="advancedsettings" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Configuración avanzada</h2>
+          <p>Ajustes de análisis, interfaz y despliegue para uso institucional o investigación avanzada.</p>
+        </div>
+        <span class="badge">Configuración v2.0</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Decimales por defecto
+          <select id="settingDecimals">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label>Nivel de confianza
+          <select id="settingConfidence">
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select>
+        </label>
+        <label>Modo de interfaz
+          <select id="settingInterfaceMode">
+            <option value="guided" selected>Guiado</option>
+            <option value="advanced">Avanzado</option>
+          </select>
+        </label>
+        <label>Guardar historial automáticamente
+          <select id="settingHistory">
+            <option value="yes" selected>Sí</option>
+            <option value="no">No</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveAdvancedSettings" class="primary">Guardar configuración</button>
+        <button id="resetAdvancedSettings">Restablecer</button>
+        <button id="exportAppConfig">Exportar configuración JSON</button>
+      </div>
+
+      <div id="advancedSettingsStatus"></div>
+    </section>
+
+    
+    <section id="dataimport" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Importación de datos</h2>
+          <p>Cargue CSV o XLSX y reutilice la base en los módulos diagnósticos, AFE, AFC y Motor Pro.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Archivo de datos</h3>
+          <p>CSV se procesa localmente. XLSX se convierte mediante el backend de ValiStruct 3.0 RC6 para mantener compatibilidad amplia entre navegadores.</p>
+        </div>
+        <label class="file-button">Seleccionar CSV/XLSX
+          <input id="unifiedDataFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+        </label>
+      </div>
+
+      <div class="config-grid">
+        <label>Hoja XLSX
+          <select id="xlsxSheetSelect" disabled>
+            <option value="">Seleccione un archivo XLSX</option>
+          </select>
+        </label>
+        <label>Primera columna
+          <select id="importFirstColumn">
+            <option value="auto" selected>Detectar ID automáticamente</option>
+            <option value="data">Usarla como dato</option>
+            <option value="id">Tratarla como ID</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="importToDiagnostics" class="primary">Enviar a Diagnóstico</button>
+        <button id="importToEfa">Enviar a AFE</button>
+        <button id="importToMotorPro">Enviar a Motor Pro</button>
+        <button id="downloadNormalizedCsv">Descargar CSV normalizado</button>
+      </div>
+
+      <div id="unifiedImportSummary" class="dataset-summary"></div>
+      <div id="unifiedImportPreview"></div>
+    </section>
+
+    <section id="templates" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Biblioteca de plantillas de modelos</h2>
+          <p>Inicie modelos frecuentes y edítelos antes de enviarlos al Motor Pro o al editor Latencia.</p>
+        </div>
+        <span class="badge">Model Library v2.1</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Tipo de plantilla
+          <select id="templateCategory">
+            <option value="cfa">AFC</option>
+            <option value="sem">SEM</option>
+            <option value="mediation">Mediación</option>
+            <option value="secondorder">Segundo orden</option>
+            <option value="invariance">Invariancia</option>
+          </select>
+        </label>
+        <label>Plantilla
+          <select id="templateSelect"></select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="loadTemplate" class="primary">Cargar plantilla</button>
+        <button id="templateToPro">Enviar a Motor Pro</button>
+        <button id="templateToSyntaxPro">Enviar a Sintaxis Pro</button>
+      </div>
+
+      <textarea id="templateOutput" rows="16" class="syntax-preview"></textarea>
+      <div id="templateHelp" class="notice"></div>
+    </section>
+
+    <section id="migration" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Migración de proyectos</h2>
+          <p>Abra proyectos creados en versiones previas y conviértalos al formato ValiStruct 3.0 RC6.</p>
+        </div>
+        <span class="badge">Compatibilidad v2.1</span>
+      </div>
+
+      <div class="button-row">
+        <label class="file-button">Seleccionar proyecto antiguo
+          <input id="migrationFile" type="file" accept=".json,.valistruct.json,application/json" hidden>
+        </label>
+        <button id="downloadMigratedProject">Descargar proyecto migrado</button>
+      </div>
+
+      <div id="migrationSummary" class="dataset-summary"></div>
+      <div id="migrationResults"></div>
+    </section>
+
+    <section id="privacy" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Privacidad y seguridad</h2>
+          <p>Configure el tratamiento local de datos y revise recomendaciones para despliegue institucional.</p>
+        </div>
+        <span class="badge">Privacy by design v2.1</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Guardar datos crudos en proyectos
+          <select id="privacyRawData">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí, de forma local</option>
+          </select>
+        </label>
+        <label>Registrar nombres de variables en historial
+          <select id="privacyVariableNames">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </label>
+        <label>Modo de backend
+          <select id="privacyBackendMode">
+            <option value="transient" selected>Procesamiento transitorio</option>
+            <option value="institutional">Servidor institucional</option>
+          </select>
+        </label>
+        <label>Eliminar datos del navegador al cerrar proyecto
+          <select id="privacyClearOnClose">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="savePrivacySettings" class="primary">Guardar privacidad</button>
+        <button id="clearLocalResearchData">Borrar datos locales de investigación</button>
+        <button id="downloadPrivacyPolicy">Descargar política local TXT</button>
+      </div>
+
+      <div id="privacyStatus"></div>
+    </section>
+
+    
+    <section id="legacyimport" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Importación SPSS / Stata</h2>
+          <p>Convierta archivos <strong>.sav</strong> y <strong>.dta</strong> a CSV para reutilizarlos en ValiStruct.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="notice">
+        La conversión se realiza en el backend mediante <strong>pyreadstat</strong>. En despliegue remoto, utilice HTTPS y políticas institucionales de privacidad.
+      </div>
+
+      <div class="import-box">
+        <div>
+          <h3>Archivo</h3>
+          <p>Formatos soportados: SPSS .sav y Stata .dta.</p>
+        </div>
+        <label class="file-button">Seleccionar SAV/DTA
+          <input id="legacyDataFile" type="file" accept=".sav,.dta,application/x-spss-sav,application/x-stata-dta" hidden>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="convertLegacyFile" class="primary">Convertir a CSV</button>
+        <button id="legacyToDiagnostics">Enviar a Diagnóstico</button>
+        <button id="legacyToEfa">Enviar a AFE</button>
+        <button id="legacyToMotorPro">Enviar a Motor Pro</button>
+        <button id="downloadLegacyCsv">Descargar CSV</button>
+      </div>
+
+      <div id="legacySummary" class="dataset-summary"></div>
+      <div id="legacyPreview"></div>
+    </section>
+
+    <section id="encryption" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Cifrado opcional de proyectos</h2>
+          <p>Proteja archivos de proyecto exportados mediante cifrado AES-GCM en el navegador.</p>
+        </div>
+        <span class="badge">Seguridad v2.2</span>
+      </div>
+
+      <div class="notice">
+        El cifrado depende de la contraseña proporcionada. ValiStruct no almacena ni recupera esa contraseña.
+        Si se pierde, el proyecto cifrado no podrá descifrarse.
+      </div>
+
+      <div class="config-grid">
+        <label>Contraseña
+          <input id="encryptPassword" type="password" autocomplete="new-password" placeholder="Contraseña segura">
+        </label>
+        <label>Confirmar contraseña
+          <input id="encryptPassword2" type="password" autocomplete="new-password" placeholder="Repita la contraseña">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="exportEncryptedProject" class="primary">Exportar proyecto cifrado</button>
+        <label class="file-button">Abrir proyecto cifrado
+          <input id="encryptedProjectFile" type="file" accept=".vstructenc,.json,application/json" hidden>
+        </label>
+      </div>
+
+      <div id="encryptionStatus"></div>
+    </section>
+
+    <section id="accessibility" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Accesibilidad y navegación</h2>
+          <p>Ajuste contraste, tamaño de texto y navegación por teclado.</p>
+        </div>
+        <span class="badge">WCAG-oriented v2.2</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Contraste
+          <select id="a11yContrast">
+            <option value="normal" selected>Normal</option>
+            <option value="high">Alto contraste</option>
+          </select>
+        </label>
+        <label>Tamaño de texto
+          <select id="a11yTextSize">
+            <option value="normal" selected>Normal</option>
+            <option value="large">Grande</option>
+            <option value="xlarge">Muy grande</option>
+          </select>
+        </label>
+        <label>Reducir movimiento
+          <select id="a11yMotion">
+            <option value="system" selected>Seguir sistema</option>
+            <option value="reduce">Reducir animaciones</option>
+          </select>
+        </label>
+        <label>Mostrar indicadores de foco
+          <select id="a11yFocus">
+            <option value="yes" selected>Sí</option>
+            <option value="no">No</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveA11ySettings" class="primary">Aplicar accesibilidad</button>
+        <button id="resetA11ySettings">Restablecer</button>
+      </div>
+
+      <div class="notice">
+        Atajos: <strong>Alt+1</strong> Inicio · <strong>Alt+2</strong> Proyecto guiado · <strong>Alt+3</strong> Motor Pro · <strong>Alt+4</strong> Centro de resultados.
+      </div>
+
+      <div id="a11yStatus"></div>
+    </section>
+
+    <section id="updates" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Actualizaciones y versión</h2>
+          <p>Consulte la versión actual, formato de proyecto y compatibilidad de archivos.</p>
+        </div>
+        <span class="badge">Versionado v2.2</span>
+      </div>
+
+      <div class="button-row">
+        <button id="showVersionInfo" class="primary">Mostrar información</button>
+        <button id="exportVersionManifest">Exportar manifiesto</button>
+        <button id="runCompatibilityCheck">Comprobar compatibilidad</button>
+      </div>
+
+      <div id="versionInfo"></div>
+      <div id="compatibilityResults"></div>
+    </section>
+
+    
+    <section id="auth" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Acceso institucional opcional</h2>
+          <p>Conecte ValiStruct a un backend con autenticación y control de roles cuando el despliegue institucional lo requiera.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="notice">
+        El modo institucional está <strong>desactivado por defecto</strong>. El administrador del servidor debe habilitarlo y configurar usuarios de forma segura.
+      </div>
+
+      <div class="config-grid">
+        <label>Usuario
+          <input id="authUsername" type="text" autocomplete="username" placeholder="usuario institucional">
+        </label>
+        <label>Contraseña
+          <input id="authPassword" type="password" autocomplete="current-password" placeholder="contraseña">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="loginInstitution" class="primary">Iniciar sesión</button>
+        <button id="logoutInstitution">Cerrar sesión</button>
+        <button id="checkAuthStatus">Comprobar estado</button>
+      </div>
+
+      <div id="authStatus"></div>
+    </section>
+
+    <section id="institutionlib" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Biblioteca institucional de proyectos</h2>
+          <p>Guarde y recupere proyectos en un repositorio institucional controlado por roles.</p>
+        </div>
+        <span class="badge">Project Library v2.3</span>
+      </div>
+
+      <div class="notice">
+        Para proteger la privacidad, la sincronización institucional excluye datos crudos por defecto.
+        Puede conservar modelo, configuración, resultados y metadatos del proyecto.
+      </div>
+
+      <div class="button-row">
+        <button id="refreshInstitutionProjects" class="primary">Actualizar biblioteca</button>
+        <button id="uploadInstitutionProject">Guardar proyecto actual</button>
+      </div>
+
+      <div id="institutionLibraryStatus" class="dataset-summary"></div>
+      <div id="institutionProjectList"></div>
+    </section>
+
+    <section id="sync" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Sincronización controlada</h2>
+          <p>Compare la copia local con la copia institucional antes de sobrescribir información.</p>
+        </div>
+        <span class="badge">Sync v2.3</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="syncProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Estrategia
+          <select id="syncStrategy">
+            <option value="review" selected>Revisar diferencias antes de aplicar</option>
+            <option value="pull">Usar versión institucional</option>
+            <option value="push">Usar versión local</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="compareSync" class="primary">Comparar versiones</button>
+        <button id="applySync">Aplicar sincronización</button>
+      </div>
+
+      <div id="syncResults"></div>
+    </section>
+
+    <section id="backendtests" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Pruebas automatizadas del backend</h2>
+          <p>Compruebe endpoints críticos antes de un despliegue institucional o una actualización.</p>
+        </div>
+        <span class="badge">QA v2.3</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runBackendSelfTest" class="primary">Ejecutar self-test</button>
+        <button id="downloadBackendTestReport">Descargar informe JSON</button>
+      </div>
+
+      <div id="backendTestSummary" class="dataset-summary"></div>
+      <div id="backendTestResults"></div>
+    </section>
+
+    
+    <section id="teams" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Equipos y permisos</h2>
+          <p>Comparta proyectos institucionales con permisos explícitos de lectura o edición.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="teamProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Usuario colaborador
+          <input id="teamUsername" type="text" placeholder="usuario institucional">
+        </label>
+        <label>Permiso
+          <select id="teamPermission">
+            <option value="viewer">Lectura</option>
+            <option value="editor">Edición</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshTeamProjects">Actualizar proyectos</button>
+        <button id="grantTeamPermission" class="primary">Conceder permiso</button>
+        <button id="revokeTeamPermission">Revocar permiso</button>
+      </div>
+
+      <div id="teamStatus" class="dataset-summary"></div>
+      <div id="teamMembers"></div>
+    </section>
+
+    <section id="versions" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Historial de versiones del proyecto</h2>
+          <p>Consulte, compare y recupere versiones anteriores de un proyecto institucional.</p>
+        </div>
+        <span class="badge">Versioning v2.4</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="versionProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Comentario de versión
+          <input id="versionComment" type="text" placeholder="Ej. Ajuste del modelo confirmatorio">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshProjectVersions">Actualizar historial</button>
+        <button id="saveProjectVersion" class="primary">Crear versión</button>
+      </div>
+
+      <div id="projectVersionSummary" class="dataset-summary"></div>
+      <div id="projectVersionList"></div>
+    </section>
+
+    <section id="adminpanel" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Panel administrativo básico</h2>
+          <p>Resumen de usuarios configurados, proyectos institucionales y estado del servidor.</p>
+        </div>
+        <span class="badge">Admin v2.4</span>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshAdminPanel" class="primary">Actualizar panel</button>
+        <button id="downloadAdminSummary">Descargar resumen JSON</button>
+      </div>
+
+      <div id="adminSummary" class="dataset-summary"></div>
+      <div id="adminContent"></div>
+    </section>
+
+    <section id="oidc" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Preparación para SSO / OIDC</h2>
+          <p>Configure metadatos para una futura integración con identidad institucional.</p>
+        </div>
+        <span class="badge">OIDC-ready v2.4</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Issuer URL
+          <input id="oidcIssuer" type="url" placeholder="https://login.institucion.edu/...">
+        </label>
+        <label>Client ID
+          <input id="oidcClientId" type="text" placeholder="valistruct-client">
+        </label>
+        <label>Redirect URI
+          <input id="oidcRedirectUri" type="url" placeholder="https://valistruct.institucion.edu/auth/callback">
+        </label>
+        <label>Scopes
+          <input id="oidcScopes" type="text" value="openid profile email">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveOidcConfig" class="primary">Guardar configuración local</button>
+        <button id="exportOidcConfig">Exportar JSON</button>
+      </div>
+
+      <div class="notice">
+        Este módulo prepara la configuración, pero no sustituye una implementación OIDC completa.
+        La autenticación federada debe completarse en el servidor institucional.
+      </div>
+
+      <div id="oidcStatus"></div>
+    </section>
+
+    
+    <section id="peerreview" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Comentarios y revisión por pares</h2>
+          <p>Registre observaciones metodológicas dentro del proyecto institucional sin modificar los datos del análisis.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="reviewProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Tipo de comentario
+          <select id="reviewType">
+            <option value="general">General</option>
+            <option value="methodology" selected>Metodología</option>
+            <option value="statistics">Estadística</option>
+            <option value="editorial">Editorial</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Comentario
+        <textarea id="reviewCommentText" rows="5" placeholder="Escriba una observación clara y accionable..."></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="refreshReviewProjects">Actualizar proyectos</button>
+        <button id="addReviewComment" class="primary">Agregar comentario</button>
+        <button id="refreshReviewComments">Actualizar comentarios</button>
+      </div>
+
+      <div id="reviewSummary" class="dataset-summary"></div>
+      <div id="reviewCommentList"></div>
+    </section>
+
+    <section id="activitylog" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Bitácora colaborativa</h2>
+          <p>Consulte quién realizó cambios relevantes, cuándo y sobre qué proyecto.</p>
+        </div>
+        <span class="badge">Audit trail v2.5</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="activityProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshActivityProjects">Actualizar proyectos</button>
+        <button id="loadProjectActivity" class="primary">Ver actividad</button>
+        <button id="downloadProjectActivity">Descargar JSON</button>
+      </div>
+
+      <div id="activitySummary" class="dataset-summary"></div>
+      <div id="activityList"></div>
+    </section>
+
+    <section id="notifications" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Notificaciones internas</h2>
+          <p>Reciba avisos sobre comentarios, permisos, versiones y cambios en proyectos compartidos.</p>
+        </div>
+        <span class="badge">Notifications v2.5</span>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshNotifications" class="primary">Actualizar notificaciones</button>
+        <button id="markNotificationsRead">Marcar todas como leídas</button>
+      </div>
+
+      <div id="notificationSummary" class="dataset-summary"></div>
+      <div id="notificationList"></div>
+    </section>
+
+    <section id="betaready" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Preparación para beta institucional</h2>
+          <p>Evalúe si el despliegue cuenta con los componentes mínimos antes de una prueba piloto.</p>
+        </div>
+        <span class="badge">Beta readiness v2.5</span>
+      </div>
+
+      <div class="button-row">
+        <button id="evaluateBetaReadiness" class="primary">Evaluar preparación beta</button>
+        <button id="downloadBetaReadiness">Descargar informe JSON</button>
+      </div>
+
+      <div id="betaSummary" class="dataset-summary"></div>
+      <div id="betaContent"></div>
+    </section>
+
+    
+    <section id="conflicts" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Resolución visual de conflictos</h2>
+          <p>Compare la copia local con la institucional y decida qué versión conservar en campos críticos.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="conflictProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshConflictProjects">Actualizar proyectos</button>
+        <button id="loadConflictComparison" class="primary">Comparar local vs institucional</button>
+        <button id="applyResolvedConflict">Aplicar resolución</button>
+      </div>
+
+      <div id="conflictSummary" class="dataset-summary"></div>
+      <div id="conflictResults"></div>
+    </section>
+
+    <section id="tasks" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Tareas y estados de revisión</h2>
+          <p>Asigne acciones a colaboradores y controle el estado general de revisión del proyecto.</p>
+        </div>
+        <span class="badge">Workflow v2.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="taskProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Asignar a
+          <input id="taskAssignee" type="text" placeholder="usuario institucional">
+        </label>
+        <label>Prioridad
+          <select id="taskPriority">
+            <option value="low">Baja</option>
+            <option value="medium" selected>Media</option>
+            <option value="high">Alta</option>
+          </select>
+        </label>
+        <label>Estado de revisión del proyecto
+          <select id="projectReviewStatus">
+            <option value="pending">Pendiente</option>
+            <option value="in_review">En revisión</option>
+            <option value="approved">Aprobado</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Tarea
+        <textarea id="taskText" rows="4" placeholder="Ej. Revisar cargas cruzadas del factor 2"></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="refreshTaskProjects">Actualizar proyectos</button>
+        <button id="addTask" class="primary">Asignar tarea</button>
+        <button id="saveProjectReviewStatus">Guardar estado de revisión</button>
+        <button id="refreshTasks">Actualizar tareas</button>
+      </div>
+
+      <div id="taskSummary" class="dataset-summary"></div>
+      <div id="taskList"></div>
+    </section>
+
+    <section id="collabexport" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Exportación de bitácora colaborativa</h2>
+          <p>Genere una bitácora de colaboración para anexos, auditoría académica o documentación institucional.</p>
+        </div>
+        <span class="badge">Collaboration report v2.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="collabExportProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshCollabExportProjects">Actualizar proyectos</button>
+        <button id="generateCollabPreview" class="primary">Generar vista previa</button>
+        <button id="downloadCollabDocx">Descargar DOCX</button>
+        <button id="printCollabReport">Imprimir / Guardar PDF</button>
+      </div>
+
+      <div id="collabExportPreview" class="apa-report"></div>
+    </section>
+
+    <section id="telemetry" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Telemetría técnica opcional</h2>
+          <p>Registre únicamente métricas técnicas de uso y errores, sin datos de investigación ni contenido de proyectos.</p>
+        </div>
+        <span class="badge">Privacy-preserving telemetry v2.6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Telemetría
+          <select id="telemetryEnabled">
+            <option value="no" selected>Desactivada</option>
+            <option value="yes">Activada</option>
+          </select>
+        </label>
+        <label>Enviar al backend
+          <select id="telemetryUpload">
+            <option value="no" selected>No, solo local</option>
+            <option value="yes">Sí, métricas técnicas</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="saveTelemetrySettings" class="primary">Guardar configuración</button>
+        <button id="exportTelemetry">Exportar métricas JSON</button>
+        <button id="clearTelemetry">Borrar métricas</button>
+      </div>
+
+      <div class="notice">
+        Nunca se incluyen nombres de participantes, datos crudos, sintaxis, comentarios, resultados estadísticos ni contenido de proyectos.
+      </div>
+
+      <div id="telemetryStatus"></div>
+    </section>
+
+    
+    <section id="kanban" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Kanban de tareas</h2>
+          <p>Organice las tareas del proyecto por estado y prioridad para facilitar el seguimiento colaborativo.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="kanbanProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshKanbanProjects">Actualizar proyectos</button>
+        <button id="loadKanban" class="primary">Cargar tablero</button>
+      </div>
+
+      <div id="kanbanSummary" class="dataset-summary"></div>
+
+      <div class="kanban-board">
+        <div class="kanban-column" data-kanban-column="todo">
+          <h3>Pendiente</h3>
+          <div class="kanban-list" id="kanbanTodo"></div>
+        </div>
+        <div class="kanban-column" data-kanban-column="doing">
+          <h3>En proceso</h3>
+          <div class="kanban-list" id="kanbanDoing"></div>
+        </div>
+        <div class="kanban-column" data-kanban-column="done">
+          <h3>Completada</h3>
+          <div class="kanban-list" id="kanbanDone"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="approvals" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Firmas y aprobaciones de revisión</h2>
+          <p>Registre aprobaciones metodológicas, estadísticas o editoriales mediante una constancia electrónica interna.</p>
+        </div>
+        <span class="badge">Approval workflow v2.7</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="approvalProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Tipo de aprobación
+          <select id="approvalType">
+            <option value="methodology" selected>Metodológica</option>
+            <option value="statistics">Estadística</option>
+            <option value="editorial">Editorial</option>
+            <option value="final">Aprobación final</option>
+          </select>
+        </label>
+        <label>Decisión
+          <select id="approvalDecision">
+            <option value="approved" selected>Aprobado</option>
+            <option value="approved_with_changes">Aprobado con cambios</option>
+            <option value="rejected">No aprobado</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Observación
+        <textarea id="approvalComment" rows="4" placeholder="Justificación breve de la decisión..."></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="refreshApprovalProjects">Actualizar proyectos</button>
+        <button id="addApproval" class="primary">Registrar aprobación</button>
+        <button id="refreshApprovals">Actualizar historial</button>
+      </div>
+
+      <div id="approvalSummary" class="dataset-summary"></div>
+      <div id="approvalList"></div>
+    </section>
+
+    <section id="releases" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Versiones etiquetadas / Releases</h2>
+          <p>Cree hitos estables del proyecto para tesis, manuscrito, revisión o entrega institucional.</p>
+        </div>
+        <span class="badge">Release management v2.7</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="releaseProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+        <label>Etiqueta
+          <input id="releaseTag" type="text" placeholder="Ej. v1.0-manuscrito">
+        </label>
+        <label>Tipo de release
+          <select id="releaseType">
+            <option value="milestone" selected>Hito</option>
+            <option value="thesis">Tesis</option>
+            <option value="manuscript">Manuscrito</option>
+            <option value="institutional">Entrega institucional</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Notas de release
+        <textarea id="releaseNotes" rows="4" placeholder="Cambios y decisiones relevantes..."></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="refreshReleaseProjects">Actualizar proyectos</button>
+        <button id="createRelease" class="primary">Crear release</button>
+        <button id="refreshReleases">Actualizar releases</button>
+      </div>
+
+      <div id="releaseSummary" class="dataset-summary"></div>
+      <div id="releaseList"></div>
+    </section>
+
+    <section id="auditpackage" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Paquete integral de auditoría</h2>
+          <p>Consolide proyecto, bitácora, comentarios, tareas, aprobaciones, releases y resumen técnico en un solo paquete.</p>
+        </div>
+        <span class="badge">Audit package v2.7</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Proyecto institucional
+          <select id="auditProjectSelect">
+            <option value="">Seleccione un proyecto</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshAuditProjects">Actualizar proyectos</button>
+        <button id="buildAuditPreview" class="primary">Generar resumen</button>
+        <button id="downloadAuditZip">Descargar paquete ZIP</button>
+      </div>
+
+      <div id="auditSummary" class="dataset-summary"></div>
+      <div id="auditPreview"></div>
+    </section>
+
+    <section id="servermonitor" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Monitoreo técnico del servidor</h2>
+          <p>Consulte el estado general del Motor Pro y servicios institucionales sin exponer datos de investigación.</p>
+        </div>
+        <span class="badge">Operations v2.7</span>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshServerMonitor" class="primary">Actualizar monitoreo</button>
+        <button id="downloadServerMonitor">Descargar JSON</button>
+      </div>
+
+      <div id="serverMonitorSummary" class="dataset-summary"></div>
+      <div id="serverMonitorContent"></div>
+    </section>
+
+    
+    <section id="backuprestore" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Respaldo y restauración institucional</h2>
+          <p>Genere copias de seguridad de proyectos institucionales, permisos, versiones y bitácoras, y restaure paquetes autorizados.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="notice">
+        La restauración requiere privilegios administrativos. Antes de restaurar se recomienda generar un respaldo nuevo.
+      </div>
+
+      <div class="button-row">
+        <button id="createInstitutionBackup" class="primary">Crear respaldo ZIP</button>
+        <label class="file-button">Seleccionar respaldo
+          <input id="restoreBackupFile" type="file" accept=".zip,application/zip" hidden>
+        </label>
+        <button id="restoreInstitutionBackup">Restaurar respaldo</button>
+      </div>
+
+      <div id="backupStatus" class="dataset-summary"></div>
+      <div id="backupDetails"></div>
+    </section>
+
+    <section id="serverwizard" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Asistente de configuración del servidor</h2>
+          <p>Genere una configuración base para instalar ValiStruct en un servidor institucional.</p>
+        </div>
+        <span class="badge">Deployment Wizard v2.8</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Dominio
+          <input id="wizardDomain" type="text" placeholder="valistruct.institucion.edu">
+        </label>
+        <label>Puerto interno del backend
+          <input id="wizardPort" type="number" min="1024" max="65535" value="8765">
+        </label>
+        <label>Autenticación
+          <select id="wizardAuth">
+            <option value="off">Desactivada</option>
+            <option value="local" selected>Local controlada</option>
+            <option value="oidc">Preparar OIDC/SSO</option>
+          </select>
+        </label>
+        <label>Biblioteca institucional
+          <select id="wizardLibrary">
+            <option value="yes" selected>Activada</option>
+            <option value="no">Desactivada</option>
+          </select>
+        </label>
+        <label>Límite de carga
+          <select id="wizardUploadMb">
+            <option value="10">10 MB</option>
+            <option value="20" selected>20 MB</option>
+            <option value="50">50 MB</option>
+          </select>
+        </label>
+        <label>HTTPS
+          <select id="wizardHttps">
+            <option value="yes" selected>Obligatorio</option>
+            <option value="no">Solo entorno local</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="buildServerConfig" class="primary">Generar configuración</button>
+        <button id="downloadServerEnv">Descargar .env</button>
+        <button id="downloadServerChecklist">Descargar checklist</button>
+      </div>
+
+      <div id="serverWizardOutput"></div>
+    </section>
+
+    <section id="incidents" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Panel de incidencias</h2>
+          <p>Registre fallos técnicos, problemas de usabilidad o hallazgos de la beta sin incluir datos de investigación.</p>
+        </div>
+        <span class="badge">Issue Tracker v2.8</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Tipo
+          <select id="incidentType">
+            <option value="bug" selected>Error técnico</option>
+            <option value="usability">Usabilidad</option>
+            <option value="methodology">Observación metodológica</option>
+            <option value="security">Seguridad/privacidad</option>
+          </select>
+        </label>
+        <label>Severidad
+          <select id="incidentSeverity">
+            <option value="low">Baja</option>
+            <option value="medium" selected>Media</option>
+            <option value="high">Alta</option>
+            <option value="critical">Crítica</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Descripción
+        <textarea id="incidentDescription" rows="5" placeholder="Describa el problema sin incluir información sensible..."></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="createIncident" class="primary">Registrar incidencia</button>
+        <button id="refreshIncidents">Actualizar incidencias</button>
+        <button id="exportIncidents">Exportar JSON</button>
+      </div>
+
+      <div id="incidentSummary" class="dataset-summary"></div>
+      <div id="incidentList"></div>
+    </section>
+
+    <section id="userdocs" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Documentación para usuarios</h2>
+          <p>Guías rápidas para estudiantes, investigadores, docentes y administradores.</p>
+        </div>
+        <span class="badge">Help & Docs v2.8</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Perfil
+          <select id="docsProfile">
+            <option value="student">Estudiante</option>
+            <option value="researcher" selected>Investigador</option>
+            <option value="teacher">Docente</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </label>
+        <label>Buscar tema
+          <input id="docsSearch" type="text" placeholder="Ej. importar datos, AFC, proyecto institucional">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="searchDocs" class="primary">Buscar</button>
+        <button id="showDocsIndex">Mostrar índice</button>
+      </div>
+
+      <div id="docsResults"></div>
+    </section>
+
+    <section id="e2e" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Pruebas end-to-end</h2>
+          <p>Ejecute una batería de comprobaciones del navegador y del backend para validar el flujo principal.</p>
+        </div>
+        <span class="badge">E2E QA v2.8</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runE2E" class="primary">Ejecutar pruebas E2E</button>
+        <button id="downloadE2EReport">Descargar informe JSON</button>
+      </div>
+
+      <div id="e2eSummary" class="dataset-summary"></div>
+      <div id="e2eResults"></div>
+    </section>
+
+    
+    <section id="installer" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Instalador asistido</h2>
+          <p>Prepare los archivos esenciales para desplegar ValiStruct en un servidor institucional.</p>
+        </div>
+        <span class="badge">ValiStruct 3.0 RC6</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Tipo de instalación
+          <select id="installerMode">
+            <option value="local">Local / laboratorio</option>
+            <option value="institutional" selected>Institucional</option>
+            <option value="beta">Beta controlada</option>
+          </select>
+        </label>
+        <label>Dominio
+          <input id="installerDomain" type="text" placeholder="valistruct.institucion.edu">
+        </label>
+        <label>HTTPS
+          <select id="installerHttps">
+            <option value="yes" selected>Obligatorio</option>
+            <option value="no">Solo pruebas locales</option>
+          </select>
+        </label>
+        <label>Autenticación
+          <select id="installerAuth">
+            <option value="off">Desactivada</option>
+            <option value="local" selected>Local controlada</option>
+            <option value="oidc">OIDC / SSO preparado</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="buildInstallPlan" class="primary">Generar plan de instalación</button>
+        <button id="downloadInstallPlan">Descargar plan TXT</button>
+        <button id="downloadInstallConfig">Descargar configuración</button>
+      </div>
+
+      <div id="installerOutput"></div>
+    </section>
+
+    <section id="scheduledbackup" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Respaldos programados</h2>
+          <p>Configure una política de respaldo institucional y genere el cron recomendado.</p>
+        </div>
+        <span class="badge">Backup policy v2.9</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Frecuencia
+          <select id="backupFrequency">
+            <option value="daily" selected>Diario</option>
+            <option value="weekly">Semanal</option>
+            <option value="monthly">Mensual</option>
+          </select>
+        </label>
+        <label>Hora
+          <input id="backupHour" type="time" value="02:00">
+        </label>
+        <label>Retención
+          <select id="backupRetention">
+            <option value="7">7 respaldos</option>
+            <option value="14" selected>14 respaldos</option>
+            <option value="30">30 respaldos</option>
+            <option value="90">90 respaldos</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="buildBackupPolicy" class="primary">Generar política</button>
+        <button id="downloadBackupCron">Descargar cron</button>
+        <button id="downloadBackupPolicy">Descargar política TXT</button>
+      </div>
+
+      <div id="backupPolicyOutput"></div>
+    </section>
+
+    <section id="loadtesting" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Pruebas de carga</h2>
+          <p>Genere escenarios de prueba para evaluar la estabilidad del backend antes de ampliar la beta.</p>
+        </div>
+        <span class="badge">Load testing v2.9</span>
+      </div>
+
+      <div class="config-grid">
+        <label>Usuarios concurrentes
+          <input id="loadUsers" type="number" min="1" max="500" value="20">
+        </label>
+        <label>Duración (minutos)
+          <input id="loadMinutes" type="number" min="1" max="120" value="10">
+        </label>
+        <label>Escenario
+          <select id="loadScenario">
+            <option value="health">Health / monitor</option>
+            <option value="mixed" selected>Mixto: proyectos + monitor + comentarios</option>
+            <option value="analysis">Motor Pro / análisis</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="buildLoadTest" class="primary">Generar escenario</button>
+        <button id="downloadLocustfile">Descargar locustfile.py</button>
+      </div>
+
+      <div id="loadTestOutput"></div>
+    </section>
+
+    <section id="a11yaudit" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Auditoría de accesibilidad</h2>
+          <p>Revise criterios básicos orientados a WCAG para navegación, contraste y estructura semántica.</p>
+        </div>
+        <span class="badge">Accessibility QA v2.9</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runA11yAudit" class="primary">Ejecutar auditoría</button>
+        <button id="downloadA11yAudit">Descargar informe JSON</button>
+      </div>
+
+      <div id="a11yAuditSummary" class="dataset-summary"></div>
+      <div id="a11yAuditResults"></div>
+    </section>
+
+    <section id="betametrics" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Métricas de la beta</h2>
+          <p>Consolide información técnica de incidencias, actividad, proyectos y estado del servidor.</p>
+        </div>
+        <span class="badge">Beta dashboard v2.9</span>
+      </div>
+
+      <div class="button-row">
+        <button id="refreshBetaMetrics" class="primary">Actualizar métricas</button>
+        <button id="downloadBetaMetrics">Descargar JSON</button>
+      </div>
+
+      <div id="betaMetricsSummary" class="dataset-summary"></div>
+      <div id="betaMetricsContent"></div>
+    </section>
+
+    
+    <section id="releasecandidate" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Centro Release Candidate</h2>
+          <p>ValiStruct 3.0 RC6 congela funcionalidades y prioriza estabilidad, compatibilidad, seguridad y reproducibilidad.</p>
+        </div>
+        <span class="badge">3.0 RC6</span>
+      </div>
+
+      <div class="notice"><strong>Correcciones RC4 — auditoría externa:</strong> se corrigió un fallo de ejecución detectado en dos endpoints de exportación/respaldo que usaban <code>send_file</code> sin import global garantizado. También se añadió auditoría runtime.</div>
+
+      <div class="notice">
+        <strong>Congelamiento funcional:</strong> durante la fase RC no deben agregarse módulos nuevos salvo correcciones indispensables.
+      </div>
+
+      <div class="button-row">
+        <button id="runRcAudit" class="primary">Ejecutar auditoría RC</button>
+        <button id="downloadRcAudit">Descargar informe JSON</button>
+      </div>
+
+      <div id="rcSummary" class="dataset-summary"></div>
+      <div id="rcResults"></div>
+    </section>
+
+    <section id="regression" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Pruebas de regresión</h2>
+          <p>Compruebe que los módulos acumulados continúan disponibles después de la consolidación 3.0.</p>
+        </div>
+        <span class="badge">Regression QA</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runRegressionSuite" class="primary">Ejecutar regresión</button>
+        <button id="downloadRegressionReport">Descargar informe JSON</button>
+      </div>
+
+      <div id="regressionSummary" class="dataset-summary"></div>
+      <div id="regressionResults"></div>
+    </section>
+
+    <section id="securityreview" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Revisión de seguridad y privacidad</h2>
+          <p>Checklist técnico previo a una beta institucional real.</p>
+        </div>
+        <span class="badge">Security review RC3</span>
+      </div>
+
+      <div class="button-row">
+        <button id="runSecurityReview" class="primary">Ejecutar revisión</button>
+        <button id="downloadSecurityReview">Descargar informe JSON</button>
+      </div>
+
+      <div id="securityReviewSummary" class="dataset-summary"></div>
+      <div id="securityReviewResults"></div>
+    </section>
+
+    <section id="appsettings" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Compatibilidad, PWA y conexión del servidor</h2>
+          <p>Configuración diseñada para iPhone, iPad, Mac, Windows y Android.</p>
+        </div>
+        <span class="badge">Responsive + táctil + PWA</span>
+      </div>
+
+      <div class="efa-grid">
+        <div class="efa-guidance">
+          <h3>Servidor del Motor Pro</h3>
+          <p>En iPhone/iPad use una URL HTTPS de su servidor institucional o en la nube.</p>
+          <label>URL de la API
+            <input id="apiBaseInput" type="text" placeholder="https://sem.midominio.edu/api">
+          </label>
+          <div class="button-row">
+            <button id="saveApiBase" class="primary">Guardar servidor</button>
+            <button id="resetApiBase">Usar servidor local</button>
+          </div>
+          <p id="apiBaseStatus" class="small"></p>
+        </div>
+
+        <div class="efa-guidance">
+          <h3>Instalar como aplicación</h3>
+          <p>ValiStruct funciona como PWA y puede agregarse a la pantalla de inicio.</p>
+          <button id="installPwaButton" class="primary">Instalar ValiStruct</button>
+          <div class="rel-note">
+            <strong>iPhone/iPad:</strong> en Safari pulse Compartir → “Añadir a pantalla de inicio”.
+            En iOS, la instalación puede requerir este procedimiento manual.
+          </div>
+        </div>
+      </div>
+
+      <div class="efa-grid">
+        <div class="efa-guidance">
+          <h3>Compatibilidad prevista</h3>
+          <p>✓ Safari en iPadOS/iOS</p>
+          <p>✓ Safari/Chrome en macOS</p>
+          <p>✓ Edge/Chrome en Windows</p>
+          <p>✓ Chrome en Android</p>
+        </div>
+        <div class="efa-guidance">
+          <h3>Interacción táctil</h3>
+          <p>El editor Latencia utiliza eventos de puntero para arrastrar nodos con mouse, Apple Pencil o pantalla táctil.</p>
+          <p>Las tablas permiten desplazamiento horizontal y los controles se adaptan a pantallas pequeñas.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="guia" class="panel">
+      <h2>Guía metodológica</h2>
+      <p>
+        ValiStruct funcionará como tutor metodológico interactivo. Cada resultado puede acompañarse de
+        significado, criterio orientativo, advertencias y recomendaciones de revisión.
+      </p>
+      <div class="status-grid">
+        <div class="status good">🟢 Favorable</div>
+        <div class="status warn">🟠 Revisar</div>
+        <div class="status bad">🔴 Problema potencial</div>
+      </div>
+
+      <div class="guide-card">
+        <h3>¿Cómo debe interpretarse la V de Aiken?</h3>
+        <p>
+          Valores más cercanos a 1 indican mayor acuerdo entre jueces respecto a la pertinencia del ítem
+          dentro del criterio evaluado. Sin embargo, ValiStruct evita recomendar eliminar un ítem por un único
+          punto de corte: primero solicita revisar el contenido del ítem, los comentarios de los jueces,
+          la evidencia conceptual y, en fases posteriores, su desempeño psicométrico.
+        </p>
+      </div>
+    </section>
+
+    <section id="referencias" class="panel">
+      <h2>Referencias</h2>
+      <p>
+        Cada módulo de ValiStruct tendrá referencias metodológicas específicas. En esta versión se incorpora
+        la base conceptual de la V de Aiken y el trabajo metodológico del autor de la aplicación.
+      </p>
+      <div class="reference">
+        Aiken, L. R. (1985). Three coefficients for analyzing the reliability and validity of ratings.
+        <em>Educational and Psychological Measurement, 45</em>(1), 131–142.
+      </div>
+      <div class="reference">
+        Penfield, R. D., &amp; Giacobbi, P. R. (2004). Applying a score confidence interval to Aiken’s item content-relevance index.
+        <em>Measurement in Physical Education and Exercise Science, 8</em>(4), 213–225.
+      </div>
+      <div class="reference">Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. <em>Psychometrika, 16</em>, 297–334.</div>
+<div class="reference">McDonald, R. P. (1999). <em>Test theory: A unified treatment</em>. Lawrence Erlbaum Associates.</div>
+<div class="reference">Dunn, T. J., Baguley, T., &amp; Brunsden, V. (2014). From alpha to omega: A practical solution to the pervasive problem of internal consistency estimation. <em>British Journal of Psychology, 105</em>(3), 399–412.</div>
+      <div class="reference">
+        Kaiser, H. F. (1974). An index of factorial simplicity. <em>Psychometrika, 39</em>, 31–36.
+      </div>
+      <div class="reference">
+        Bartlett, M. S. (1954). A note on the multiplying factors for various χ² approximations.
+        <em>Journal of the Royal Statistical Society. Series B, 16</em>(2), 296–298.
+      </div>
+      <div class="reference">
+        Horn, J. L. (1965). A rationale and test for the number of factors in factor analysis.
+        <em>Psychometrika, 30</em>, 179–185.
+      </div>
+            <div class="reference">
+        Hu, L.-t., &amp; Bentler, P. M. (1999). Cutoff criteria for fit indexes in covariance structure analysis:
+        Conventional criteria versus new alternatives. <em>Structural Equation Modeling, 6</em>(1), 1–55.
+      </div>
+      <div class="reference">
+        Fornell, C., &amp; Larcker, D. F. (1981). Evaluating structural equation models with unobservable variables and measurement error.
+        <em>Journal of Marketing Research, 18</em>(1), 39–50.
+      </div>
+      <div class="reference">
+        Henseler, J., Ringle, C. M., &amp; Sarstedt, M. (2015). A new criterion for assessing discriminant validity in variance-based structural equation modeling.
+        <em>Journal of the Academy of Marketing Science, 43</em>, 115–135.
+      </div>
+      <div class="reference">
+        Tirado-Reyes, R. J., et al. (2026). Trabajo metodológico de referencia para criterios de análisis factorial.
+        <br />
+        DOI: <a href="https://doi.org/10.37811/cl_rcm.v10i2.23827" target="_blank">10.37811/cl_rcm.v10i2.23827</a>
+      </div>
+      <p class="small">
+        Próximas incorporaciones: referencias para intervalos de confianza de V de Aiken, confiabilidad,
+        AFE, AFC, SEM, validez convergente, discriminante e invariancia factorial.
+      </p>
+    </section>
+
+    <section id="acerca" class="panel">
+      <h2>Acerca de ValiStruct</h2>
+      <p>
+        ValiStruct se concibe como una herramienta académica de acceso abierto orientada a democratizar
+        el uso de procedimientos estadísticos avanzados para la validación de instrumentos y el modelamiento
+        estructural, especialmente entre estudiantes y profesores en formación investigadora.
+      </p>
+      <p>
+        <strong>Autor y desarrollador académico:</strong><br />
+        Dr. Roberto Joel Tirado Reyes<br />
+        Profesor-investigador<br />
+        Universidad Autónoma de Sinaloa
+      </p>
+      <p>
+        La aplicación busca complementar, no sustituir, el juicio metodológico, la revisión teórica
+        ni la supervisión de especialistas en estadística, psicometría o metodología de investigación.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <span>ValiStruct · Open Access</span>
+    <span>Dr. Roberto Joel Tirado Reyes · Universidad Autónoma de Sinaloa</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

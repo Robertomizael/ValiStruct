@@ -1,0 +1,8 @@
+services:
+  valistruct-backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8765:8765"
+    restart: unless-stopped

@@ -1,37 +1,53 @@
-# ValiStruct 3.0 RC6
+# Despliegue institucional de ValiStruct 2.0
 
-**Autor y desarrollador académico:**  
-Dr. Roberto Joel Tirado Reyes  
-Profesor-investigador, Universidad Autónoma de Sinaloa
+## Backend
+Se incluye un Dockerfile que instala:
+- Python
+- R
+- lavaan
+- semTools
+- psych
+- naniar
+- Flask
+- dependencias de exportación
 
-## Objetivo
-RC6 convierte la validación pendiente en una batería automatizada y reproducible.
-
-### Incluye
-- comparación numérica contra R/lavaan para CFA continuo MLR;
-- comparación numérica para CFA ordinal WLSMV;
-- validación de cargas estandarizadas;
-- pytest del backend;
-- Playwright;
-- smoke del backend;
-- workflow de GitHub Actions;
-- `beta_gate.py`;
-- manifiesto de integridad SHA-256.
-
-## Validación local
-```bash
-python tests/validate_release.py
-python tests/beta_gate.py
-```
-
-## Validación completa
-En un entorno con R/lavaan y dependencias instaladas:
+## Inicio
+Desde la carpeta `deployment`:
 
 ```bash
-deployment/run_full_validation.sh
+docker compose up --build
 ```
 
-## Estado
-**3.0.0-rc.6 — Release Candidate.**
+El backend queda disponible en:
+`http://localhost:8765`
 
-No debe promoverse a Beta 1 mientras `beta_gate.py` reporte pruebas obligatorias omitidas o fallidas.
+Para iPhone/iPad o uso institucional se recomienda:
+1. desplegar el backend en un servidor HTTPS;
+2. configurar la URL en `Dispositivo / PWA`;
+3. servir el frontend también mediante HTTPS.
+
+## Producción
+Antes de uso institucional se recomienda:
+- proxy inverso HTTPS;
+- autenticación si se manejan datos sensibles;
+- límites de carga;
+- registro de errores;
+- copias de seguridad;
+- política institucional de privacidad.
+
+
+## ValiStruct 2.3 · Modo institucional opcional
+
+Funciones desactivadas por defecto:
+- autenticación,
+- biblioteca institucional de proyectos.
+
+Para activarlas configure las variables del archivo `.env.example`.
+
+Roles disponibles:
+- `student`: lectura/aprendizaje;
+- `researcher`: puede crear y actualizar sus proyectos;
+- `teacher`: puede crear y actualizar sus proyectos;
+- `admin`: acceso administrativo a todos los proyectos.
+
+La implementación incluida es un prototipo de despliegue controlado. Para producción pública se recomienda integrar SSO/OIDC/SAML institucional en lugar de mantener credenciales directamente en variables de entorno.
