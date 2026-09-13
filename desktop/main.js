@@ -5,32 +5,143 @@ const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const tar = require('tar');
 
 let backendProcess = null;
+let runtimeInfo = null;
 
 function resourcePath(...parts) {
   const base = app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '..');
   return path.join(base, ...parts);
 }
 
-function commandExists(command, args = ['--version']) {
+function commandExists(command, args = ['--version'], env = process.env) {
   try {
-    const result = spawnSync(command, args, { stdio: 'ignore', shell: false });
+    const result = spawnSync(command, args, { stdio: 'ignore', shell: false, env });
     return result.status === 0;
   } catch (_) {
     return false;
   }
 }
 
-function findPython() {
-  const candidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
-  for (const cmd of candidates) {
-    if (commandExists(cmd, cmd === 'py' ? ['-3', '--version'] : ['--version'])) return cmd;
-  }
-  return null;
+function firstExisting(paths) {
+  return paths.find((p) => p && fs.existsSync(p)) || null;
 }
 
-function waitForBackend(timeoutMs = 30000) {
+function runtimeExecutables(runtimeDir) {
+  const python = firstExisting(process.platform === 'win32'
+    ? [path.join(runtimeDir, 'python.exe'), path.join(runtimeDir, 'Scripts', 'python.exe')]
+    : [path.join(runtimeDir, 'bin', 'python3'), path.join(runtimeDir, 'bin', 'python')]);
+
+  const rscript = firstExisting(process.platform === 'win32'
+    ? [
+        path.join(runtimeDir, 'Scripts', 'Rscript.exe'),
+        path.join(runtimeDir, 'Library', 'bin', 'Rscript.exe'),
+        path.join(runtimeDir, 'Lib', 'R', 'bin', 'x64', 'Rscript.exe'),
+        path.join(runtimeDir, 'Lib', 'R', 'bin', 'Rscript.exe')
+      ]
+    : [path.join(runtimeDir, 'bin', 'Rscript')]);
+
+  const rHome = firstExisting(process.platform === 'win32'
+    ? [path.join(runtimeDir, 'Lib', 'R'), path.join(runtimeDir, 'Library', 'lib', 'R')]
+    : [path.join(runtimeDir, 'lib', 'R')]);
+
+  const pathDirs = process.platform === 'win32'
+    ? [runtimeDir, path.join(runtimeDir, 'Scripts'), path.join(runtimeDir, 'Library', 'bin'), path.join(runtimeDir, 'Lib', 'R', 'bin', 'x64')]
+    : [path.join(runtimeDir, 'bin'), path.join(runtimeDir, 'lib', 'R', 'bin')];
+
+  const env = {
+    ...process.env,
+    PATH: [...pathDirs.filter(fs.existsSync), process.env.PATH || ''].join(path.delimiter),
+    CONDA_PREFIX: runtimeDir
+  };
+  if (rHome) env.R_HOME = rHome;
+
+  return { python, rscript, rHome, env };
+}
+
+async function ensureBundledRuntime() {
+  if (!app.isPackaged) return null;
+
+  const archive = resourcePath('runtime', 'valistruct-runtime.tar.gz');
+  if (!fs.existsSync(archive)) {
+    throw new Error('El instalador no contiene el motor autónomo de ValiStruct.');
+  }
+
+  const runtimeDir = path.join(app.getPath('userData'), 'runtime-v1');
+  const marker = path.join(runtimeDir, '.valistruct-runtime-ready');
+
+  if (!fs.existsSync(marker)) {
+    await dialog.showMessageBox({
+      type: 'info',
+      title: 'ValiStruct Desktop',
+      message: 'Preparando el motor estadístico integrado',
+      detail: 'Esta preparación ocurre una sola vez y puede tardar algunos minutos. No requiere instalar Python ni R por separado.',
+      buttons: ['Continuar'],
+      defaultId: 0
+    });
+
+    fs.rmSync(runtimeDir, { recursive: true, force: true });
+    fs.mkdirSync(runtimeDir, { recursive: true });
+    await tar.x({ file: archive, cwd: runtimeDir });
+
+    const unpack = firstExisting(process.platform === 'win32'
+      ? [path.join(runtimeDir, 'Scripts', 'conda-unpack.exe'), path.join(runtimeDir, 'Scripts', 'conda-unpack-script.py')]
+      : [path.join(runtimeDir, 'bin', 'conda-unpack')]);
+
+    if (unpack) {
+      let result;
+      if (unpack.endsWith('.py')) {
+        const py = firstExisting([path.join(runtimeDir, 'python.exe'), path.join(runtimeDir, 'bin', 'python')]);
+        result = py ? spawnSync(py, [unpack], { cwd: runtimeDir, encoding: 'utf8' }) : null;
+      } else {
+        result = spawnSync(unpack, [], { cwd: runtimeDir, encoding: 'utf8' });
+      }
+      if (result && result.status !== 0) {
+        throw new Error(`No fue posible preparar el runtime integrado: ${result.stderr || result.stdout || 'conda-unpack falló'}`);
+      }
+    }
+
+    const candidate = runtimeExecutables(runtimeDir);
+    if (!candidate.python || !candidate.rscript) {
+      throw new Error('El runtime integrado se extrajo, pero no se encontraron Python y Rscript.');
+    }
+    if (!commandExists(candidate.python, ['--version'], candidate.env)) {
+      throw new Error('Python integrado no pudo iniciarse.');
+    }
+    if (!commandExists(candidate.rscript, ['--version'], candidate.env)) {
+      throw new Error('R integrado no pudo iniciarse.');
+    }
+
+    const rCheck = spawnSync(candidate.rscript, ['-e', 'library(jsonlite); library(lavaan); library(psych); library(naniar); cat("OK")'], {
+      env: candidate.env,
+      encoding: 'utf8',
+      timeout: 120000
+    });
+    if (rCheck.status !== 0) {
+      throw new Error(`El runtime de R no contiene todos los paquetes requeridos: ${rCheck.stderr || rCheck.stdout || ''}`);
+    }
+
+    fs.writeFileSync(marker, new Date().toISOString(), 'utf8');
+  }
+
+  return runtimeExecutables(runtimeDir);
+}
+
+function findSystemRuntime() {
+  const pythonCandidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
+  let python = null;
+  for (const cmd of pythonCandidates) {
+    if (commandExists(cmd, cmd === 'py' ? ['-3', '--version'] : ['--version'])) {
+      python = cmd;
+      break;
+    }
+  }
+  const rscript = commandExists('Rscript') ? 'Rscript' : null;
+  return { python, rscript, env: process.env };
+}
+
+function waitForBackend(timeoutMs = 45000) {
   const started = Date.now();
   return new Promise((resolve, reject) => {
     const probe = () => {
@@ -51,19 +162,19 @@ function waitForBackend(timeoutMs = 30000) {
 }
 
 function startBackend() {
-  const python = findPython();
-  if (!python) throw new Error('No se encontró Python 3. Esta Beta Desktop aún requiere Python instalado.');
-  if (!commandExists('Rscript')) throw new Error('No se encontró Rscript. Esta Beta Desktop aún requiere R instalado y disponible en PATH.');
+  const runtime = runtimeInfo || findSystemRuntime();
+  if (!runtime.python) throw new Error('No se encontró el motor Python integrado.');
+  if (!runtime.rscript) throw new Error('No se encontró el motor R integrado.');
 
   const backendDir = app.isPackaged ? resourcePath('backend') : path.resolve(__dirname, '..', 'backend');
   const apiFile = path.join(backendDir, 'api.py');
   if (!fs.existsSync(apiFile)) throw new Error(`No se encontró el backend: ${apiFile}`);
 
-  const args = python === 'py' ? ['-3', apiFile] : [apiFile];
-  backendProcess = spawn(python, args, {
+  const args = runtime.python === 'py' ? ['-3', apiFile] : [apiFile];
+  backendProcess = spawn(runtime.python, args, {
     cwd: backendDir,
     env: {
-      ...process.env,
+      ...runtime.env,
       VALISTRUCT_AUTH_ENABLED: 'false',
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
@@ -80,10 +191,11 @@ function startBackend() {
 
 async function createWindow() {
   try {
+    runtimeInfo = await ensureBundledRuntime();
     startBackend();
     await waitForBackend();
   } catch (err) {
-    dialog.showErrorBox('ValiStruct Desktop Beta', `${err.message}\n\nEn la siguiente fase integraremos Python y R dentro del instalador para eliminar este requisito.`);
+    dialog.showErrorBox('ValiStruct Desktop Beta', `${err.message}\n\nEl instalador autónomo no pudo preparar el motor estadístico.`);
   }
 
   const win = new BrowserWindow({
