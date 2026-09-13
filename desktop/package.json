@@ -29,7 +29,9 @@
     },
     "files": [
       "main.js",
-      "preload.js"
+      "preload.js",
+      "ux-shell.js",
+      "ux-shell.css"
     ],
     "extraResources": [
       { "from": "../index.html", "to": "app/index.html" },
