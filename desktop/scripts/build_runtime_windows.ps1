@@ -21,7 +21,18 @@ if (!(Test-Path $rscript)) { $rscript = Join-Path $envDir 'Library/bin/Rscript.e
 if (!(Test-Path $rscript)) { throw 'Rscript.exe was not found in the integrated runtime.' }
 & $rscript -e "library(jsonlite); library(lavaan); library(psych); library(naniar); cat('R runtime OK\n')"
 
-conda-pack -p $envDir -o $archive
+$condaRoot = $env:CONDA
+if ([string]::IsNullOrWhiteSpace($condaRoot)) {
+  $condaRoot = (& conda info --base).Trim()
+}
+$condaPack = Join-Path $condaRoot 'Scripts/conda-pack.exe'
+if (!(Test-Path $condaPack)) {
+  $found = Get-ChildItem -Path $condaRoot -Filter 'conda-pack.exe' -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($found) { $condaPack = $found.FullName }
+}
+if (!(Test-Path $condaPack)) { throw 'conda-pack.exe was not found in the base environment.' }
+
+& $condaPack -p $envDir -o $archive
 if (!(Test-Path $archive)) { throw 'The autonomous runtime archive was not created.' }
 if ((Get-Item $archive).Length -le 0) { throw 'The autonomous runtime archive is empty.' }
 Write-Host "Runtime autonomous archive created: $archive"
