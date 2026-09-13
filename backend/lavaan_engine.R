@@ -212,4 +212,4 @@ result <- tryCatch({
   list(ok=FALSE, error=conditionMessage(e))
 })
 
-write(toJSON(result, auto_unbox=TRUE, pretty=TRUE, na="null"), out_file)
+write(toJSON(result, auto_unbox=TRUE, pretty=TRUE, na="null", digits=15), out_file)
