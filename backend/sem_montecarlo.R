@@ -1,4 +1,4 @@
-%||% <- function(a,b) if (is.null(a)) b else a
+`%||%` <- function(a,b) if (is.null(a)) b else a
 args <- commandArgs(trailingOnly=TRUE)
 if(length(args)<2) stop("Uso: Rscript sem_montecarlo.R request.json response.json")
 suppressPackageStartupMessages({
