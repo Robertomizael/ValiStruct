@@ -1,53 +1,82 @@
-# Despliegue institucional de ValiStruct 2.0
+# ValiStruct
 
-## Backend
-Se incluye un Dockerfile que instala:
-- Python
-- R
-- lavaan
-- semTools
-- psych
-- naniar
-- Flask
-- dependencias de exportación
+**Plataforma inteligente para validación de instrumentos y modelamiento estructural**
 
-## Inicio
-Desde la carpeta `deployment`:
+ValiStruct es una plataforma científica de acceso abierto orientada a estudiantes, docentes e investigadores. Integra herramientas para validación de instrumentos, análisis psicométrico, análisis factorial y modelamiento de ecuaciones estructurales.
 
-```bash
-docker compose up --build
+## Versión actual
+
+**ValiStruct v3.0.0 Beta 1** (`v3.0.0-beta.1`)
+
+Esta versión se encuentra en fase Beta para evaluación y pruebas antes de la versión estable 3.0.
+
+## Capacidades principales
+
+- Validez de contenido mediante V de Aiken.
+- Análisis de confiabilidad.
+- Análisis factorial exploratorio.
+- Análisis factorial confirmatorio (CFA).
+- Modelamiento de ecuaciones estructurales (SEM) con R/lavaan.
+- Estimadores MLR y WLSMV.
+- Índices de ajuste estándar, robustos y escalados.
+- Cargas factoriales estandarizadas.
+- CR, AVE y HTMT.
+- Diagnóstico de convergencia y soluciones impropias.
+- Apoyo metodológico e interpretativo.
+
+## Módulos
+
+- **ValiStruct Content** — validez de contenido.
+- **ValiStruct Factor** — análisis factorial exploratorio.
+- **ValiStruct Confirm** — análisis factorial confirmatorio.
+- **ValiStruct Latencia** — modelamiento de variables latentes.
+- **ValiStruct Metrics** — confiabilidad y validez de constructo.
+- **ValiStruct Guide** — orientación metodológica.
+- **ValiStruct Report** — apoyo para reportes científicos.
+- **Motor Pro** — procesamiento avanzado con R/lavaan.
+
+## Validación técnica
+
+La Beta 1 deriva del ciclo RC6 y cuenta con validación automatizada mediante GitHub Actions. El flujo incluye chequeos estáticos, pruebas de backend, equivalencia estadística frente a lavaan directo, smoke tests y pruebas end-to-end en navegador.
+
+## Estructura principal
+
+```text
+.github/workflows/   Validación automatizada
+backend/             API y motores estadísticos
+deployment/          Recursos de despliegue
+docs/                Documentación
+icons/               Recursos gráficos
+tests/               Pruebas y validación estadística
+app.js               Frontend
+index.html           Interfaz principal
+service-worker.js    Soporte PWA
 ```
 
-El backend queda disponible en:
-`http://localhost:8765`
+## Uso local
 
-Para iPhone/iPad o uso institucional se recomienda:
-1. desplegar el backend en un servidor HTTPS;
-2. configurar la URL en `Dispositivo / PWA`;
-3. servir el frontend también mediante HTTPS.
+Backend:
 
-## Producción
-Antes de uso institucional se recomienda:
-- proxy inverso HTTPS;
-- autenticación si se manejan datos sensibles;
-- límites de carga;
-- registro de errores;
-- copias de seguridad;
-- política institucional de privacidad.
+```bash
+cd backend
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
 
+Frontend:
 
-## ValiStruct 2.3 · Modo institucional opcional
+```bash
+python -m http.server 8000
+```
 
-Funciones desactivadas por defecto:
-- autenticación,
-- biblioteca institucional de proyectos.
+## Consideraciones de uso
 
-Para activarlas configure las variables del archivo `.env.example`.
+ValiStruct es una herramienta de apoyo. No sustituye el juicio metodológico, estadístico y teórico del investigador ni la supervisión especializada. Las decisiones sobre eliminación de ítems o modificación de modelos no deben basarse en un único indicador estadístico.
 
-Roles disponibles:
-- `student`: lectura/aprendizaje;
-- `researcher`: puede crear y actualizar sus proyectos;
-- `teacher`: puede crear y actualizar sus proyectos;
-- `admin`: acceso administrativo a todos los proyectos.
+## Autor
 
-La implementación incluida es un prototipo de despliegue controlado. Para producción pública se recomienda integrar SSO/OIDC/SAML institucional en lugar de mantener credenciales directamente en variables de entorno.
+**Dr. Roberto Joel Tirado Reyes**  
+Profesor-investigador  
+Universidad Autónoma de Sinaloa
+
+ValiStruct se desarrolla como una contribución de acceso abierto al fortalecimiento de la formación y la investigación científica.
