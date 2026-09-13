@@ -42,6 +42,19 @@ if node:
 else:
     warnings.append("Node.js not available; JS syntax check skipped")
 
+# R syntax audit. Parse does not require loading lavaan/psych and catches invalid
+# custom infix definitions such as an unquoted %||% assignment before runtime.
+rscript=shutil.which("Rscript")
+if rscript:
+    for rfile in sorted((ROOT/"backend").glob("*.R")):
+        rr=subprocess.run(
+            [rscript,"-e",f"parse(file={json.dumps(str(rfile))})"],
+            capture_output=True,text=True
+        )
+        if rr.returncode:
+            errors.append(f"R syntax {rfile.name}: {rr.stderr.strip()}")
+else:
+    warnings.append("Rscript not available; R syntax check skipped")
 
 # Additional static audits
 for script in ["static_backend_audit.py","static_frontend_audit.py"]:
