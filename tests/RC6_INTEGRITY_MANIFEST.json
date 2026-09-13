@@ -1,0 +1,15 @@
+{
+  "release": "3.0.0-rc.6",
+  "critical_files": {
+    "app.js": "e5fda2a9a52fc467fb9ca2b0ad8f7507d3801363c12bfc52c91702e30be6b39f",
+    "index.html": "b5dc9dc3bea1d48247d38e58754cc54dc631ad40cfdc804ec21ffd4c20ff74cf",
+    "service-worker.js": "35a82704dcbaf3f90ac3483c65f71a5e454dc02643235a35b458657b1a4a58a4",
+    "backend/api.py": "6d8aaa148362725985f04282a82144bb9215d8a7b3694a7d0515623382d712f5",
+    "backend/lavaan_engine.R": "a3165b29f1d63d8b9a630c5f240c19c37089e98ae6092d86ffda8595f2576b10",
+    "backend/advanced_engine.R": "7b8eccfe2453a1ab988a381265ef0c4a7814cb8883cbdab77ad27b28ebd693e8",
+    "backend/sem_montecarlo.R": "11cd8b4acffa22d1ba9dd99eb13550d79ef4e08bf94ce9b24b4755a3dbbe6178",
+    "backend/model_check.R": "bc28855b806965d058f6295561fcf7248792fcda3df495c7dc0e610986c2c62b",
+    "deployment/Dockerfile": "b39f72d487d20e614bbc8bbd50610b9763ad52a6fdcd2780182d8560d3c9778c",
+    "tests/statistical_validation.R": "e510aedf151a494126109678fa71eb938bce0c4ddd66432500966e8c4f7eddbc"
+  }
+}
