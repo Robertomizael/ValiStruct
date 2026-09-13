@@ -1,14 +1,36 @@
 'use strict';
 
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const tar = require('tar');
+const XLSX = require('xlsx');
 
 let backendProcess = null;
 let runtimeInfo = null;
+
+ipcMain.handle('valistruct:parse-spreadsheet', async (_event, payload) => {
+  try {
+    const name = String(payload?.name || 'archivo.xlsx');
+    if (!/\.(xlsx|xls)$/i.test(name)) {
+      return { ok: false, error: 'Formato no compatible. Use .xls o .xlsx.' };
+    }
+    const bytes = payload?.data;
+    if (!bytes) return { ok: false, error: 'El archivo está vacío.' };
+    const buffer = Buffer.from(bytes);
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+    const firstSheet = workbook.SheetNames?.[0];
+    if (!firstSheet) return { ok: false, error: 'El libro de Excel no contiene hojas.' };
+    const sheet = workbook.Sheets[firstSheet];
+    const csv = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n', blankrows: false });
+    if (!csv.trim()) return { ok: false, error: 'La primera hoja no contiene datos.' };
+    return { ok: true, csv, sheet: firstSheet };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
 
 function resourcePath(...parts) {
   const base = app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '..');
@@ -85,10 +107,6 @@ async function ensureBundledRuntime() {
     fs.mkdirSync(runtimeDir, { recursive: true });
     await tar.x({ file: archive, cwd: runtimeDir });
 
-    // Build the runtime environment immediately after extraction so that
-    // conda-unpack never depends on the host machine PATH. On macOS the
-    // conda-unpack launcher uses /usr/bin/env python; invoking it through
-    // the bundled interpreter avoids the "env: python: No such file" error.
     let candidate = runtimeExecutables(runtimeDir);
     if (!candidate.python) {
       throw new Error('El runtime integrado se extrajo, pero no se encontró Python.');
@@ -200,11 +218,15 @@ function startBackend() {
 async function injectDesktopUX(win) {
   const cssPath = path.join(__dirname, 'ux-shell.css');
   const jsPath = path.join(__dirname, 'ux-shell.js');
+  const excelPath = path.join(__dirname, 'excel-import.js');
   if (fs.existsSync(cssPath)) {
     await win.webContents.insertCSS(fs.readFileSync(cssPath, 'utf8'));
   }
   if (fs.existsSync(jsPath)) {
     await win.webContents.executeJavaScript(fs.readFileSync(jsPath, 'utf8'));
+  }
+  if (fs.existsSync(excelPath)) {
+    await win.webContents.executeJavaScript(fs.readFileSync(excelPath, 'utf8'));
   }
 }
 
