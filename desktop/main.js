@@ -189,6 +189,17 @@ function startBackend() {
   backendProcess.on('exit', (code) => console.log(`Backend finalizado: ${code}`));
 }
 
+async function injectDesktopUX(win) {
+  const cssPath = path.join(__dirname, 'ux-shell.css');
+  const jsPath = path.join(__dirname, 'ux-shell.js');
+  if (fs.existsSync(cssPath)) {
+    await win.webContents.insertCSS(fs.readFileSync(cssPath, 'utf8'));
+  }
+  if (fs.existsSync(jsPath)) {
+    await win.webContents.executeJavaScript(fs.readFileSync(jsPath, 'utf8'));
+  }
+}
+
 async function createWindow() {
   try {
     runtimeInfo = await ensureBundledRuntime();
@@ -199,11 +210,12 @@ async function createWindow() {
   }
 
   const win = new BrowserWindow({
-    width: 1440,
-    height: 940,
-    minWidth: 1100,
-    minHeight: 720,
+    width: 1600,
+    height: 1000,
+    minWidth: 1180,
+    minHeight: 760,
     title: 'ValiStruct v3.0.0 Beta 1',
+    backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -217,6 +229,8 @@ async function createWindow() {
     : path.resolve(__dirname, '..', 'index.html');
 
   await win.loadFile(frontend);
+  await injectDesktopUX(win);
+  win.maximize();
 }
 
 app.whenReady().then(createWindow);
