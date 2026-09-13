@@ -85,24 +85,32 @@ async function ensureBundledRuntime() {
     fs.mkdirSync(runtimeDir, { recursive: true });
     await tar.x({ file: archive, cwd: runtimeDir });
 
+    // Build the runtime environment immediately after extraction so that
+    // conda-unpack never depends on the host machine PATH. On macOS the
+    // conda-unpack launcher uses /usr/bin/env python; invoking it through
+    // the bundled interpreter avoids the "env: python: No such file" error.
+    let candidate = runtimeExecutables(runtimeDir);
+    if (!candidate.python) {
+      throw new Error('El runtime integrado se extrajo, pero no se encontró Python.');
+    }
+
     const unpack = firstExisting(process.platform === 'win32'
-      ? [path.join(runtimeDir, 'Scripts', 'conda-unpack.exe'), path.join(runtimeDir, 'Scripts', 'conda-unpack-script.py')]
+      ? [path.join(runtimeDir, 'Scripts', 'conda-unpack-script.py'), path.join(runtimeDir, 'Scripts', 'conda-unpack.exe')]
       : [path.join(runtimeDir, 'bin', 'conda-unpack')]);
 
     if (unpack) {
       let result;
-      if (unpack.endsWith('.py')) {
-        const py = firstExisting([path.join(runtimeDir, 'python.exe'), path.join(runtimeDir, 'bin', 'python')]);
-        result = py ? spawnSync(py, [unpack], { cwd: runtimeDir, encoding: 'utf8' }) : null;
+      if (process.platform === 'win32' && unpack.toLowerCase().endsWith('.exe')) {
+        result = spawnSync(unpack, [], { cwd: runtimeDir, env: candidate.env, encoding: 'utf8' });
       } else {
-        result = spawnSync(unpack, [], { cwd: runtimeDir, encoding: 'utf8' });
+        result = spawnSync(candidate.python, [unpack], { cwd: runtimeDir, env: candidate.env, encoding: 'utf8' });
       }
       if (result && result.status !== 0) {
         throw new Error(`No fue posible preparar el runtime integrado: ${result.stderr || result.stdout || 'conda-unpack falló'}`);
       }
     }
 
-    const candidate = runtimeExecutables(runtimeDir);
+    candidate = runtimeExecutables(runtimeDir);
     if (!candidate.python || !candidate.rscript) {
       throw new Error('El runtime integrado se extrajo, pero no se encontraron Python y Rscript.');
     }
