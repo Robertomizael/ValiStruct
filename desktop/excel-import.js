@@ -113,6 +113,15 @@
     panel.querySelector('#downloadJudgeTemplateXlsx')?.addEventListener('click', downloadJudgeTemplateXlsx);
   }
 
+  function replaceVisibleTextPreservingChildren(el, nextText) {
+    const textNode = [...el.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    if (textNode) {
+      textNode.textContent = `${nextText} `;
+    } else {
+      el.insertBefore(document.createTextNode(`${nextText} `), el.firstChild || null);
+    }
+  }
+
   function enhanceFileInputs(root = document) {
     root.querySelectorAll('input[type="file"]').forEach(input => {
       const accept = (input.getAttribute('accept') || '').toLowerCase();
@@ -124,9 +133,9 @@
 
     root.querySelectorAll('button, label, span, p, div').forEach(el => {
       const t = (el.textContent || '').trim();
-      if (t === 'Importar CSV') el.textContent = 'Importar CSV / XLSX';
-      else if (t === 'Archivo CSV') el.textContent = 'Archivo CSV / XLSX';
-      else if (t === 'Seleccionar CSV') el.textContent = 'Seleccionar CSV / XLSX';
+      if (t === 'Importar CSV') replaceVisibleTextPreservingChildren(el, 'Importar CSV / XLSX');
+      else if (t === 'Archivo CSV') replaceVisibleTextPreservingChildren(el, 'Archivo CSV / XLSX');
+      else if (t === 'Seleccionar CSV') replaceVisibleTextPreservingChildren(el, 'Seleccionar CSV / XLSX');
     });
 
     root.querySelectorAll('button[id]').forEach(button => {
