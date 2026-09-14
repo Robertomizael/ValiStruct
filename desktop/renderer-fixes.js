@@ -24,7 +24,7 @@
         if(value!=null)covariances.push({from:factors[i].name,to:factors[j].name,value});
       }
     }
-    return {factors,covariances,source:'AFC preliminar'};
+    return {factors,covariances,source:'AFC rápido · vista diagnóstica'};
   }
 
   function proModel(data){
@@ -44,7 +44,7 @@
       }
     });
     const factors=[...map.entries()].map(([name,items])=>({name,items}));
-    return factors.length?{factors,covariances,source:'Motor Pro · lavaan'}:null;
+    return factors.length?{factors,covariances,source:'Motor Pro · R/lavaan'}:null;
   }
 
   function buildPathDiagram(model){
@@ -59,7 +59,6 @@
 
     model.factors.forEach((f,fi)=>factorPos.set(f.name,{x:factorX,y:firstY+fi*rowGap}));
 
-    // Factor covariances: routed in a dedicated left rail to avoid crossing item paths.
     (model.covariances||[]).forEach((c,ci)=>{
       const a=factorPos.get(c.from), b=factorPos.get(c.to); if(!a||!b)return;
       const railX=35+(ci%5)*18;
@@ -88,7 +87,73 @@
     return s;
   }
 
-  // Override the AFC prototype diagram with the publication layout.
+  // Converts the simple AFC notation used by the quick editor into valid lavaan syntax.
+  // Example: Factor1 = I1, I2, I3  ->  Factor1 =~ I1 + I2 + I3
+  function toLavaanSyntax(raw){
+    const lines=String(raw||'').split(/\r?\n/);
+    return lines.map(line=>{
+      const trimmed=line.trim();
+      if(!trimmed || trimmed.startsWith('#'))return line;
+      if(trimmed.includes('=~') || trimmed.includes('~~') || /(^|\s)~(\s|$)/.test(trimmed) || trimmed.includes(':='))return line;
+      const m=trimmed.match(/^([^=]+?)\s*=\s*(.+)$/);
+      if(!m)return line;
+      const lhs=m[1].trim();
+      const rhs=m[2].split(',').map(x=>x.trim()).filter(Boolean);
+      if(!lhs || !rhs.length)return line;
+      return `${lhs} =~ ${rhs.join(' + ')}`;
+    }).join('\n');
+  }
+
+  function reviseAfcProductionNote(){
+    const cfa=document.getElementById('cfa');
+    if(!cfa)return;
+    cfa.querySelectorAll('p,div').forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if(t.includes('motor R/lavaan') && t.includes('vista rápida del AFC') || t.includes('CFI, TLI, RMSEA') && t.includes('prototipo')){
+        el.innerHTML='<strong>Estimación AFC:</strong> la vista rápida sirve para revisar la especificación y visualizar el modelo. Para la estimación confirmatoria final, ValiStruct ejecuta <strong>R/lavaan en Motor Pro</strong>, donde se obtienen χ², CFI, TLI, RMSEA, SRMR, índices robustos y parámetros estandarizados. La sintaxis del editor AFC se convierte automáticamente al formato lavaan.';
+      }
+    });
+  }
+
+  function cfaDataToCsv(){
+    try{
+      if(typeof cfaData==='undefined' || !cfaData?.itemNames?.length || !cfaData?.matrix?.length)return null;
+      const quote=x=>`"${String(x??'').replaceAll('"','""')}"`;
+      return [cfaData.itemNames,...cfaData.matrix].map(r=>r.map(quote).join(',')).join('\n');
+    }catch(_){return null;}
+  }
+
+  function bridgeCfaToMotorPro(){
+    const cfaBox=document.getElementById('cfaSyntax');
+    const proBox=document.getElementById('proSyntax');
+    if(!cfaBox || !proBox)return alert('No fue posible localizar los editores AFC/Motor Pro.');
+    const lavaan=toLavaanSyntax(cfaBox.value);
+    proBox.value=lavaan;
+    try{
+      const csv=cfaDataToCsv();
+      if(csv && typeof proCsvText!=='undefined'){
+        proCsvText=csv;
+        if(typeof summarizeProCsv==='function')summarizeProCsv(csv);
+      }
+    }catch(_){}
+    const motorButton=document.querySelector('[data-section="motorpro"]');
+    if(motorButton)motorButton.click();
+    const status=document.getElementById('proResults');
+    if(status && !status.innerHTML.trim())status.innerHTML='<div class="model-ok"><strong>Modelo transferido desde AFC.</strong> La sintaxis fue convertida automáticamente a formato lavaan. Revise el estimador y pulse “Ejecutar modelo profesional”.</div>';
+  }
+
+  function installCfaBridgeButton(){
+    if(document.getElementById('sendCfaToMotorPro'))return;
+    const estimate=document.getElementById('estimateCfa');
+    if(!estimate?.parentElement)return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.id='sendCfaToMotorPro';
+    b.textContent='Estimar AFC con Motor Pro · lavaan';
+    b.addEventListener('click',bridgeCfaToMotorPro);
+    estimate.insertAdjacentElement('afterend',b);
+  }
+
   if(typeof renderCfaDiagram==='function'){
     renderCfaDiagram=function(r){
       const model=prototypeModel(r);
@@ -96,7 +161,6 @@
     };
   }
 
-  // Append a professional diagram every time Motor Pro renders lavaan output.
   if(typeof renderProResults==='function'){
     const previousRenderPro=renderProResults;
     renderProResults=function(data){
@@ -108,14 +172,17 @@
     };
   }
 
-  // Replace the Motor Pro click path to avoid AUTH_TOKEN_KEY temporal-dead-zone failures.
+  // Replace the Motor Pro click path. It fixes the former auth TDZ issue and
+  // normalizes quick-AFC syntax before it reaches lavaan.
   const runBtn=document.getElementById('runProModel');
   if(runBtn){
     runBtn.addEventListener('click',async ev=>{
       ev.preventDefault(); ev.stopImmediatePropagation();
+      const proSyntaxBox=document.getElementById('proSyntax');
+      if(proSyntaxBox)proSyntaxBox.value=toLavaanSyntax(proSyntaxBox.value);
       let payload;
       try{payload=buildProPayload();}catch(e){return alert(e.message);}
-      proResults.innerHTML='<div class="notice">Ejecutando modelo…</div>';
+      proResults.innerHTML='<div class="notice">Ejecutando modelo con R/lavaan…</div>';
       try{
         const headers={'Content-Type':'application/json'};
         try{
@@ -128,10 +195,20 @@
         proLastResponse=data;
         renderProResults(data);
       }catch(e){
-        proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${esc(e.message)}<br><br>Compruebe que el backend incluido en ValiStruct esté activo.</div>`;
+        const msg=String(e.message||e);
+        const syntaxError=/lav_parse|unexpected character|parse|syntax/i.test(msg);
+        proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${esc(msg)}<br><br>${syntaxError?'La conexión con R/lavaan funciona, pero la sintaxis del modelo no es válida. ValiStruct intentó convertir automáticamente la notación AFC; revise nombres de variables y especificación del modelo.':'Compruebe que el backend incluido en ValiStruct esté activo.'}</div>`;
       }
     },true);
   }
+
+  reviseAfcProductionNote();
+  installCfaBridgeButton();
+  const noteObserver=new MutationObserver(()=>{
+    reviseAfcProductionNote();
+    installCfaBridgeButton();
+  });
+  noteObserver.observe(document.documentElement,{childList:true,subtree:true});
 
   const style=document.createElement('style');
   style.textContent=`
@@ -140,6 +217,7 @@
     .vs-diagram-head h3{margin:0 0 4px;color:#123c73}.vs-diagram-head p{margin:0;color:#64748b;font-size:13px}
     .vs-diagram-scroll{overflow:auto;border:1px solid #edf1f5;border-radius:12px;background:#fff;padding:8px}
     .vs-diagram-scroll svg{display:block;max-width:none;background:white}
+    #sendCfaToMotorPro{border-color:#0d4f8b;background:#eef6ff;color:#0d4f8b;font-weight:700}
   `;
   document.head.appendChild(style);
 })();
