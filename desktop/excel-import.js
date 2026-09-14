@@ -7,6 +7,26 @@
   const blobRegistry = new Map();
   let pendingExcelExport = null;
 
+  // Desktop compatibility bridge for statistical helpers used by app.js.
+  // The AFE/AFC code calls correlation(), while the reliability module exposes corr().
+  // Providing the alias here prevents the silent ReferenceError that left “Ejecutar AFE” without results.
+  if (typeof globalThis.correlation !== 'function') {
+    globalThis.correlation = function correlation(a, b) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length || a.length < 2) return NaN;
+      const meanA = a.reduce((s, x) => s + Number(x), 0) / a.length;
+      const meanB = b.reduce((s, x) => s + Number(x), 0) / b.length;
+      let cov = 0, ssA = 0, ssB = 0;
+      for (let i = 0; i < a.length; i++) {
+        const da = Number(a[i]) - meanA;
+        const db = Number(b[i]) - meanB;
+        cov += da * db;
+        ssA += da * da;
+        ssB += db * db;
+      }
+      return ssA > 0 && ssB > 0 ? cov / Math.sqrt(ssA * ssB) : NaN;
+    };
+  }
+
   const originalCreateObjectURL = URL.createObjectURL.bind(URL);
   const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
   URL.createObjectURL = blob => {
@@ -113,6 +133,68 @@
     panel.querySelector('#downloadJudgeTemplateXlsx')?.addEventListener('click', downloadJudgeTemplateXlsx);
   }
 
+  function clearReliabilityData() {
+    // relData/relLast are global lexical bindings created by app.js.
+    // Direct eval inherits the page global lexical environment and resets them safely.
+    try {
+      eval('relData = null; relLast = null;');
+    } catch (_) {
+      // UI reset still permits a new import; app.js will replace relData on the next load.
+    }
+    const input = document.getElementById('relCsvFile');
+    if (input) input.value = '';
+    const summary = document.getElementById('relDatasetSummary');
+    const preview = document.getElementById('relDataPreview');
+    const results = document.getElementById('relResults');
+    const actions = document.getElementById('relActions');
+    if (summary) summary.innerHTML = '';
+    if (preview) preview.innerHTML = '';
+    if (results) results.innerHTML = '';
+    if (actions) actions.classList.add('hidden');
+  }
+
+  function ensureReliabilityClearButton() {
+    if (document.getElementById('clearRelData')) return;
+    const reliability = document.getElementById('reliability');
+    const loadExample = document.getElementById('loadRelExample');
+    if (!reliability || !loadExample) return;
+    const button = document.createElement('button');
+    button.id = 'clearRelData';
+    button.type = 'button';
+    button.textContent = 'Borrar datos';
+    button.title = 'Borra la base, la vista previa y los resultados para cargar un archivo nuevo.';
+    loadExample.insertAdjacentElement('afterend', button);
+    button.addEventListener('click', () => {
+      const hasData = Boolean(document.getElementById('relDataPreview')?.textContent.trim());
+      if (hasData && !confirm('¿Desea borrar los datos cargados y los resultados de confiabilidad?')) return;
+      clearReliabilityData();
+    });
+  }
+
+  function installReliabilityParserGuard() {
+    const current = globalThis.parseRelCSV;
+    if (typeof current !== 'function' || current.__valistructDerivedFilter) return;
+
+    const wrapped = function(text) {
+      const parsed = current(text);
+      const derived = /^(?:D\d+_media|Total_media|Total_suma)$/i;
+      const keep = parsed.itemNames
+        .map((name, idx) => ({ name, idx }))
+        .filter(x => !derived.test(String(x.name || '').trim()));
+
+      if (keep.length === parsed.itemNames.length || keep.length < 2) return parsed;
+      const matrix = parsed.matrix.map(row => keep.map(x => row[x.idx]));
+      return {
+        itemNames: keep.map(x => x.name),
+        matrix,
+        n: matrix.length,
+        k: keep.length
+      };
+    };
+    wrapped.__valistructDerivedFilter = true;
+    globalThis.parseRelCSV = wrapped;
+  }
+
   function replaceVisibleTextPreservingChildren(el, nextText) {
     const textNode = [...el.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
     if (textNode) {
@@ -163,6 +245,8 @@
     });
 
     ensureJudgeTemplatePanel();
+    ensureReliabilityClearButton();
+    installReliabilityParserGuard();
   }
 
   async function excelToCsvFile(file) {
