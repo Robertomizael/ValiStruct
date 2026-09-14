@@ -15,10 +15,9 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
   }
 });
 
-// AFC diagnostic assistant: Mardia + estimator guidance.
-// This runs in the isolated preload world and does not alter the page's statistical state.
+// AFC diagnostic assistant: Mardia + estimator guidance + diagram enhancement.
 (() => {
-  let lastCfaCsvFile = null;
+  let lastCfaFile = null;
 
   function parseCsv(text) {
     const rows = [];
@@ -41,11 +40,21 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     return rows;
   }
 
+  async function fileToCsv(file) {
+    if (/\.csv$/i.test(file.name)) return (await file.text()).replace(/^\uFEFF/, '');
+    if (/\.(xlsx|xls)$/i.test(file.name)) {
+      const buffer = new Uint8Array(await file.arrayBuffer());
+      const parsed = await ipcRenderer.invoke('valistruct:parse-spreadsheet', { name: file.name, data: buffer });
+      if (!parsed?.ok || !parsed.csv) throw new Error(parsed?.error || 'No fue posible convertir el archivo de Excel.');
+      return String(parsed.csv).replace(/^\uFEFF/, '');
+    }
+    throw new Error('Formato no compatible. Use CSV, XLSX o XLS.');
+  }
+
   function cleanMatrix(rows) {
     if (rows.length < 3) throw new Error('Se requieren encabezados y al menos dos casos.');
-    let headers = rows[0].map(x => String(x).trim());
-    let body = rows.slice(1).filter(r => r.some(x => String(x).trim() !== ''));
-
+    const headers = rows[0].map(x => String(x).trim());
+    const body = rows.slice(1).filter(r => r.some(x => String(x).trim() !== ''));
     let keepIdx = headers.map((h, i) => ({ h, i }));
     if (/^(id|idem|folio|participante|sujeto|caso)$/i.test(headers[0] || '')) keepIdx = keepIdx.slice(1);
     const derived = /^(?:D\d+_media|Total_media|Total_suma)$/i;
@@ -68,10 +77,10 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     return { headers: numericCols.map(x => x.name), matrix, n: matrix.length, p: numericCols.length };
   }
 
-  function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
   function multiply(A, B) {
     return A.map(row => B[0].map((_, j) => row.reduce((s, x, i) => s + x * B[i][j], 0)));
   }
+
   function inverse(A) {
     const n = A.length;
     const M = A.map((r, i) => r.slice().concat(Array.from({ length: n }, (_, j) => i === j ? 1 : 0)));
@@ -100,6 +109,7 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     const t = z + 7.5;
     return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
   }
+
   function gammaQ(a, x) {
     if (!(x >= 0) || !(a > 0)) return NaN;
     if (x === 0) return 1;
@@ -122,6 +132,7 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     }
     return Math.max(0, Math.min(1, Math.exp(-x + a * Math.log(x) - logGamma(a)) * h));
   }
+
   function erf(x) {
     const sign = x < 0 ? -1 : 1, a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
     const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
@@ -132,8 +143,7 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
   function isOrdinalMatrix(matrix) {
     const p = matrix[0].length;
     for (let j = 0; j < p; j++) {
-      const vals = matrix.map(r => r[j]);
-      const uniq = [...new Set(vals)];
+      const uniq = [...new Set(matrix.map(r => r[j]))];
       if (uniq.length < 2 || uniq.length > 7 || uniq.some(v => Math.abs(v - Math.round(v)) > 1e-10)) return false;
     }
     return true;
@@ -180,22 +190,20 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     panel.innerHTML = `
       <h3>Diagnóstico previo al AFC · normalidad multivariante y estimador</h3>
       <p>ValiStruct evalúa la <strong>prueba de Mardia</strong> cuando es apropiada y orienta la elección del estimador. Para ítems ordinales, el nivel de medición tiene prioridad sobre una prueba de normalidad.</p>
-      <div class="config-grid">
-        <label>Tipo de indicadores
-          <select id="cfaIndicatorType">
-            <option value="auto" selected>Detectar automáticamente</option>
-            <option value="ordinal">Ordinales / Likert</option>
-            <option value="continuous">Continuos</option>
-          </select>
-        </label>
-      </div>
+      <div class="config-grid"><label>Tipo de indicadores
+        <select id="cfaIndicatorType">
+          <option value="auto" selected>Detectar automáticamente</option>
+          <option value="ordinal">Ordinales / Likert</option>
+          <option value="continuous">Continuos</option>
+        </select>
+      </label></div>
       <div class="button-row compact"><button id="runCfaMardia" type="button">Calcular Mardia y recomendar estimador</button></div>
       <div id="cfaMardiaResults" class="ci-note" style="margin-top:12px">Cargue una matriz para iniciar el diagnóstico.</div>
       <p class="ci-note"><strong>Aclaración:</strong> “ortogonal” no es un estimador de AFC. Ortogonal/oblicua describe la rotación en AFE. En AFC, la elección habitual es entre ML, MLR, WLSMV u otros estimadores según el nivel de medición y los supuestos.</p>`;
     importBox.insertAdjacentElement('afterend', panel);
     panel.querySelector('#runCfaMardia')?.addEventListener('click', () => {
-      if (!lastCfaCsvFile) return alert('Primero cargue un archivo CSV/XLSX en AFC.');
-      analyzeFile(lastCfaCsvFile);
+      if (!lastCfaFile) return alert('Primero cargue un archivo CSV/XLSX en AFC.');
+      analyzeFile(lastCfaFile);
     });
   }
 
@@ -205,9 +213,10 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     ensurePanel();
     const out = document.getElementById('cfaMardiaResults');
     if (!out) return;
+    out.innerHTML = '<span>Calculando diagnóstico multivariante…</span>';
     try {
-      const text = (await file.text()).replace(/^\uFEFF/, '');
-      const data = cleanMatrix(parseCsv(text));
+      const csv = await fileToCsv(file);
+      const data = cleanMatrix(parseCsv(csv));
       const selected = document.getElementById('cfaIndicatorType')?.value || 'auto';
       const autoOrdinal = isOrdinalMatrix(data.matrix);
       const dataType = selected === 'auto' ? (autoOrdinal ? 'ordinal' : 'continuous') : selected;
@@ -217,7 +226,7 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
       let estimator, reason;
       if (dataType === 'ordinal') {
         estimator = 'WLSMV';
-        reason = 'Los indicadores se consideran ordinales. La recomendación se basa en el nivel de medición; Mardia no debe utilizarse para forzar ML en ítems Likert.';
+        reason = 'Los indicadores se consideran ordinales. La recomendación se basa en el nivel de medición; Mardia se presenta como diagnóstico complementario y no debe utilizarse para forzar ML en ítems Likert.';
       } else if (m && m.normal) {
         estimator = 'ML';
         reason = 'Para indicadores continuos, Mardia no detecta evidencia de no normalidad multivariante al nivel .05. ML es una opción defendible si no hay otros problemas relevantes.';
@@ -234,7 +243,7 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
           <div class="result-card good-bg"><span>Estimador recomendado</span><strong>${estimator}</strong></div>
         </div>` : `<div class="model-error"><strong>Mardia no calculable:</strong> ${mError || 'no disponible'}.</div>`;
 
-      out.innerHTML = `<p><strong>Casos completos:</strong> ${data.n} · <strong>Variables:</strong> ${data.p} · <strong>Tipo detectado:</strong> ${autoOrdinal ? 'ordinal/categórico ordenado' : 'continuo o con muchas categorías'}.</p>${mardiaHtml}<p><strong>Orientación:</strong> ${reason}</p><p class="ci-note">La recomendación es metodológica, no una decisión automática. Para escalas Likert de 5 categorías, WLSMV suele ser preferible en AFC cuando los ítems se modelan explícitamente como ordinales.</p>`;
+      out.innerHTML = `<p><strong>Archivo:</strong> ${file.name} · <strong>Casos completos:</strong> ${data.n} · <strong>Variables:</strong> ${data.p} · <strong>Tipo detectado:</strong> ${autoOrdinal ? 'ordinal/categórico ordenado' : 'continuo o con muchas categorías'}.</p>${mardiaHtml}<p><strong>Orientación:</strong> ${reason}</p><p class="ci-note">La recomendación es metodológica, no una decisión automática. Para escalas Likert de 5 categorías, WLSMV suele ser preferible en AFC cuando los ítems se modelan explícitamente como ordinales.</p>`;
     } catch (err) {
       out.innerHTML = `<div class="model-error"><strong>No fue posible calcular el diagnóstico:</strong> ${String(err.message || err)}</div>`;
     }
@@ -251,10 +260,72 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
     });
   }
 
+  function enhanceCfaDiagram() {
+    document.querySelectorAll('.cfa-diagram').forEach(box => {
+      const svg = box.querySelector('svg');
+      if (!svg || svg.dataset.vsEnhanced === '1') return;
+      svg.dataset.vsEnhanced = '1';
+
+      let maxX = 0, maxY = 0;
+      svg.querySelectorAll('ellipse').forEach(el => {
+        maxX = Math.max(maxX, Number(el.getAttribute('cx') || 0) + Number(el.getAttribute('rx') || 0));
+        maxY = Math.max(maxY, Number(el.getAttribute('cy') || 0) + Number(el.getAttribute('ry') || 0));
+        el.setAttribute('fill', '#f7eef1');
+        el.setAttribute('stroke', '#8f2034');
+        el.setAttribute('stroke-width', '2.2');
+      });
+      svg.querySelectorAll('rect').forEach(el => {
+        maxX = Math.max(maxX, Number(el.getAttribute('x') || 0) + Number(el.getAttribute('width') || 0));
+        maxY = Math.max(maxY, Number(el.getAttribute('y') || 0) + Number(el.getAttribute('height') || 0));
+        el.setAttribute('fill', '#ffffff');
+        el.setAttribute('stroke', '#7c8797');
+        el.setAttribute('stroke-width', '1.5');
+        el.setAttribute('rx', '8');
+      });
+      svg.querySelectorAll('line').forEach(el => {
+        maxX = Math.max(maxX, Number(el.getAttribute('x1') || 0), Number(el.getAttribute('x2') || 0));
+        maxY = Math.max(maxY, Number(el.getAttribute('y1') || 0), Number(el.getAttribute('y2') || 0));
+        el.setAttribute('stroke', '#455468');
+        el.setAttribute('stroke-width', '1.5');
+        el.setAttribute('opacity', '.88');
+      });
+      svg.querySelectorAll('text').forEach(el => {
+        maxX = Math.max(maxX, Number(el.getAttribute('x') || 0));
+        maxY = Math.max(maxY, Number(el.getAttribute('y') || 0));
+        el.setAttribute('font-family', 'Aptos, Inter, system-ui, sans-serif');
+        el.setAttribute('fill', '#17263a');
+      });
+
+      const vb = svg.viewBox?.baseVal;
+      const h = Math.max(maxY + 70, vb?.height || 520);
+      const w = Math.max(maxX + 110, vb?.width || 1000);
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      svg.setAttribute('width', String(w));
+      svg.setAttribute('height', String(h));
+      svg.style.display = 'block';
+      svg.style.maxWidth = 'none';
+      svg.style.background = '#fbfcfe';
+      svg.style.border = '1px solid #e0e6ef';
+      svg.style.borderRadius = '12px';
+      svg.style.padding = '18px';
+
+      box.style.overflowX = 'auto';
+      box.style.paddingBottom = '8px';
+      const note = box.querySelector('.ci-note');
+      if (note) note.textContent = 'Diagrama AFC mejorado: factores latentes, indicadores observados y cargas estandarizadas. Desplácese horizontalmente cuando el modelo contenga varias dimensiones.';
+    });
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     ensurePanel();
     revisePrototypeNotice();
-    const obs = new MutationObserver(() => { ensurePanel(); revisePrototypeNotice(); });
+    enhanceCfaDiagram();
+
+    const obs = new MutationObserver(() => {
+      ensurePanel();
+      revisePrototypeNotice();
+      enhanceCfaDiagram();
+    });
     obs.observe(document.documentElement, { childList: true, subtree: true });
 
     document.addEventListener('change', event => {
@@ -262,9 +333,9 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
       if (!(input instanceof HTMLInputElement) || input.id !== 'cfaCsvFile') return;
       const file = input.files?.[0];
       if (!file) return;
-      if (/\.csv$/i.test(file.name)) {
-        lastCfaCsvFile = file;
-        setTimeout(() => analyzeFile(file), 80);
+      if (/\.(csv|xlsx|xls)$/i.test(file.name)) {
+        lastCfaFile = file;
+        setTimeout(() => analyzeFile(file), 100);
       }
     }, true);
   });
