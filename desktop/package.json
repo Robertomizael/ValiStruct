@@ -2,7 +2,7 @@
   "name": "valistruct-desktop",
   "version": "3.0.0-beta.1",
   "description": "ValiStruct Desktop Beta",
-  "main": "main.js",
+  "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
   "private": true,
@@ -30,6 +30,8 @@
     },
     "files": [
       "main.js",
+      "main-patched.js",
+      "renderer-fixes.js",
       "preload.js",
       "ux-shell.js",
       "ux-shell.css",
