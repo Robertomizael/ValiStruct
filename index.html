@@ -335,7 +335,15 @@
         </label>
         <label>Rotación
           <select id="efaRotation">
-            <option value="varimax" selected>Varimax</option>
+            <optgroup label="Rotaciones ortogonales">
+              <option value="varimax" selected>Varimax</option>
+              <option value="quartimax">Quartimax</option>
+              <option value="equamax">Equamax</option>
+            </optgroup>
+            <optgroup label="Rotaciones oblicuas">
+              <option value="oblimin">Direct Oblimin (δ = 0)</option>
+              <option value="promax">Promax</option>
+            </optgroup>
             <option value="none">Sin rotación</option>
           </select>
         </label>
