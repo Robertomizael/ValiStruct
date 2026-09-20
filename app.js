@@ -796,30 +796,50 @@ function renderEfaResults(r){
       <div class="result-card"><span>Factores · Kaiser &gt; 1</span><strong>${r.retainedKaiser}</strong></div>
       <div class="result-card ${problemCount?'warn-bg':'good-bg'}"><span>Ítems a revisar</span><strong>${problemCount}</strong></div>
     </div>
-    <p><strong>Orientación:</strong> priorice el análisis paralelo y la interpretabilidad teórica sobre el criterio de autovalor &gt; 1. Revise cargas, comunalidades y cargas cruzadas antes de modificar el instrumento.</p><div class="model-error"><strong>Advertencia metodológica RC4:</strong> esta extracción web utiliza Componentes Principales (ACP), no un método de factores comunes (PAF/MINRES/ML). No reporte este resultado como AFE común. Use Motor Pro/R para análisis factorial confirmatorio y un motor de factores comunes para AFE definitiva.</div><p class="ci-note"><strong>Bartlett:</strong> el p-valor mostrado en este módulo web usa la aproximación de Wilson–Hilferty.</p>
+    <p><strong>Orientación:</strong> priorice el análisis paralelo y la interpretabilidad teórica sobre el criterio de autovalor &gt; 1. Revise cargas, comunalidades y cargas cruzadas antes de modificar el instrumento.</p>
+    <div class="model-error"><strong>Advertencia metodológica:</strong> la extracción web actual continúa utilizando Componentes Principales (ACP). Las rotaciones aquí implementadas sí distinguen soluciones ortogonales y oblicuas, pero una AFE de factores comunes definitiva debe usar PAF/MINRES/ML.</div>
+    <p class="ci-note"><strong>Bartlett:</strong> el p-valor mostrado en este módulo web usa la aproximación de Wilson–Hilferty.</p>
+    ${r.rotationWarning?`<div class="model-error"><strong>Rotación:</strong> ${escapeHtml(r.rotationWarning)}</div>`:''}
   </div>`;
 
   html += `<div class="efa-chart-wrap"><h3>Scree plot y análisis paralelo</h3><canvas id="efaScree" width="1000" height="320"></canvas><p class="ci-note">Línea 1: autovalores observados. Línea 2: percentil 95 de autovalores aleatorios (${r.runs} simulaciones).</p></div>`;
 
   html += `<div class="efa-grid">
     <div class="efa-guidance"><h3>Factorizabilidad</h3><p>KMO = <strong>${r.kmo.overall.toFixed(3)}</strong> (${kmoLabel(r.kmo.overall)}).</p><p>Bartlett ${r.bart.p<.05?'apoya':'no apoya'} que la matriz sea factorizable.</p><p>Determinante de R = ${Number.isFinite(r.bart.det)?r.bart.det.toExponential(3):'—'}.</p></div>
-    <div class="efa-guidance"><h3>Retención</h3><p>Análisis paralelo sugiere <strong>${r.retainedPA}</strong> factor(es).</p><p>Kaiser sugiere <strong>${r.retainedKaiser}</strong>.</p><p>Modelo ejecutado: <strong>${r.m}</strong> factor(es), rotación ${r.rotation==='varimax'?'Varimax':'sin rotación'}.</p></div>
+    <div class="efa-guidance"><h3>Retención y rotación</h3><p>Análisis paralelo sugiere <strong>${r.retainedPA}</strong> factor(es).</p><p>Kaiser sugiere <strong>${r.retainedKaiser}</strong>.</p><p>Modelo ejecutado: <strong>${r.m}</strong> factor(es), rotación <strong>${escapeHtml(r.rotationLabel)}</strong>.</p></div>
   </div>`;
 
-  html += `<div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
+  html += `<h3>${r.oblique?'Matriz patrón':'Matriz de cargas rotadas'}</h3><div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
   for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
   html+='<th>Comunalidad</th><th>Orientación</th></tr></thead><tbody>';
-  r.loadings.forEach((row,i)=>{
+  r.pattern.forEach((row,i)=>{
     html+=`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>`;
-    row.forEach((v,j)=>{
-      const abs=Math.abs(v);
-      const cls=abs>=r.loadingThr?'loading-strong':'';
+    row.forEach(v=>{
+      const cls=Math.abs(v)>=r.loadingThr?'loading-strong':'';
       html+=`<td class="${cls}">${v.toFixed(3)}</td>`;
     });
     const d=r.itemDiag[i];
     html+=`<td>${r.communalities[i].toFixed(3)}</td><td><span class="status-chip ${d.cls}">${d.icon} ${d.status}</span></td></tr>`;
   });
   html+='</tbody></table></div>';
+
+  if(r.oblique){
+    html += `<h3>Matriz de estructura</h3><p class="ci-note">Correlación total de cada ítem con los factores, incorporando la correlación entre factores.</p><div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
+    for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
+    html+='</tr></thead><tbody>';
+    r.structure.forEach((row,i)=>{
+      html+=`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`;
+    });
+    html+='</tbody></table></div>';
+
+    html += `<h3>Matriz de correlaciones entre factores (Φ)</h3><div class="workspace"><table class="results-table matrix-table"><thead><tr><th></th>`;
+    for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
+    html+='</tr></thead><tbody>';
+    r.phi.forEach((row,i)=>{
+      html+=`<tr><th>Factor ${i+1}</th>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`;
+    });
+    html+='</tbody></table></div>';
+  }
 
   html += `<h3>KMO por ítem (MSA)</h3><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>MSA</th><th>Interpretación</th></tr></thead><tbody>`;
   r.kmo.perItem.forEach((v,i)=>{
@@ -830,7 +850,6 @@ function renderEfaResults(r){
   efaResults.innerHTML=html;
   setTimeout(()=>drawScree(r),0);
 }
-
 function drawScree(r){
   const canvas=document.getElementById('efaScree');
   if(!canvas) return;
