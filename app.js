@@ -556,6 +556,118 @@ function varimax(Phi, gamma=1, q=40, tol=1e-6){
   return mult(Phi,R);
 }
 
+function efaMatMult(A,B){
+  return A.map(row=>B[0].map((_,j)=>row.reduce((s,x,i)=>s+x*B[i][j],0)));
+}
+
+function efaTranspose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+
+function efaClone(A){return A.map(r=>r.slice());}
+
+function efaNormalizeOblique(pattern, phi){
+  const k=phi.length;
+  const sd=Array.from({length:k},(_,j)=>Math.sqrt(Math.max(phi[j][j],1e-12)));
+  const P=pattern.map(row=>row.map((x,j)=>x*sd[j]));
+  const C=Array.from({length:k},(_,i)=>Array.from({length:k},(_,j)=>phi[i][j]/(sd[i]*sd[j])));
+  for(let i=0;i<k;i++) C[i][i]=1;
+  const S=efaMatMult(P,C);
+  return {pattern:P,structure:S,phi:C};
+}
+
+function promaxRotate(loadings,power=4){
+  const V=varimax(loadings,1);
+  const XtX=efaMatMult(efaTranspose(V),V);
+  const invXtX=matrixInverse(XtX);
+  if(!invXtX) return {pattern:V,structure:V,phi:identity(V[0].length),warning:'No fue posible invertir X′X; se conserva Varimax.'};
+  const target=V.map(row=>row.map(x=>Math.sign(x||1)*Math.pow(Math.abs(x),power)));
+  const T=efaMatMult(efaMatMult(invXtX,efaTranspose(V)),target);
+  const TtT=efaMatMult(efaTranspose(T),T);
+  const phi=matrixInverse(TtT);
+  if(!phi) return {pattern:V,structure:V,phi:identity(V[0].length),warning:'Transformación Promax singular; se conserva Varimax.'};
+  return efaNormalizeOblique(efaMatMult(V,T),phi);
+}
+
+function quartiminObjective(B){
+  let q=0;
+  for(const row of B){
+    const sq=row.map(x=>x*x);
+    for(let j=0;j<sq.length;j++) for(let l=j+1;l<sq.length;l++) q+=sq[j]*sq[l];
+  }
+  return q;
+}
+
+function quartiminGradient(B){
+  return B.map(row=>{
+    const sq=row.map(x=>x*x), total=sq.reduce((a,b)=>a+b,0);
+    return row.map((x,j)=>2*x*(total-sq[j]));
+  });
+}
+
+function obliminRotate(loadings,maxIter=500,tol=1e-8){
+  const A=varimax(loadings,1);
+  const k=A[0].length;
+  let T=identity(k), step=0.05;
+  function stateFromT(Tm){
+    const rawPhi=matrixInverse(efaMatMult(efaTranspose(Tm),Tm));
+    if(!rawPhi) return null;
+    const norm=efaNormalizeOblique(efaMatMult(A,Tm),rawPhi);
+    return {...norm,q:quartiminObjective(norm.pattern)};
+  }
+  let cur=stateFromT(T);
+  if(!cur) return {pattern:A,structure:A,phi:identity(k),warning:'No fue posible iniciar Oblimin; se conserva Varimax.'};
+  let best={...cur}, bestQ=cur.q;
+  for(let iter=0;iter<maxIter;iter++){
+    const Gp=quartiminGradient(cur.pattern);
+    const Gt=efaMatMult(efaTranspose(A),Gp);
+    const gNorm=Math.sqrt(Gt.flat().reduce((s,x)=>s+x*x,0))||1;
+    const trialT=T.map((row,i)=>row.map((x,j)=>x-step*Gt[i][j]/gNorm));
+    const trial=stateFromT(trialT);
+    if(trial && Number.isFinite(trial.q) && trial.q<cur.q){
+      const improvement=cur.q-trial.q;
+      T=trialT; cur=trial;
+      if(cur.q<bestQ){best={...cur};bestQ=cur.q;}
+      step=Math.min(step*1.08,0.25);
+      if(improvement<tol*Math.max(1,cur.q)) break;
+    }else{
+      step*=0.5;
+      if(step<1e-8) break;
+    }
+  }
+  return best || cur;
+}
+
+function efaRotationLabel(rotation){
+  return ({
+    none:'Sin rotación',
+    varimax:'Varimax (ortogonal)',
+    quartimax:'Quartimax (ortogonal)',
+    equamax:'Equamax (ortogonal)',
+    promax:'Promax (oblicua)',
+    oblimin:'Direct Oblimin δ=0 / Quartimin (oblicua)'
+  })[rotation] || rotation;
+}
+
+function rotateEfaLoadings(loadings,rotation){
+  const p=loadings.length, k=loadings[0].length;
+  if(k<=1 || rotation==='none') return {pattern:efaClone(loadings),structure:efaClone(loadings),phi:identity(k),oblique:false};
+  if(rotation==='varimax'){
+    const P=varimax(loadings,1); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='quartimax'){
+    const P=varimax(loadings,0); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='equamax'){
+    const P=varimax(loadings,p/(2*k)); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='promax') return {...promaxRotate(loadings,4),oblique:true};
+  if(rotation==='oblimin') return {...obliminRotate(loadings),oblique:true};
+  return {pattern:efaClone(loadings),structure:efaClone(loadings),phi:identity(k),oblique:false,warning:'Rotación no reconocida; se muestran cargas sin rotar.'};
+}
+
+function efaCommunalities(pattern,structure,oblique){
+  return pattern.map((row,i)=>oblique?row.reduce((s,x,j)=>s+x*structure[i][j],0):row.reduce((s,x)=>s+x*x,0));
+}
+
 function chiSquareSurvivalApprox(x,df){
   // Wilson-Hilferty normal approximation
   if(x<0 || df<=0) return NaN;
@@ -640,10 +752,10 @@ function executeEfa(){
   const bart=bartlettTest(R,efaData.n);
   const pa=parallelAnalysis(efaData.n,efaData.k,runs);
   const pca=pcaLoadings(R,m);
-  let L=pca.loadings;
-  if(rotation==='varimax' && m>1) L=varimax(L);
 
-  const communalities=L.map(row=>row.reduce((s,x)=>s+x*x,0));
+  const rot=rotateEfaLoadings(pca.loadings,rotation);
+  const L=rot.pattern, structure=rot.structure, phi=rot.phi;
+  const communalities=efaCommunalities(L,structure,rot.oblique).map(x=>Math.max(0,Math.min(1,x)));
   const retainedPA=pca.eigenvalues.filter((v,i)=>v>pa[i]).length;
   const retainedKaiser=pca.eigenvalues.filter(v=>v>1).length;
 
@@ -658,10 +770,15 @@ function executeEfa(){
     return {primary,secondary,status,cls,icon};
   });
 
-  efaLastResults={R,kmo,bart,pa,eigenvalues:pca.eigenvalues,loadings:L,communalities,itemDiag,m,retainedPA,retainedKaiser,runs,rotation,loadingThr,crossThr};
+  efaLastResults={
+    R,kmo,bart,pa,eigenvalues:pca.eigenvalues,
+    loadings:L,pattern:L,structure,phi,oblique:!!rot.oblique,
+    communalities,itemDiag,m,retainedPA,retainedKaiser,runs,rotation,
+    rotationLabel:efaRotationLabel(rotation),rotationWarning:rot.warning||'',
+    loadingThr,crossThr
+  };
   renderEfaResults(efaLastResults);
 }
-
 function renderEfaResults(r){
   const kmoCls=r.kmo.overall>=.70?'good-bg':(r.kmo.overall>=.50?'warn-bg':'bad-bg');
   const bartCls=r.bart.p<.05?'good-bg':'bad-bg';
