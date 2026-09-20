@@ -940,34 +940,48 @@ function downloadEfaResults(){
     ['Determinante',r.bart.det],
     ['Factores_analisis_paralelo',r.retainedPA],
     ['Factores_Kaiser',r.retainedKaiser],
+    ['Rotacion',r.rotationLabel],
     [],
+    [r.oblique?'MATRIZ_PATRON':'CARGAS_ROTADAS'],
     ['Item',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`),'Comunalidad','Estado']
   ];
-  r.loadings.forEach((row,i)=>rows.push([efaData.itemNames[i],...row,r.communalities[i],r.itemDiag[i].status]));
+  r.pattern.forEach((row,i)=>rows.push([efaData.itemNames[i],...row,r.communalities[i],r.itemDiag[i].status]));
+
+  if(r.oblique){
+    rows.push([],['MATRIZ_ESTRUCTURA'],['Item',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`)]);
+    r.structure.forEach((row,i)=>rows.push([efaData.itemNames[i],...row]));
+    rows.push([],['PHI_CORRELACIONES_FACTORES'],['Factor',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`)]);
+    r.phi.forEach((row,i)=>rows.push([`Factor_${i+1}`,...row]));
+  }
+
   const csv=rows.map(row=>row.map(csvEscape).join(',')).join('\n');
   saveBlob("\ufeff"+csv,'text/csv;charset=utf-8;','ValiStruct_AFE_resultados.csv');
 }
-
 function efaReportHtml(){
   if(!efaLastResults) return null;
   const r=efaLastResults;
-  const rows=r.loadings.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}<td>${r.communalities[i].toFixed(3)}</td><td>${escapeHtml(r.itemDiag[i].status)}</td></tr>`).join('');
+  const rows=r.pattern.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}<td>${r.communalities[i].toFixed(3)}</td><td>${escapeHtml(r.itemDiag[i].status)}</td></tr>`).join('');
   const headers=Array.from({length:r.m},(_,i)=>`<th>Factor ${i+1}</th>`).join('');
+  const structureRows=r.oblique?r.structure.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`).join(''):'';
+  const phiRows=r.oblique?r.phi.map((row,i)=>`<tr><th>Factor ${i+1}</th>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`).join(''):'';
   return `<!doctype html><html lang="es"><meta charset="utf-8"><title>ValiStruct · Informe AFE</title>
   <style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;color:#222}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f2f2f2}.note{background:#f8f8f8;padding:14px;border-left:4px solid #7c1f2a}</style>
   <body><h1>ValiStruct · Informe de Análisis Factorial Exploratorio</h1>
   <p><strong>Dr. Roberto Joel Tirado Reyes</strong><br>Profesor-investigador · Universidad Autónoma de Sinaloa</p>
   <p><strong>KMO:</strong> ${r.kmo.overall.toFixed(3)} · <strong>Bartlett:</strong> χ²=${Number.isFinite(r.bart.chi2)?r.bart.chi2.toFixed(2):'∞'}, gl=${r.bart.df}, p ${r.bart.p<.001?'&lt; .001':'= '+r.bart.p.toFixed(3)}</p>
-  <p><strong>Análisis paralelo:</strong> ${r.retainedPA} factor(es) sugeridos. <strong>Kaiser:</strong> ${r.retainedKaiser}.</p>
-  <div class="note">La versión web v0.5 utiliza extracción por componentes principales como prototipo. La versión de producción incorporará análisis factorial común, análisis paralelo robusto y métodos de rotación adicionales.</div>
+  <p><strong>Análisis paralelo:</strong> ${r.retainedPA} factor(es) sugeridos. <strong>Kaiser:</strong> ${r.retainedKaiser}. <strong>Rotación:</strong> ${escapeHtml(r.rotationLabel)}.</p>
+  <div class="note">La extracción web actual utiliza componentes principales (ACP). Las rotaciones ortogonales y oblicuas se calculan en este módulo; para AFE común definitiva utilice PAF/MINRES/ML.</div>
+  <h2>${r.oblique?'Matriz patrón':'Matriz de cargas rotadas'}</h2>
   <table><thead><tr><th>Ítem</th>${headers}<th>Comunalidad</th><th>Orientación</th></tr></thead><tbody>${rows}</tbody></table>
+  ${r.oblique?`<h2>Matriz de estructura</h2><table><thead><tr><th>Ítem</th>${headers}</tr></thead><tbody>${structureRows}</tbody></table>
+  <h2>Matriz de correlaciones entre factores (Φ)</h2><table><thead><tr><th></th>${headers}</tr></thead><tbody>${phiRows}</tbody></table>`:''}
   <h3>Referencias</h3>
   <p>Kaiser, H. F. (1974). An index of factorial simplicity. <em>Psychometrika, 39</em>, 31–36.</p>
-  <p>Bartlett, M. S. (1954). A note on the multiplying factors for various χ² approximations. <em>Journal of the Royal Statistical Society. Series B, 16</em>(2), 296–298.</p>
+  <p>Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. <em>British Journal of Statistical Psychology, 17</em>, 65–70.</p>
+  <p>Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings. <em>Psychometrika, 31</em>, 313–323.</p>
   <p>Horn, J. L. (1965). A rationale and test for the number of factors in factor analysis. <em>Psychometrika, 30</em>, 179–185.</p>
   </body></html>`;
 }
-
 document.getElementById('downloadEfaTemplate').addEventListener('click',downloadEfaTemplate);
 document.getElementById('loadEfaExample').addEventListener('click',loadEfaExample);
 document.getElementById('efaCsvFile').addEventListener('change',e=>{
