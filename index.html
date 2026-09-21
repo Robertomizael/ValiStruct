@@ -1086,6 +1086,9 @@
         <button id="downloadConsolidatedXlsx">Exportar libro Excel/XLSX</button>
       </div>
 
+      <div id="qualityDashboardStatus" class="notice">
+        El dashboard está listo. Pulse <strong>Actualizar dashboard</strong> para integrar la evidencia disponible en esta sesión.
+      </div>
       <div id="qualityDashboardSummary" class="dataset-summary"></div>
       <div id="qualityDashboardContent"></div>
     </section>
@@ -3215,5 +3218,106 @@
     window.ValiStructEstimatorGuide=estimatorGuideFallback;
   })();
   </script>
+
+<script>
+(function(){
+  function qEsc(s){
+    return String(s).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+    });
+  }
+  function setDashStatus(msg,kind){
+    var box=document.getElementById('qualityDashboardStatus');
+    if(!box)return;
+    box.className=kind==='error'?'model-error':(kind==='ok'?'model-ok':'notice');
+    box.innerHTML=msg;
+  }
+  function currentQualitySnapshot(){
+    try{
+      if(typeof qualityLast!=='undefined' && qualityLast)return qualityLast;
+    }catch(_){}
+    if(window.__valistructQualityFallback)return window.__valistructQualityFallback;
+    return {
+      generated_at:new Date().toISOString(),
+      note:'Resumen de respaldo: no fue posible leer el estado interno completo del dashboard.',
+      summary:(document.getElementById('qualityDashboardSummary')||{}).innerText||'',
+      content:(document.getElementById('qualityDashboardContent')||{}).innerText||''
+    };
+  }
+  function refreshDashboardFallback(){
+    setDashStatus('Actualizando evidencia metodológica…','info');
+    try{
+      if(typeof buildQualityDashboard==='function'){
+        buildQualityDashboard();
+        try{
+          if(typeof qualityLast!=='undefined' && qualityLast)window.__valistructQualityFallback=qualityLast;
+        }catch(_){}
+        setDashStatus('<strong>Dashboard actualizado.</strong> Se integró la evidencia disponible en esta sesión.','ok');
+        return;
+      }
+      throw new Error('La función de actualización no está disponible en esta carga.');
+    }catch(err){
+      var summary=document.getElementById('qualityDashboardSummary');
+      var content=document.getElementById('qualityDashboardContent');
+      if(summary)summary.innerHTML='<div class="metric-card"><span>Estado</span><strong>Revisión requerida</strong></div>';
+      if(content)content.innerHTML='<div class="model-error"><strong>No fue posible construir el dashboard automáticamente.</strong><br>'+qEsc(err.message||err)+'<br>Reinicie ValiStruct para cargar la versión actual.</div>';
+      setDashStatus('<strong>Error al actualizar:</strong> '+qEsc(err.message||err),'error');
+    }
+  }
+  function downloadDashboardJsonFallback(){
+    try{
+      var data=currentQualitySnapshot();
+      var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8;'});
+      var url=URL.createObjectURL(blob);
+      var link=document.createElement('a');
+      link.href=url; link.download='ValiStruct_dashboard_validacion.json';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},250);
+      setDashStatus('<strong>Resumen JSON generado correctamente.</strong>','ok');
+    }catch(err){
+      setDashStatus('<strong>No fue posible descargar el resumen:</strong> '+qEsc(err.message||err),'error');
+    }
+  }
+  async function downloadDashboardXlsxFallback(){
+    setDashStatus('Preparando libro Excel/XLSX…','info');
+    try{
+      if(typeof getProApiBase!=='function')throw new Error('No se encontró la configuración del Motor Pro.');
+      if(typeof buildConsolidatedExportPayload!=='function')throw new Error('No se encontró el generador del libro consolidado.');
+      var res=await fetch(getProApiBase()+'/export-xlsx',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(buildConsolidatedExportPayload())
+      });
+      if(!res.ok)throw new Error(await res.text());
+      var blob=await res.blob();
+      var url=URL.createObjectURL(blob);
+      var link=document.createElement('a');
+      link.href=url; link.download='ValiStruct_resultados_consolidados.xlsx';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},250);
+      setDashStatus('<strong>Libro Excel/XLSX generado correctamente.</strong>','ok');
+    }catch(err){
+      setDashStatus('<strong>No fue posible exportar XLSX.</strong> Verifique que el Motor Pro/backend esté activo. Detalle: '+qEsc(err.message||err),'error');
+    }
+  }
+
+  var refresh=document.getElementById('refreshQualityDashboard');
+  var json=document.getElementById('downloadQualitySummary');
+  var xlsx=document.getElementById('downloadConsolidatedXlsx');
+
+  if(refresh)refresh.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); refreshDashboardFallback();
+  },true);
+  if(json)json.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); downloadDashboardJsonFallback();
+  },true);
+  if(xlsx)xlsx.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); downloadDashboardXlsxFallback();
+  },true);
+
+  window.ValiStructRefreshDashboard=refreshDashboardFallback;
+})();
+</script>
+
 </body>
 </html>
