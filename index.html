@@ -662,6 +662,31 @@
         </div>
       </div>
 
+      <div class="model-builder" id="residualCovariancePanel">
+        <h3>Liberar covarianza residual entre ítems</h3>
+        <p>Use esta opción únicamente cuando exista una justificación teórica o de contenido. En lavaan se añadirá una relación del tipo <strong>I08 ~~ I10</strong>, sin eliminar los ítems ni cambiar su factor principal.</p>
+        <div class="config-grid">
+          <label>Ítem 1
+            <select id="resCovItemA">
+              <option value="">Importe datos para seleccionar un ítem</option>
+            </select>
+          </label>
+          <label>Ítem 2
+            <select id="resCovItemB">
+              <option value="">Importe datos para seleccionar un ítem</option>
+            </select>
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="addResidualCovariance" class="primary">Añadir covarianza al modelo</button>
+          <button id="addAndRunResidualCovariance">Añadir y reestimar</button>
+        </div>
+        <div class="notice">
+          <strong>Importante:</strong> no libere covarianzas únicamente porque el índice de modificación sea alto. Revise similitud de redacción, contenido compartido, efecto de método y coherencia con la teoría.
+        </div>
+        <div id="activeResidualCovariances"></div>
+      </div>
+
       <div id="proResults"></div>
       <div id="guidedMiPanel" class="model-builder hidden">
         <h3>Índices de modificación guiados</h3>
