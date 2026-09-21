@@ -1,4 +1,4 @@
-const CACHE='valistruct-v3-0-rc6';
+const CACHE='valistruct-v3-0-rc6-hotfix-estimator-1';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install',event=>{
@@ -22,17 +22,17 @@ self.addEventListener('fetch',event=>{
   });
 
   if(staticAsset){
+    // Network-first for application shell: when an update is available,
+    // users receive the current index/app.js/styles.css instead of a stale
+    // cache-first copy. If offline, fall back to the last cached version.
     event.respondWith(
-      caches.match(event.request).then(cached=>{
-        if(cached) return cached;
-        return fetch(event.request).then(resp=>{
-          if(resp.ok){
-            const copy=resp.clone();
-            caches.open(CACHE).then(c=>c.put(event.request,copy));
-          }
-          return resp;
-        });
-      })
+      fetch(event.request).then(resp=>{
+        if(resp.ok){
+          const copy=resp.clone();
+          caches.open(CACHE).then(c=>c.put(event.request,copy));
+        }
+        return resp;
+      }).catch(()=>caches.match(event.request))
     );
     return;
   }
