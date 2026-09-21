@@ -1133,7 +1133,11 @@
         <button id="applyEstimatorToPro">Aplicar al Motor Pro</button>
       </div>
 
-      <div id="estimatorGuideResults"></div>
+      <div id="estimatorGuideResults">
+        <div class="notice" id="estimatorGuideStatus">
+          Seleccione las características de los datos y pulse <strong>Obtener recomendación</strong>.
+        </div>
+      </div>
     </section>
 
     <section id="samplesize" class="panel">
@@ -3115,5 +3119,101 @@
   </footer>
 
   <script src="app.js"></script>
+  <script>
+  (function(){
+    function esc(s){
+      return String(s).replace(/[&<>"']/g,function(ch){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+      });
+    }
+    function estimatorGuideFallback(){
+      var type=document.getElementById('estVarType');
+      var norm=document.getElementById('estNormality');
+      var missing=document.getElementById('estMissing');
+      var sample=document.getElementById('estSampleN');
+      var out=document.getElementById('estimatorGuideResults');
+      if(!type||!norm||!missing||!sample||!out)return null;
+
+      var t=type.value, nrm=norm.value, miss=missing.value, n=Number(sample.value)||0;
+      var estimator='MLR', reasons=[], cautions=[];
+
+      if(t==='ordinal4'){
+        estimator='WLSMV';
+        reasons.push('Las variables ordinales con pocas categorías favorecen un estimador para datos ordinales basado en umbrales.');
+      }else if(t==='likert5'){
+        if(nrm==='normal' && n>=300){
+          estimator='MLR';
+          reasons.push('Con 5–7 categorías, tamaño muestral moderado/grande y sin desviaciones importantes, MLR es una opción robusta y flexible.');
+        }else{
+          estimator='WLSMV';
+          reasons.push('La combinación de respuestas Likert y desviaciones de normalidad favorece WLSMV.');
+        }
+      }else if(t==='continuous'){
+        estimator=nrm==='normal'?'ML':'MLR';
+        reasons.push(nrm==='normal'?'Los datos continuos sin desviaciones importantes son compatibles con ML.':'MLR es preferible ante no normalidad en variables continuas.');
+      }else if(t==='mixed'){
+        estimator='MLR';
+        reasons.push('Con variables mixtas, MLR puede ser un punto de partida cuando las ordinales tienen suficientes categorías.');
+        cautions.push('En modelos realmente mixtos puede requerirse una estrategia específica según la naturaleza de cada variable.');
+      }
+
+      if(miss==='moderate'){
+        if(estimator==='ML'||estimator==='MLR'){
+          reasons.push('Con ML/MLR puede considerarse FIML para datos faltantes bajo supuestos razonables de MAR.');
+        }else{
+          cautions.push('Con WLSMV, revise cuidadosamente el tratamiento de datos faltantes en la implementación utilizada.');
+        }
+      }
+      if(n<150)cautions.push('El tamaño muestral puede ser limitado para modelos AFC/SEM complejos.');
+      if(n>=500)reasons.push('El tamaño muestral amplio favorece la estabilidad de la estimación.');
+
+      window.__valistructEstimatorRecommendation={estimator:estimator,reasons:reasons,cautions:cautions,n:n,type:t,norm:nrm,missing:miss};
+      out.innerHTML='<div class="estimator-card">'+
+        '<span>Estimador orientativo</span>'+
+        '<div class="estimator-choice">'+esc(estimator)+'</div>'+
+        '<h4>Razones</h4><ul>'+reasons.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'+
+        (cautions.length?'<h4>Precauciones</h4><ul>'+cautions.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+
+        '<div class="sem-engine-note"><strong>Uso responsable:</strong> esta recomendación es orientativa y debe interpretarse junto con el nivel de medición, distribución, tamaño muestral y complejidad del modelo.</div>'+
+        '</div>';
+      return window.__valistructEstimatorRecommendation;
+    }
+
+    function applyEstimatorFallback(){
+      var rec=window.__valistructEstimatorRecommendation || estimatorGuideFallback();
+      if(!rec)return;
+      var pro=document.getElementById('proEstimator');
+      if(pro){
+        var values=Array.prototype.map.call(pro.options,function(o){return o.value;});
+        if(values.indexOf(rec.estimator)>=0)pro.value=rec.estimator;
+      }
+      var out=document.getElementById('estimatorGuideResults');
+      if(out){
+        out.insertAdjacentHTML('beforeend','<div class="model-ok"><strong>Aplicado al Motor Pro:</strong> '+esc(rec.estimator)+'. Abra Motor Pro para continuar con la estimación.</div>');
+      }
+    }
+
+    var run=document.getElementById('runEstimatorGuide');
+    var apply=document.getElementById('applyEstimatorToPro');
+    if(run && !run.dataset.fallbackBound){
+      run.addEventListener('click',function(e){
+        try{ estimatorGuideFallback(); }catch(err){
+          var out=document.getElementById('estimatorGuideResults');
+          if(out)out.innerHTML='<div class="model-error"><strong>No fue posible generar la recomendación.</strong><br>'+esc(err.message||err)+'</div>';
+        }
+      });
+      run.dataset.fallbackBound='1';
+    }
+    if(apply && !apply.dataset.fallbackBound){
+      apply.addEventListener('click',function(){
+        try{ applyEstimatorFallback(); }catch(err){
+          var out=document.getElementById('estimatorGuideResults');
+          if(out)out.innerHTML='<div class="model-error"><strong>No fue posible aplicar el estimador.</strong><br>'+esc(err.message||err)+'</div>';
+        }
+      });
+      apply.dataset.fallbackBound='1';
+    }
+    window.ValiStructEstimatorGuide=estimatorGuideFallback;
+  })();
+  </script>
 </body>
 </html>
