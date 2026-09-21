@@ -1,4 +1,4 @@
-const CACHE='valistruct-v3-0-rc6-hotfix-estimator-1';
+const CACHE='valistruct-v3-0-rc6-dashboard-hotfix-1';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install',event=>{
