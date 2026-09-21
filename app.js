@@ -2861,13 +2861,35 @@ function renderGuidedModificationIndices(data){
     const mi=Number(m.mi);
     const cls=mi>=20?'mi-high':(mi>=10?'mi-medium':'mi-low');
     const level=mi>=20?'Alta prioridad para revisión teórica':(mi>=10?'Revisión moderada':'Revisión exploratoria');
+    const residual=isResidualMiCandidate(m);
+    const already=residual && hasResidualCovariance(String(m.lhs),String(m.rhs));
+    const action=residual
+      ? `<div class="button-row compact"><button class="mi-add-residual-cov" data-a="${escapeHtml(String(m.lhs))}" data-b="${escapeHtml(String(m.rhs))}" ${already?'disabled':''}>${already?'Covarianza ya añadida':'Liberar covarianza entre estos ítems'}</button></div>`
+      : '';
     return `<div class="mi-card ${cls}">
       <strong>${escapeHtml(m.lhs)} ${escapeHtml(m.op)} ${escapeHtml(m.rhs)} · MI=${fmtPro(mi)}</strong>
       <span>${level}. EPC=${fmtPro(m.epc)}.</span>
-      <div class="small">Antes de liberar este parámetro, verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      <div class="small">${residual?'Esta sugerencia corresponde a una covarianza residual entre dos variables observadas. ':'Antes de liberar este parámetro, '}verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      ${action}
     </div>`;
   }).join('');
 }
+
+
+document.getElementById('guidedMiContent')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.mi-add-residual-cov');
+  if(!btn)return;
+  const a=btn.dataset.a,b=btn.dataset.b;
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)return alert(r.message);
+  const selA=document.getElementById('resCovItemA');
+  const selB=document.getElementById('resCovItemB');
+  if(selA)selA.value=a;
+  if(selB)selB.value=b;
+  btn.disabled=true;
+  btn.textContent='Covarianza ya añadida';
+  alert(`Se añadió ${a} ~~ ${b} a la sintaxis. Revise la justificación teórica y reestime el modelo.`);
+});
 
 // Patch existing pro render by listening after model run
 const oldRenderProResults = renderProResults;
