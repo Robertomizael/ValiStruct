@@ -2041,9 +2041,105 @@ function summarizeProCsv(text){
       <div class="metric-card"><span>Casos</span><strong>${body.length}</strong></div>
       <div class="metric-card"><span>Columnas</span><strong>${headers.length}</strong></div>
       <div class="metric-card"><span>Variables</span><strong>${headers.slice(0,8).map(escapeHtml).join(', ')}${headers.length>8?'…':''}</strong></div>`;
+    populateResidualCovarianceSelectors();
+    renderActiveResidualCovariances();
   }catch(_){
     proDatasetSummary.innerHTML='<div class="model-error">No fue posible leer el CSV.</div>';
   }
+}
+
+
+
+function getProObservedVariables(){
+  if(!proCsvText)return [];
+  try{
+    const rows=parseCSV(proCsvText.replace(/^\\uFEFF/,''));
+    const headers=(rows[0]||[]).map(x=>String(x).trim()).filter(Boolean);
+    return headers.filter((name,i)=>{
+      if(i===0 && /^(id|folio|participante|sujeto|caso)$/i.test(name))return false;
+      return /^[A-Za-z][A-Za-z0-9_.]*$/.test(name);
+    });
+  }catch(_){return [];}
+}
+
+function populateResidualCovarianceSelectors(){
+  const a=document.getElementById('resCovItemA');
+  const b=document.getElementById('resCovItemB');
+  if(!a||!b)return;
+  const vars=getProObservedVariables();
+  const currentA=a.value,currentB=b.value;
+  const options='<option value="">Seleccione un ítem</option>'+vars.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join('');
+  a.innerHTML=options;b.innerHTML=options;
+  if(vars.includes(currentA))a.value=currentA;
+  if(vars.includes(currentB))b.value=currentB;
+}
+
+function residualCovariancePairsFromSyntax(){
+  const syntax=document.getElementById('proSyntax')?.value||'';
+  const observed=new Set(getProObservedVariables());
+  const pairs=[];
+  syntax.split(/\n+/).forEach(line=>{
+    const clean=line.replace(/#.*/,'').trim();
+    const m=clean.match(/^([A-Za-z][A-Za-z0-9_.]*)\s*~~\s*([A-Za-z][A-Za-z0-9_.]*)\s*$/);
+    if(m && observed.has(m[1]) && observed.has(m[2]) && m[1]!==m[2]){
+      const key=[m[1],m[2]].sort().join('~~');
+      if(!pairs.some(p=>p.key===key))pairs.push({a:m[1],b:m[2],key});
+    }
+  });
+  return pairs;
+}
+
+function hasResidualCovariance(a,b){
+  const key=[a,b].sort().join('~~');
+  return residualCovariancePairsFromSyntax().some(p=>p.key===key);
+}
+
+function appendResidualCovariance(a,b){
+  const observed=new Set(getProObservedVariables());
+  if(!a||!b)return {ok:false,message:'Seleccione dos ítems.'};
+  if(a===b)return {ok:false,message:'Seleccione dos ítems diferentes.'};
+  if(!observed.has(a)||!observed.has(b))return {ok:false,message:'Los dos nombres deben corresponder a variables observadas importadas.'};
+  if(hasResidualCovariance(a,b))return {ok:false,message:'Esta covarianza residual ya está incluida en el modelo.'};
+
+  const box=document.getElementById('proSyntax');
+  if(!box)return {ok:false,message:'No se encontró el editor de sintaxis del Motor Pro.'};
+  const line=`${a} ~~ ${b}`;
+  const current=box.value.trimEnd();
+  box.value=current ? current+'\n'+line : line;
+  renderActiveResidualCovariances();
+  return {ok:true,line};
+}
+
+function removeResidualCovariance(a,b){
+  const box=document.getElementById('proSyntax');
+  if(!box)return;
+  const key=[a,b].sort().join('~~');
+  const observed=new Set(getProObservedVariables());
+  box.value=box.value.split(/\n/).filter(line=>{
+    const clean=line.replace(/#.*/,'').trim();
+    const m=clean.match(/^([A-Za-z][A-Za-z0-9_.]*)\s*~~\s*([A-Za-z][A-Za-z0-9_.]*)\s*$/);
+    if(!m || !observed.has(m[1]) || !observed.has(m[2]))return true;
+    return [m[1],m[2]].sort().join('~~')!==key;
+  }).join('\n').replace(/\n{3,}/g,'\n\n');
+  renderActiveResidualCovariances();
+}
+
+function renderActiveResidualCovariances(){
+  const box=document.getElementById('activeResidualCovariances');
+  if(!box)return;
+  const pairs=residualCovariancePairsFromSyntax();
+  if(!pairs.length){
+    box.innerHTML='<div class="sem-engine-note"><strong>Covarianzas residuales activas:</strong> ninguna añadida desde el modelo actual.</div>';
+    return;
+  }
+  box.innerHTML='<div class="sem-engine-note"><strong>Covarianzas residuales activas:</strong></div>'+
+    pairs.map(p=>`<div class="mi-card mi-low"><strong>${escapeHtml(p.a)} ~~ ${escapeHtml(p.b)}</strong><span>Covarianza residual liberada.</span><div class="button-row compact"><button class="remove-residual-cov" data-a="${escapeHtml(p.a)}" data-b="${escapeHtml(p.b)}">Quitar del modelo</button></div></div>`).join('');
+}
+
+function isResidualMiCandidate(m){
+  if(!m || m.op!=='~~')return false;
+  const observed=new Set(getProObservedVariables());
+  return observed.has(String(m.lhs)) && observed.has(String(m.rhs)) && String(m.lhs)!==String(m.rhs);
 }
 
 function buildProPayload(){
@@ -2186,8 +2282,30 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();
   document.getElementById('proSyntax').value=semSyntax.value.replace(/# Modelo vacío/g,'');
+  renderActiveResidualCovariances();
 });
 document.getElementById('runProModel').addEventListener('click',runProModel);
+
+document.getElementById('addResidualCovariance')?.addEventListener('click',()=>{
+  const a=document.getElementById('resCovItemA')?.value||'';
+  const b=document.getElementById('resCovItemB')?.value||'';
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)alert(r.message);
+});
+document.getElementById('addAndRunResidualCovariance')?.addEventListener('click',async()=>{
+  const a=document.getElementById('resCovItemA')?.value||'';
+  const b=document.getElementById('resCovItemB')?.value||'';
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)return alert(r.message);
+  await runProModel();
+});
+document.getElementById('activeResidualCovariances')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.remove-residual-cov');
+  if(!btn)return;
+  removeResidualCovariance(btn.dataset.a,btn.dataset.b);
+});
+document.getElementById('proSyntax')?.addEventListener('input',renderActiveResidualCovariances);
+
 document.getElementById('downloadProPayload').addEventListener('click',()=>{
   try{
     const payload=buildProPayload();
@@ -2744,13 +2862,35 @@ function renderGuidedModificationIndices(data){
     const mi=Number(m.mi);
     const cls=mi>=20?'mi-high':(mi>=10?'mi-medium':'mi-low');
     const level=mi>=20?'Alta prioridad para revisión teórica':(mi>=10?'Revisión moderada':'Revisión exploratoria');
+    const residual=isResidualMiCandidate(m);
+    const already=residual && hasResidualCovariance(String(m.lhs),String(m.rhs));
+    const action=residual
+      ? `<div class="button-row compact"><button class="mi-add-residual-cov" data-a="${escapeHtml(String(m.lhs))}" data-b="${escapeHtml(String(m.rhs))}" ${already?'disabled':''}>${already?'Covarianza ya añadida':'Liberar covarianza entre estos ítems'}</button></div>`
+      : '';
     return `<div class="mi-card ${cls}">
       <strong>${escapeHtml(m.lhs)} ${escapeHtml(m.op)} ${escapeHtml(m.rhs)} · MI=${fmtPro(mi)}</strong>
       <span>${level}. EPC=${fmtPro(m.epc)}.</span>
-      <div class="small">Antes de liberar este parámetro, verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      <div class="small">${residual?'Esta sugerencia corresponde a una covarianza residual entre dos variables observadas. ':'Antes de liberar este parámetro, '}verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      ${action}
     </div>`;
   }).join('');
 }
+
+
+document.getElementById('guidedMiContent')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.mi-add-residual-cov');
+  if(!btn)return;
+  const a=btn.dataset.a,b=btn.dataset.b;
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)return alert(r.message);
+  const selA=document.getElementById('resCovItemA');
+  const selB=document.getElementById('resCovItemB');
+  if(selA)selA.value=a;
+  if(selB)selB.value=b;
+  btn.disabled=true;
+  btn.textContent='Covarianza ya añadida';
+  alert(`Se añadió ${a} ~~ ${b} a la sintaxis. Revise la justificación teórica y reestime el modelo.`);
+});
 
 // Patch existing pro render by listening after model run
 const oldRenderProResults = renderProResults;
@@ -3767,6 +3907,7 @@ document.getElementById('sendSyntaxToPro')?.addEventListener('click',()=>{
   if(!advancedGeneratedSyntax)generateAdvancedSyntax();
   if(advancedGeneratedSyntax && document.getElementById('proSyntax')){
     document.getElementById('proSyntax').value=advancedGeneratedSyntax;
+    renderActiveResidualCovariances();
     alert('Sintaxis enviada a Motor Pro.');
   }
 });
