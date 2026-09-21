@@ -2282,6 +2282,7 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();
   document.getElementById('proSyntax').value=semSyntax.value.replace(/# Modelo vacío/g,'');
+  renderActiveResidualCovariances();
 });
 document.getElementById('runProModel').addEventListener('click',runProModel);
 
@@ -3906,6 +3907,7 @@ document.getElementById('sendSyntaxToPro')?.addEventListener('click',()=>{
   if(!advancedGeneratedSyntax)generateAdvancedSyntax();
   if(advancedGeneratedSyntax && document.getElementById('proSyntax')){
     document.getElementById('proSyntax').value=advancedGeneratedSyntax;
+    renderActiveResidualCovariances();
     alert('Sintaxis enviada a Motor Pro.');
   }
 });
