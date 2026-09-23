@@ -556,6 +556,118 @@ function varimax(Phi, gamma=1, q=40, tol=1e-6){
   return mult(Phi,R);
 }
 
+function efaMatMult(A,B){
+  return A.map(row=>B[0].map((_,j)=>row.reduce((s,x,i)=>s+x*B[i][j],0)));
+}
+
+function efaTranspose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+
+function efaClone(A){return A.map(r=>r.slice());}
+
+function efaNormalizeOblique(pattern, phi){
+  const k=phi.length;
+  const sd=Array.from({length:k},(_,j)=>Math.sqrt(Math.max(phi[j][j],1e-12)));
+  const P=pattern.map(row=>row.map((x,j)=>x*sd[j]));
+  const C=Array.from({length:k},(_,i)=>Array.from({length:k},(_,j)=>phi[i][j]/(sd[i]*sd[j])));
+  for(let i=0;i<k;i++) C[i][i]=1;
+  const S=efaMatMult(P,C);
+  return {pattern:P,structure:S,phi:C};
+}
+
+function promaxRotate(loadings,power=4){
+  const V=varimax(loadings,1);
+  const XtX=efaMatMult(efaTranspose(V),V);
+  const invXtX=matrixInverse(XtX);
+  if(!invXtX) return {pattern:V,structure:V,phi:identity(V[0].length),warning:'No fue posible invertir X′X; se conserva Varimax.'};
+  const target=V.map(row=>row.map(x=>Math.sign(x||1)*Math.pow(Math.abs(x),power)));
+  const T=efaMatMult(efaMatMult(invXtX,efaTranspose(V)),target);
+  const TtT=efaMatMult(efaTranspose(T),T);
+  const phi=matrixInverse(TtT);
+  if(!phi) return {pattern:V,structure:V,phi:identity(V[0].length),warning:'Transformación Promax singular; se conserva Varimax.'};
+  return efaNormalizeOblique(efaMatMult(V,T),phi);
+}
+
+function quartiminObjective(B){
+  let q=0;
+  for(const row of B){
+    const sq=row.map(x=>x*x);
+    for(let j=0;j<sq.length;j++) for(let l=j+1;l<sq.length;l++) q+=sq[j]*sq[l];
+  }
+  return q;
+}
+
+function quartiminGradient(B){
+  return B.map(row=>{
+    const sq=row.map(x=>x*x), total=sq.reduce((a,b)=>a+b,0);
+    return row.map((x,j)=>2*x*(total-sq[j]));
+  });
+}
+
+function obliminRotate(loadings,maxIter=500,tol=1e-8){
+  const A=varimax(loadings,1);
+  const k=A[0].length;
+  let T=identity(k), step=0.05;
+  function stateFromT(Tm){
+    const rawPhi=matrixInverse(efaMatMult(efaTranspose(Tm),Tm));
+    if(!rawPhi) return null;
+    const norm=efaNormalizeOblique(efaMatMult(A,Tm),rawPhi);
+    return {...norm,q:quartiminObjective(norm.pattern)};
+  }
+  let cur=stateFromT(T);
+  if(!cur) return {pattern:A,structure:A,phi:identity(k),warning:'No fue posible iniciar Oblimin; se conserva Varimax.'};
+  let best={...cur}, bestQ=cur.q;
+  for(let iter=0;iter<maxIter;iter++){
+    const Gp=quartiminGradient(cur.pattern);
+    const Gt=efaMatMult(efaTranspose(A),Gp);
+    const gNorm=Math.sqrt(Gt.flat().reduce((s,x)=>s+x*x,0))||1;
+    const trialT=T.map((row,i)=>row.map((x,j)=>x-step*Gt[i][j]/gNorm));
+    const trial=stateFromT(trialT);
+    if(trial && Number.isFinite(trial.q) && trial.q<cur.q){
+      const improvement=cur.q-trial.q;
+      T=trialT; cur=trial;
+      if(cur.q<bestQ){best={...cur};bestQ=cur.q;}
+      step=Math.min(step*1.08,0.25);
+      if(improvement<tol*Math.max(1,cur.q)) break;
+    }else{
+      step*=0.5;
+      if(step<1e-8) break;
+    }
+  }
+  return best || cur;
+}
+
+function efaRotationLabel(rotation){
+  return ({
+    none:'Sin rotación',
+    varimax:'Varimax (ortogonal)',
+    quartimax:'Quartimax (ortogonal)',
+    equamax:'Equamax (ortogonal)',
+    promax:'Promax (oblicua)',
+    oblimin:'Direct Oblimin δ=0 / Quartimin (oblicua)'
+  })[rotation] || rotation;
+}
+
+function rotateEfaLoadings(loadings,rotation){
+  const p=loadings.length, k=loadings[0].length;
+  if(k<=1 || rotation==='none') return {pattern:efaClone(loadings),structure:efaClone(loadings),phi:identity(k),oblique:false};
+  if(rotation==='varimax'){
+    const P=varimax(loadings,1); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='quartimax'){
+    const P=varimax(loadings,0); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='equamax'){
+    const P=varimax(loadings,p/(2*k)); return {pattern:P,structure:efaClone(P),phi:identity(k),oblique:false};
+  }
+  if(rotation==='promax') return {...promaxRotate(loadings,4),oblique:true};
+  if(rotation==='oblimin') return {...obliminRotate(loadings),oblique:true};
+  return {pattern:efaClone(loadings),structure:efaClone(loadings),phi:identity(k),oblique:false,warning:'Rotación no reconocida; se muestran cargas sin rotar.'};
+}
+
+function efaCommunalities(pattern,structure,oblique){
+  return pattern.map((row,i)=>oblique?row.reduce((s,x,j)=>s+x*structure[i][j],0):row.reduce((s,x)=>s+x*x,0));
+}
+
 function chiSquareSurvivalApprox(x,df){
   // Wilson-Hilferty normal approximation
   if(x<0 || df<=0) return NaN;
@@ -640,10 +752,10 @@ function executeEfa(){
   const bart=bartlettTest(R,efaData.n);
   const pa=parallelAnalysis(efaData.n,efaData.k,runs);
   const pca=pcaLoadings(R,m);
-  let L=pca.loadings;
-  if(rotation==='varimax' && m>1) L=varimax(L);
 
-  const communalities=L.map(row=>row.reduce((s,x)=>s+x*x,0));
+  const rot=rotateEfaLoadings(pca.loadings,rotation);
+  const L=rot.pattern, structure=rot.structure, phi=rot.phi;
+  const communalities=efaCommunalities(L,structure,rot.oblique).map(x=>Math.max(0,Math.min(1,x)));
   const retainedPA=pca.eigenvalues.filter((v,i)=>v>pa[i]).length;
   const retainedKaiser=pca.eigenvalues.filter(v=>v>1).length;
 
@@ -658,10 +770,15 @@ function executeEfa(){
     return {primary,secondary,status,cls,icon};
   });
 
-  efaLastResults={R,kmo,bart,pa,eigenvalues:pca.eigenvalues,loadings:L,communalities,itemDiag,m,retainedPA,retainedKaiser,runs,rotation,loadingThr,crossThr};
+  efaLastResults={
+    R,kmo,bart,pa,eigenvalues:pca.eigenvalues,
+    loadings:L,pattern:L,structure,phi,oblique:!!rot.oblique,
+    communalities,itemDiag,m,retainedPA,retainedKaiser,runs,rotation,
+    rotationLabel:efaRotationLabel(rotation),rotationWarning:rot.warning||'',
+    loadingThr,crossThr
+  };
   renderEfaResults(efaLastResults);
 }
-
 function renderEfaResults(r){
   const kmoCls=r.kmo.overall>=.70?'good-bg':(r.kmo.overall>=.50?'warn-bg':'bad-bg');
   const bartCls=r.bart.p<.05?'good-bg':'bad-bg';
@@ -679,30 +796,50 @@ function renderEfaResults(r){
       <div class="result-card"><span>Factores · Kaiser &gt; 1</span><strong>${r.retainedKaiser}</strong></div>
       <div class="result-card ${problemCount?'warn-bg':'good-bg'}"><span>Ítems a revisar</span><strong>${problemCount}</strong></div>
     </div>
-    <p><strong>Orientación:</strong> priorice el análisis paralelo y la interpretabilidad teórica sobre el criterio de autovalor &gt; 1. Revise cargas, comunalidades y cargas cruzadas antes de modificar el instrumento.</p><div class="model-error"><strong>Advertencia metodológica RC4:</strong> esta extracción web utiliza Componentes Principales (ACP), no un método de factores comunes (PAF/MINRES/ML). No reporte este resultado como AFE común. Use Motor Pro/R para análisis factorial confirmatorio y un motor de factores comunes para AFE definitiva.</div><p class="ci-note"><strong>Bartlett:</strong> el p-valor mostrado en este módulo web usa la aproximación de Wilson–Hilferty.</p>
+    <p><strong>Orientación:</strong> priorice el análisis paralelo y la interpretabilidad teórica sobre el criterio de autovalor &gt; 1. Revise cargas, comunalidades y cargas cruzadas antes de modificar el instrumento.</p>
+    <div class="model-error"><strong>Advertencia metodológica:</strong> la extracción web actual continúa utilizando Componentes Principales (ACP). Las rotaciones aquí implementadas sí distinguen soluciones ortogonales y oblicuas, pero una AFE de factores comunes definitiva debe usar PAF/MINRES/ML.</div>
+    <p class="ci-note"><strong>Bartlett:</strong> el p-valor mostrado en este módulo web usa la aproximación de Wilson–Hilferty.</p>
+    ${r.rotationWarning?`<div class="model-error"><strong>Rotación:</strong> ${escapeHtml(r.rotationWarning)}</div>`:''}
   </div>`;
 
   html += `<div class="efa-chart-wrap"><h3>Scree plot y análisis paralelo</h3><canvas id="efaScree" width="1000" height="320"></canvas><p class="ci-note">Línea 1: autovalores observados. Línea 2: percentil 95 de autovalores aleatorios (${r.runs} simulaciones).</p></div>`;
 
   html += `<div class="efa-grid">
     <div class="efa-guidance"><h3>Factorizabilidad</h3><p>KMO = <strong>${r.kmo.overall.toFixed(3)}</strong> (${kmoLabel(r.kmo.overall)}).</p><p>Bartlett ${r.bart.p<.05?'apoya':'no apoya'} que la matriz sea factorizable.</p><p>Determinante de R = ${Number.isFinite(r.bart.det)?r.bart.det.toExponential(3):'—'}.</p></div>
-    <div class="efa-guidance"><h3>Retención</h3><p>Análisis paralelo sugiere <strong>${r.retainedPA}</strong> factor(es).</p><p>Kaiser sugiere <strong>${r.retainedKaiser}</strong>.</p><p>Modelo ejecutado: <strong>${r.m}</strong> factor(es), rotación ${r.rotation==='varimax'?'Varimax':'sin rotación'}.</p></div>
+    <div class="efa-guidance"><h3>Retención y rotación</h3><p>Análisis paralelo sugiere <strong>${r.retainedPA}</strong> factor(es).</p><p>Kaiser sugiere <strong>${r.retainedKaiser}</strong>.</p><p>Modelo ejecutado: <strong>${r.m}</strong> factor(es), rotación <strong>${escapeHtml(r.rotationLabel)}</strong>.</p></div>
   </div>`;
 
-  html += `<div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
+  html += `<h3>${r.oblique?'Matriz patrón':'Matriz de cargas rotadas'}</h3><div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
   for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
   html+='<th>Comunalidad</th><th>Orientación</th></tr></thead><tbody>';
-  r.loadings.forEach((row,i)=>{
+  r.pattern.forEach((row,i)=>{
     html+=`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>`;
-    row.forEach((v,j)=>{
-      const abs=Math.abs(v);
-      const cls=abs>=r.loadingThr?'loading-strong':'';
+    row.forEach(v=>{
+      const cls=Math.abs(v)>=r.loadingThr?'loading-strong':'';
       html+=`<td class="${cls}">${v.toFixed(3)}</td>`;
     });
     const d=r.itemDiag[i];
     html+=`<td>${r.communalities[i].toFixed(3)}</td><td><span class="status-chip ${d.cls}">${d.icon} ${d.status}</span></td></tr>`;
   });
   html+='</tbody></table></div>';
+
+  if(r.oblique){
+    html += `<h3>Matriz de estructura</h3><p class="ci-note">Correlación total de cada ítem con los factores, incorporando la correlación entre factores.</p><div class="workspace"><table class="results-table matrix-table"><thead><tr><th>Ítem</th>`;
+    for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
+    html+='</tr></thead><tbody>';
+    r.structure.forEach((row,i)=>{
+      html+=`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`;
+    });
+    html+='</tbody></table></div>';
+
+    html += `<h3>Matriz de correlaciones entre factores (Φ)</h3><div class="workspace"><table class="results-table matrix-table"><thead><tr><th></th>`;
+    for(let f=0;f<r.m;f++) html+=`<th>Factor ${f+1}</th>`;
+    html+='</tr></thead><tbody>';
+    r.phi.forEach((row,i)=>{
+      html+=`<tr><th>Factor ${i+1}</th>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`;
+    });
+    html+='</tbody></table></div>';
+  }
 
   html += `<h3>KMO por ítem (MSA)</h3><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>MSA</th><th>Interpretación</th></tr></thead><tbody>`;
   r.kmo.perItem.forEach((v,i)=>{
@@ -713,7 +850,6 @@ function renderEfaResults(r){
   efaResults.innerHTML=html;
   setTimeout(()=>drawScree(r),0);
 }
-
 function drawScree(r){
   const canvas=document.getElementById('efaScree');
   if(!canvas) return;
@@ -804,34 +940,48 @@ function downloadEfaResults(){
     ['Determinante',r.bart.det],
     ['Factores_analisis_paralelo',r.retainedPA],
     ['Factores_Kaiser',r.retainedKaiser],
+    ['Rotacion',r.rotationLabel],
     [],
+    [r.oblique?'MATRIZ_PATRON':'CARGAS_ROTADAS'],
     ['Item',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`),'Comunalidad','Estado']
   ];
-  r.loadings.forEach((row,i)=>rows.push([efaData.itemNames[i],...row,r.communalities[i],r.itemDiag[i].status]));
+  r.pattern.forEach((row,i)=>rows.push([efaData.itemNames[i],...row,r.communalities[i],r.itemDiag[i].status]));
+
+  if(r.oblique){
+    rows.push([],['MATRIZ_ESTRUCTURA'],['Item',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`)]);
+    r.structure.forEach((row,i)=>rows.push([efaData.itemNames[i],...row]));
+    rows.push([],['PHI_CORRELACIONES_FACTORES'],['Factor',...Array.from({length:r.m},(_,i)=>`Factor_${i+1}`)]);
+    r.phi.forEach((row,i)=>rows.push([`Factor_${i+1}`,...row]));
+  }
+
   const csv=rows.map(row=>row.map(csvEscape).join(',')).join('\n');
   saveBlob("\ufeff"+csv,'text/csv;charset=utf-8;','ValiStruct_AFE_resultados.csv');
 }
-
 function efaReportHtml(){
   if(!efaLastResults) return null;
   const r=efaLastResults;
-  const rows=r.loadings.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}<td>${r.communalities[i].toFixed(3)}</td><td>${escapeHtml(r.itemDiag[i].status)}</td></tr>`).join('');
+  const rows=r.pattern.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}<td>${r.communalities[i].toFixed(3)}</td><td>${escapeHtml(r.itemDiag[i].status)}</td></tr>`).join('');
   const headers=Array.from({length:r.m},(_,i)=>`<th>Factor ${i+1}</th>`).join('');
+  const structureRows=r.oblique?r.structure.map((row,i)=>`<tr><td>${escapeHtml(efaData.itemNames[i])}</td>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`).join(''):'';
+  const phiRows=r.oblique?r.phi.map((row,i)=>`<tr><th>Factor ${i+1}</th>${row.map(v=>`<td>${v.toFixed(3)}</td>`).join('')}</tr>`).join(''):'';
   return `<!doctype html><html lang="es"><meta charset="utf-8"><title>ValiStruct · Informe AFE</title>
   <style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;color:#222}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f2f2f2}.note{background:#f8f8f8;padding:14px;border-left:4px solid #7c1f2a}</style>
   <body><h1>ValiStruct · Informe de Análisis Factorial Exploratorio</h1>
   <p><strong>Dr. Roberto Joel Tirado Reyes</strong><br>Profesor-investigador · Universidad Autónoma de Sinaloa</p>
   <p><strong>KMO:</strong> ${r.kmo.overall.toFixed(3)} · <strong>Bartlett:</strong> χ²=${Number.isFinite(r.bart.chi2)?r.bart.chi2.toFixed(2):'∞'}, gl=${r.bart.df}, p ${r.bart.p<.001?'&lt; .001':'= '+r.bart.p.toFixed(3)}</p>
-  <p><strong>Análisis paralelo:</strong> ${r.retainedPA} factor(es) sugeridos. <strong>Kaiser:</strong> ${r.retainedKaiser}.</p>
-  <div class="note">La versión web v0.5 utiliza extracción por componentes principales como prototipo. La versión de producción incorporará análisis factorial común, análisis paralelo robusto y métodos de rotación adicionales.</div>
+  <p><strong>Análisis paralelo:</strong> ${r.retainedPA} factor(es) sugeridos. <strong>Kaiser:</strong> ${r.retainedKaiser}. <strong>Rotación:</strong> ${escapeHtml(r.rotationLabel)}.</p>
+  <div class="note">La extracción web actual utiliza componentes principales (ACP). Las rotaciones ortogonales y oblicuas se calculan en este módulo; para AFE común definitiva utilice PAF/MINRES/ML.</div>
+  <h2>${r.oblique?'Matriz patrón':'Matriz de cargas rotadas'}</h2>
   <table><thead><tr><th>Ítem</th>${headers}<th>Comunalidad</th><th>Orientación</th></tr></thead><tbody>${rows}</tbody></table>
+  ${r.oblique?`<h2>Matriz de estructura</h2><table><thead><tr><th>Ítem</th>${headers}</tr></thead><tbody>${structureRows}</tbody></table>
+  <h2>Matriz de correlaciones entre factores (Φ)</h2><table><thead><tr><th></th>${headers}</tr></thead><tbody>${phiRows}</tbody></table>`:''}
   <h3>Referencias</h3>
   <p>Kaiser, H. F. (1974). An index of factorial simplicity. <em>Psychometrika, 39</em>, 31–36.</p>
-  <p>Bartlett, M. S. (1954). A note on the multiplying factors for various χ² approximations. <em>Journal of the Royal Statistical Society. Series B, 16</em>(2), 296–298.</p>
+  <p>Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. <em>British Journal of Statistical Psychology, 17</em>, 65–70.</p>
+  <p>Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings. <em>Psychometrika, 31</em>, 313–323.</p>
   <p>Horn, J. L. (1965). A rationale and test for the number of factors in factor analysis. <em>Psychometrika, 30</em>, 179–185.</p>
   </body></html>`;
 }
-
 document.getElementById('downloadEfaTemplate').addEventListener('click',downloadEfaTemplate);
 document.getElementById('loadEfaExample').addEventListener('click',loadEfaExample);
 document.getElementById('efaCsvFile').addEventListener('change',e=>{
@@ -1891,9 +2041,105 @@ function summarizeProCsv(text){
       <div class="metric-card"><span>Casos</span><strong>${body.length}</strong></div>
       <div class="metric-card"><span>Columnas</span><strong>${headers.length}</strong></div>
       <div class="metric-card"><span>Variables</span><strong>${headers.slice(0,8).map(escapeHtml).join(', ')}${headers.length>8?'…':''}</strong></div>`;
+    populateResidualCovarianceSelectors();
+    renderActiveResidualCovariances();
   }catch(_){
     proDatasetSummary.innerHTML='<div class="model-error">No fue posible leer el CSV.</div>';
   }
+}
+
+
+
+function getProObservedVariables(){
+  if(!proCsvText)return [];
+  try{
+    const rows=parseCSV(proCsvText.replace(/^\\uFEFF/,''));
+    const headers=(rows[0]||[]).map(x=>String(x).trim()).filter(Boolean);
+    return headers.filter((name,i)=>{
+      if(i===0 && /^(id|folio|participante|sujeto|caso)$/i.test(name))return false;
+      return /^[A-Za-z][A-Za-z0-9_.]*$/.test(name);
+    });
+  }catch(_){return [];}
+}
+
+function populateResidualCovarianceSelectors(){
+  const a=document.getElementById('resCovItemA');
+  const b=document.getElementById('resCovItemB');
+  if(!a||!b)return;
+  const vars=getProObservedVariables();
+  const currentA=a.value,currentB=b.value;
+  const options='<option value="">Seleccione un ítem</option>'+vars.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join('');
+  a.innerHTML=options;b.innerHTML=options;
+  if(vars.includes(currentA))a.value=currentA;
+  if(vars.includes(currentB))b.value=currentB;
+}
+
+function residualCovariancePairsFromSyntax(){
+  const syntax=document.getElementById('proSyntax')?.value||'';
+  const observed=new Set(getProObservedVariables());
+  const pairs=[];
+  syntax.split(/\n+/).forEach(line=>{
+    const clean=line.replace(/#.*/,'').trim();
+    const m=clean.match(/^([A-Za-z][A-Za-z0-9_.]*)\s*~~\s*([A-Za-z][A-Za-z0-9_.]*)\s*$/);
+    if(m && observed.has(m[1]) && observed.has(m[2]) && m[1]!==m[2]){
+      const key=[m[1],m[2]].sort().join('~~');
+      if(!pairs.some(p=>p.key===key))pairs.push({a:m[1],b:m[2],key});
+    }
+  });
+  return pairs;
+}
+
+function hasResidualCovariance(a,b){
+  const key=[a,b].sort().join('~~');
+  return residualCovariancePairsFromSyntax().some(p=>p.key===key);
+}
+
+function appendResidualCovariance(a,b){
+  const observed=new Set(getProObservedVariables());
+  if(!a||!b)return {ok:false,message:'Seleccione dos ítems.'};
+  if(a===b)return {ok:false,message:'Seleccione dos ítems diferentes.'};
+  if(!observed.has(a)||!observed.has(b))return {ok:false,message:'Los dos nombres deben corresponder a variables observadas importadas.'};
+  if(hasResidualCovariance(a,b))return {ok:false,message:'Esta covarianza residual ya está incluida en el modelo.'};
+
+  const box=document.getElementById('proSyntax');
+  if(!box)return {ok:false,message:'No se encontró el editor de sintaxis del Motor Pro.'};
+  const line=`${a} ~~ ${b}`;
+  const current=box.value.trimEnd();
+  box.value=current ? current+'\n'+line : line;
+  renderActiveResidualCovariances();
+  return {ok:true,line};
+}
+
+function removeResidualCovariance(a,b){
+  const box=document.getElementById('proSyntax');
+  if(!box)return;
+  const key=[a,b].sort().join('~~');
+  const observed=new Set(getProObservedVariables());
+  box.value=box.value.split(/\n/).filter(line=>{
+    const clean=line.replace(/#.*/,'').trim();
+    const m=clean.match(/^([A-Za-z][A-Za-z0-9_.]*)\s*~~\s*([A-Za-z][A-Za-z0-9_.]*)\s*$/);
+    if(!m || !observed.has(m[1]) || !observed.has(m[2]))return true;
+    return [m[1],m[2]].sort().join('~~')!==key;
+  }).join('\n').replace(/\n{3,}/g,'\n\n');
+  renderActiveResidualCovariances();
+}
+
+function renderActiveResidualCovariances(){
+  const box=document.getElementById('activeResidualCovariances');
+  if(!box)return;
+  const pairs=residualCovariancePairsFromSyntax();
+  if(!pairs.length){
+    box.innerHTML='<div class="sem-engine-note"><strong>Covarianzas residuales activas:</strong> ninguna añadida desde el modelo actual.</div>';
+    return;
+  }
+  box.innerHTML='<div class="sem-engine-note"><strong>Covarianzas residuales activas:</strong></div>'+
+    pairs.map(p=>`<div class="mi-card mi-low"><strong>${escapeHtml(p.a)} ~~ ${escapeHtml(p.b)}</strong><span>Covarianza residual liberada.</span><div class="button-row compact"><button class="remove-residual-cov" data-a="${escapeHtml(p.a)}" data-b="${escapeHtml(p.b)}">Quitar del modelo</button></div></div>`).join('');
+}
+
+function isResidualMiCandidate(m){
+  if(!m || m.op!=='~~')return false;
+  const observed=new Set(getProObservedVariables());
+  return observed.has(String(m.lhs)) && observed.has(String(m.rhs)) && String(m.lhs)!==String(m.rhs);
 }
 
 function buildProPayload(){
@@ -2038,8 +2284,30 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();
   document.getElementById('proSyntax').value=semSyntax.value.replace(/# Modelo vacío/g,'');
+  renderActiveResidualCovariances();
 });
 document.getElementById('runProModel').addEventListener('click',runProModel);
+
+document.getElementById('addResidualCovariance')?.addEventListener('click',()=>{
+  const a=document.getElementById('resCovItemA')?.value||'';
+  const b=document.getElementById('resCovItemB')?.value||'';
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)alert(r.message);
+});
+document.getElementById('addAndRunResidualCovariance')?.addEventListener('click',async()=>{
+  const a=document.getElementById('resCovItemA')?.value||'';
+  const b=document.getElementById('resCovItemB')?.value||'';
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)return alert(r.message);
+  await runProModel();
+});
+document.getElementById('activeResidualCovariances')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.remove-residual-cov');
+  if(!btn)return;
+  removeResidualCovariance(btn.dataset.a,btn.dataset.b);
+});
+document.getElementById('proSyntax')?.addEventListener('input',renderActiveResidualCovariances);
+
 document.getElementById('downloadProPayload').addEventListener('click',()=>{
   try{
     const payload=buildProPayload();
@@ -2603,13 +2871,35 @@ function renderGuidedModificationIndices(data){
     const mi=Number(m.mi);
     const cls=mi>=20?'mi-high':(mi>=10?'mi-medium':'mi-low');
     const level=mi>=20?'Alta prioridad para revisión teórica':(mi>=10?'Revisión moderada':'Revisión exploratoria');
+    const residual=isResidualMiCandidate(m);
+    const already=residual && hasResidualCovariance(String(m.lhs),String(m.rhs));
+    const action=residual
+      ? `<div class="button-row compact"><button class="mi-add-residual-cov" data-a="${escapeHtml(String(m.lhs))}" data-b="${escapeHtml(String(m.rhs))}" ${already?'disabled':''}>${already?'Covarianza ya añadida':'Liberar covarianza entre estos ítems'}</button></div>`
+      : '';
     return `<div class="mi-card ${cls}">
       <strong>${escapeHtml(m.lhs)} ${escapeHtml(m.op)} ${escapeHtml(m.rhs)} · MI=${fmtPro(mi)}</strong>
       <span>${level}. EPC=${fmtPro(m.epc)}.</span>
-      <div class="small">Antes de liberar este parámetro, verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      <div class="small">${residual?'Esta sugerencia corresponde a una covarianza residual entre dos variables observadas. ':'Antes de liberar este parámetro, '}verifique plausibilidad conceptual, redacción de ítems, solapamiento de contenido y riesgo de sobreajuste.</div>
+      ${action}
     </div>`;
   }).join('');
 }
+
+
+document.getElementById('guidedMiContent')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.mi-add-residual-cov');
+  if(!btn)return;
+  const a=btn.dataset.a,b=btn.dataset.b;
+  const r=appendResidualCovariance(a,b);
+  if(!r.ok)return alert(r.message);
+  const selA=document.getElementById('resCovItemA');
+  const selB=document.getElementById('resCovItemB');
+  if(selA)selA.value=a;
+  if(selB)selB.value=b;
+  btn.disabled=true;
+  btn.textContent='Covarianza ya añadida';
+  alert(`Se añadió ${a} ~~ ${b} a la sintaxis. Revise la justificación teórica y reestime el modelo.`);
+});
 
 // Patch existing pro render by listening after model run
 const oldRenderProResults = renderProResults;
@@ -3626,6 +3916,7 @@ document.getElementById('sendSyntaxToPro')?.addEventListener('click',()=>{
   if(!advancedGeneratedSyntax)generateAdvancedSyntax();
   if(advancedGeneratedSyntax && document.getElementById('proSyntax')){
     document.getElementById('proSyntax').value=advancedGeneratedSyntax;
+    renderActiveResidualCovariances();
     alert('Sintaxis enviada a Motor Pro.');
   }
 });

@@ -335,7 +335,15 @@
         </label>
         <label>Rotación
           <select id="efaRotation">
-            <option value="varimax" selected>Varimax</option>
+            <optgroup label="Rotaciones ortogonales">
+              <option value="varimax" selected>Varimax</option>
+              <option value="quartimax">Quartimax</option>
+              <option value="equamax">Equamax</option>
+            </optgroup>
+            <optgroup label="Rotaciones oblicuas">
+              <option value="oblimin">Direct Oblimin (δ = 0)</option>
+              <option value="promax">Promax</option>
+            </optgroup>
             <option value="none">Sin rotación</option>
           </select>
         </label>
@@ -652,6 +660,31 @@
           <button id="downloadProReport">Descargar informe JSON</button>
           <button id="applyProDiagram">Aplicar coeficientes al diagrama</button>
         </div>
+      </div>
+
+      <div class="model-builder" id="residualCovariancePanel">
+        <h3>Liberar covarianza residual entre ítems</h3>
+        <p>Use esta opción únicamente cuando exista una justificación teórica o de contenido. En lavaan se añadirá una relación del tipo <strong>I08 ~~ I10</strong>, sin eliminar los ítems ni cambiar su factor principal.</p>
+        <div class="config-grid">
+          <label>Ítem 1
+            <select id="resCovItemA">
+              <option value="">Importe datos para seleccionar un ítem</option>
+            </select>
+          </label>
+          <label>Ítem 2
+            <select id="resCovItemB">
+              <option value="">Importe datos para seleccionar un ítem</option>
+            </select>
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="addResidualCovariance" class="primary">Añadir covarianza al modelo</button>
+          <button id="addAndRunResidualCovariance">Añadir y reestimar</button>
+        </div>
+        <div class="notice">
+          <strong>Importante:</strong> no libere covarianzas únicamente porque el índice de modificación sea alto. Revise similitud de redacción, contenido compartido, efecto de método y coherencia con la teoría.
+        </div>
+        <div id="activeResidualCovariances"></div>
       </div>
 
       <div id="proResults"></div>
@@ -1053,6 +1086,9 @@
         <button id="downloadConsolidatedXlsx">Exportar libro Excel/XLSX</button>
       </div>
 
+      <div id="qualityDashboardStatus" class="notice">
+        El dashboard está listo. Pulse <strong>Actualizar dashboard</strong> para integrar la evidencia disponible en esta sesión.
+      </div>
       <div id="qualityDashboardSummary" class="dataset-summary"></div>
       <div id="qualityDashboardContent"></div>
     </section>
@@ -1100,7 +1136,11 @@
         <button id="applyEstimatorToPro">Aplicar al Motor Pro</button>
       </div>
 
-      <div id="estimatorGuideResults"></div>
+      <div id="estimatorGuideResults">
+        <div class="notice" id="estimatorGuideStatus">
+          Seleccione las características de los datos y pulse <strong>Obtener recomendación</strong>.
+        </div>
+      </div>
     </section>
 
     <section id="samplesize" class="panel">
@@ -3082,5 +3122,202 @@
   </footer>
 
   <script src="app.js"></script>
+  <script>
+  (function(){
+    function esc(s){
+      return String(s).replace(/[&<>"']/g,function(ch){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+      });
+    }
+    function estimatorGuideFallback(){
+      var type=document.getElementById('estVarType');
+      var norm=document.getElementById('estNormality');
+      var missing=document.getElementById('estMissing');
+      var sample=document.getElementById('estSampleN');
+      var out=document.getElementById('estimatorGuideResults');
+      if(!type||!norm||!missing||!sample||!out)return null;
+
+      var t=type.value, nrm=norm.value, miss=missing.value, n=Number(sample.value)||0;
+      var estimator='MLR', reasons=[], cautions=[];
+
+      if(t==='ordinal4'){
+        estimator='WLSMV';
+        reasons.push('Las variables ordinales con pocas categorías favorecen un estimador para datos ordinales basado en umbrales.');
+      }else if(t==='likert5'){
+        if(nrm==='normal' && n>=300){
+          estimator='MLR';
+          reasons.push('Con 5–7 categorías, tamaño muestral moderado/grande y sin desviaciones importantes, MLR es una opción robusta y flexible.');
+        }else{
+          estimator='WLSMV';
+          reasons.push('La combinación de respuestas Likert y desviaciones de normalidad favorece WLSMV.');
+        }
+      }else if(t==='continuous'){
+        estimator=nrm==='normal'?'ML':'MLR';
+        reasons.push(nrm==='normal'?'Los datos continuos sin desviaciones importantes son compatibles con ML.':'MLR es preferible ante no normalidad en variables continuas.');
+      }else if(t==='mixed'){
+        estimator='MLR';
+        reasons.push('Con variables mixtas, MLR puede ser un punto de partida cuando las ordinales tienen suficientes categorías.');
+        cautions.push('En modelos realmente mixtos puede requerirse una estrategia específica según la naturaleza de cada variable.');
+      }
+
+      if(miss==='moderate'){
+        if(estimator==='ML'||estimator==='MLR'){
+          reasons.push('Con ML/MLR puede considerarse FIML para datos faltantes bajo supuestos razonables de MAR.');
+        }else{
+          cautions.push('Con WLSMV, revise cuidadosamente el tratamiento de datos faltantes en la implementación utilizada.');
+        }
+      }
+      if(n<150)cautions.push('El tamaño muestral puede ser limitado para modelos AFC/SEM complejos.');
+      if(n>=500)reasons.push('El tamaño muestral amplio favorece la estabilidad de la estimación.');
+
+      window.__valistructEstimatorRecommendation={estimator:estimator,reasons:reasons,cautions:cautions,n:n,type:t,norm:nrm,missing:miss};
+      out.innerHTML='<div class="estimator-card">'+
+        '<span>Estimador orientativo</span>'+
+        '<div class="estimator-choice">'+esc(estimator)+'</div>'+
+        '<h4>Razones</h4><ul>'+reasons.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'+
+        (cautions.length?'<h4>Precauciones</h4><ul>'+cautions.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+
+        '<div class="sem-engine-note"><strong>Uso responsable:</strong> esta recomendación es orientativa y debe interpretarse junto con el nivel de medición, distribución, tamaño muestral y complejidad del modelo.</div>'+
+        '</div>';
+      return window.__valistructEstimatorRecommendation;
+    }
+
+    function applyEstimatorFallback(){
+      var rec=window.__valistructEstimatorRecommendation || estimatorGuideFallback();
+      if(!rec)return;
+      var pro=document.getElementById('proEstimator');
+      if(pro){
+        var values=Array.prototype.map.call(pro.options,function(o){return o.value;});
+        if(values.indexOf(rec.estimator)>=0)pro.value=rec.estimator;
+      }
+      var out=document.getElementById('estimatorGuideResults');
+      if(out){
+        out.insertAdjacentHTML('beforeend','<div class="model-ok"><strong>Aplicado al Motor Pro:</strong> '+esc(rec.estimator)+'. Abra Motor Pro para continuar con la estimación.</div>');
+      }
+    }
+
+    var run=document.getElementById('runEstimatorGuide');
+    var apply=document.getElementById('applyEstimatorToPro');
+    if(run && !run.dataset.fallbackBound){
+      run.addEventListener('click',function(e){
+        try{ estimatorGuideFallback(); }catch(err){
+          var out=document.getElementById('estimatorGuideResults');
+          if(out)out.innerHTML='<div class="model-error"><strong>No fue posible generar la recomendación.</strong><br>'+esc(err.message||err)+'</div>';
+        }
+      });
+      run.dataset.fallbackBound='1';
+    }
+    if(apply && !apply.dataset.fallbackBound){
+      apply.addEventListener('click',function(){
+        try{ applyEstimatorFallback(); }catch(err){
+          var out=document.getElementById('estimatorGuideResults');
+          if(out)out.innerHTML='<div class="model-error"><strong>No fue posible aplicar el estimador.</strong><br>'+esc(err.message||err)+'</div>';
+        }
+      });
+      apply.dataset.fallbackBound='1';
+    }
+    window.ValiStructEstimatorGuide=estimatorGuideFallback;
+  })();
+  </script>
+
+<script>
+(function(){
+  function qEsc(s){
+    return String(s).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+    });
+  }
+  function setDashStatus(msg,kind){
+    var box=document.getElementById('qualityDashboardStatus');
+    if(!box)return;
+    box.className=kind==='error'?'model-error':(kind==='ok'?'model-ok':'notice');
+    box.innerHTML=msg;
+  }
+  function currentQualitySnapshot(){
+    try{
+      if(typeof qualityLast!=='undefined' && qualityLast)return qualityLast;
+    }catch(_){}
+    if(window.__valistructQualityFallback)return window.__valistructQualityFallback;
+    return {
+      generated_at:new Date().toISOString(),
+      note:'Resumen de respaldo: no fue posible leer el estado interno completo del dashboard.',
+      summary:(document.getElementById('qualityDashboardSummary')||{}).innerText||'',
+      content:(document.getElementById('qualityDashboardContent')||{}).innerText||''
+    };
+  }
+  function refreshDashboardFallback(){
+    setDashStatus('Actualizando evidencia metodológica…','info');
+    try{
+      if(typeof buildQualityDashboard==='function'){
+        buildQualityDashboard();
+        try{
+          if(typeof qualityLast!=='undefined' && qualityLast)window.__valistructQualityFallback=qualityLast;
+        }catch(_){}
+        setDashStatus('<strong>Dashboard actualizado.</strong> Se integró la evidencia disponible en esta sesión.','ok');
+        return;
+      }
+      throw new Error('La función de actualización no está disponible en esta carga.');
+    }catch(err){
+      var summary=document.getElementById('qualityDashboardSummary');
+      var content=document.getElementById('qualityDashboardContent');
+      if(summary)summary.innerHTML='<div class="metric-card"><span>Estado</span><strong>Revisión requerida</strong></div>';
+      if(content)content.innerHTML='<div class="model-error"><strong>No fue posible construir el dashboard automáticamente.</strong><br>'+qEsc(err.message||err)+'<br>Reinicie ValiStruct para cargar la versión actual.</div>';
+      setDashStatus('<strong>Error al actualizar:</strong> '+qEsc(err.message||err),'error');
+    }
+  }
+  function downloadDashboardJsonFallback(){
+    try{
+      var data=currentQualitySnapshot();
+      var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8;'});
+      var url=URL.createObjectURL(blob);
+      var link=document.createElement('a');
+      link.href=url; link.download='ValiStruct_dashboard_validacion.json';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},250);
+      setDashStatus('<strong>Resumen JSON generado correctamente.</strong>','ok');
+    }catch(err){
+      setDashStatus('<strong>No fue posible descargar el resumen:</strong> '+qEsc(err.message||err),'error');
+    }
+  }
+  async function downloadDashboardXlsxFallback(){
+    setDashStatus('Preparando libro Excel/XLSX…','info');
+    try{
+      if(typeof getProApiBase!=='function')throw new Error('No se encontró la configuración del Motor Pro.');
+      if(typeof buildConsolidatedExportPayload!=='function')throw new Error('No se encontró el generador del libro consolidado.');
+      var res=await fetch(getProApiBase()+'/export-xlsx',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(buildConsolidatedExportPayload())
+      });
+      if(!res.ok)throw new Error(await res.text());
+      var blob=await res.blob();
+      var url=URL.createObjectURL(blob);
+      var link=document.createElement('a');
+      link.href=url; link.download='ValiStruct_resultados_consolidados.xlsx';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},250);
+      setDashStatus('<strong>Libro Excel/XLSX generado correctamente.</strong>','ok');
+    }catch(err){
+      setDashStatus('<strong>No fue posible exportar XLSX.</strong> Verifique que el Motor Pro/backend esté activo. Detalle: '+qEsc(err.message||err),'error');
+    }
+  }
+
+  var refresh=document.getElementById('refreshQualityDashboard');
+  var json=document.getElementById('downloadQualitySummary');
+  var xlsx=document.getElementById('downloadConsolidatedXlsx');
+
+  if(refresh)refresh.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); refreshDashboardFallback();
+  },true);
+  if(json)json.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); downloadDashboardJsonFallback();
+  },true);
+  if(xlsx)xlsx.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); downloadDashboardXlsxFallback();
+  },true);
+
+  window.ValiStructRefreshDashboard=refreshDashboardFallback;
+})();
+</script>
+
 </body>
 </html>

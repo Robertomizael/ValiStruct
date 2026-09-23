@@ -6,9 +6,15 @@ ValiStruct es una plataforma científica de acceso abierto orientada a estudiant
 
 ## Versión actual
 
-**ValiStruct v3.0.0 Beta 1** (`v3.0.0-beta.1`)
+**ValiStruct v3.0.1 Beta** (cambios de análisis ordinal, ESEM e invariancia)
 
 Esta versión se encuentra en fase Beta para evaluación y pruebas antes de la versión estable 3.0.
+
+## Descargar para Windows y macOS
+
+Tras cada cambio de `main` que afecte a la aplicación, el flujo [ValiStruct Desktop Autonomous Build](https://github.com/Robertomizael/ValiStruct/actions/workflows/desktop-build.yml) genera un instalador Windows (`.exe`) y una imagen macOS (`.dmg`). Abra la ejecución más reciente que haya finalizado correctamente y descargue el archivo correspondiente en **Artifacts**, al final de la página. GitHub puede solicitar iniciar sesión para descargar artefactos de Actions. La compilación puede tardar varios minutos después de integrar los cambios.
+
+Los paquetes de escritorio son Beta y se generan por separado para cada sistema. El ZIP de código fuente de GitHub no es un instalador.
 
 ## Capacidades principales
 
