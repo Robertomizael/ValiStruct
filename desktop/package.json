@@ -1,0 +1,65 @@
+{
+  "name": "valistruct-desktop",
+  "version": "3.0.1-beta.1",
+  "description": "ValiStruct Desktop 3.0.1 Beta",
+  "main": "main-patched.js",
+  "author": "Dr. Roberto Joel Tirado Reyes",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis",
+    "pack:mac": "electron-builder --mac dir",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist": "electron-builder --win nsis --mac dmg"
+  },
+  "dependencies": {
+    "tar": "^7.4.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^32.1.2",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "mx.uas.valistruct",
+    "productName": "ValiStruct",
+    "artifactName": "ValiStruct-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "main-patched.js",
+      "renderer-fixes.js",
+      "preload.js",
+      "ux-shell.js",
+      "ux-shell.css",
+      "excel-import.js"
+    ],
+    "extraResources": [
+      { "from": "../index.html", "to": "app/index.html" },
+      { "from": "../app.js", "to": "app/app.js" },
+      { "from": "../styles.css", "to": "app/styles.css" },
+      { "from": "../manifest.webmanifest", "to": "app/manifest.webmanifest" },
+      { "from": "../icons", "to": "app/icons" },
+      { "from": "../backend", "to": "backend" },
+      { "from": "runtime/valistruct-runtime.tar.gz", "to": "runtime/valistruct-runtime.tar.gz" }
+    ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.education",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    }
+  }
+}

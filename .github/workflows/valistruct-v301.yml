@@ -1,0 +1,25 @@
+name: ValiStruct v3.0.1 statistical regression
+on:
+  push:
+    branches: [main, feature/valistruct-v3-0-1-review]
+  pull_request:
+    branches: [main]
+jobs:
+  check-r-engines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install R dependencies
+        run: Rscript -e 'install.packages(c("lavaan","jsonlite","psych"), repos="https://cloud.r-project.org")'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Check JavaScript syntax
+        run: node --check app.js
+      - name: Test R statistical engines
+        run: python -m pytest -q tests/test_v301_engine.py
