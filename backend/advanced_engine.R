@@ -24,7 +24,7 @@ capture_fit <- function(expr){
 
 result <- tryCatch({
   dat <- read.csv(text=req$csv_text, check.names=FALSE)
-  if(ncol(dat)>1 && tolower(names(dat)[1]) %in% c("id","folio","participante","sujeto","caso")) dat <- dat[,-1,drop=FALSE]
+  if(ncol(dat)>1 && tolower(trimws(names(dat)[1])) %in% c("id","folio","participante","sujeto","caso")) dat <- dat[,-1,drop=FALSE]
   action <- req$action %||% "quality"
   syntax <- req$syntax
   estimator <- toupper(req$estimator %||% "MLR")
@@ -32,18 +32,35 @@ result <- tryCatch({
 
   ordered_vars <- unlist(req$ordinal_vars %||% list())
   ordered_vars <- intersect(ordered_vars,names(dat))
-  if(length(ordered_vars)==0 && identical(req$data_type,"ordinal")) {
-    ordered_vars <- setdiff(names(dat), group %||% character())
+  if(length(ordered_vars)==0 && (identical(req$data_type,"ordinal") || identical(estimator,"WLSMV"))) {
+    model_ov <- tryCatch(lavNames(lavaanify(syntax),"ov.nox"), error=function(e) character())
+    ordered_vars <- setdiff(intersect(model_ov,names(dat)),group %||% character())
+    if(!length(ordered_vars)) stop("No se identificaron indicadores ordinales del modelo.")
   }
+  is_ordinal <- length(ordered_vars)>0
 
   fit_one <- function(model, group.equal=NULL){
-    cap <- capture_fit(
-      sem(model, data=dat, estimator=estimator, std.lv=TRUE,
-          ordered=if(length(ordered_vars)) ordered_vars else NULL,
-          group=group, group.equal=group.equal,
-          missing=if(estimator %in% c("ML","MLR")) "fiml" else "pairwise")
-    )
-    cap
+    args <- list(model=model, data=dat, estimator=estimator, std.lv=TRUE,
+                 ordered=if(is_ordinal) ordered_vars else NULL,
+                 group=group, group.equal=group.equal,
+                 missing=if(estimator %in% c("ML","MLR")) "fiml" else "pairwise")
+    if(is_ordinal && !is.null(group)) args$parameterization <- "theta"
+    capture_fit(do.call("sem",args))
+  }
+  pick_fit <- function(fit){
+    suffix <- if(estimator %in% c("MLR","MLM","MLMV","WLSMV","WLSM","ULSMV")) {
+      if(is_ordinal) ".scaled" else ".robust"
+    } else ""
+    keys <- c(paste0(c("cfi","tli","rmsea"),suffix),"srmr")
+    available <- names(fitMeasures(fit))
+    if(!all(keys %in% available)) {
+      if(suffix==".robust") {
+        suffix <- ".scaled"; keys <- c("cfi.scaled","tli.scaled","rmsea.scaled","srmr")
+      }
+    }
+    fm <- fitMeasures(fit,keys)
+    list(cfi=unname(fm[1]), tli=unname(fm[2]), rmsea=unname(fm[3]),
+         srmr=unname(fm[4]), type=if(suffix=="") "estándar" else substring(suffix,2))
   }
 
   if(action=="quality"){
@@ -56,6 +73,7 @@ result <- tryCatch({
     factors <- unique(load$lhs)
     heywood_factors <- character()
 
+    phi <- tryCatch({ p <- lavInspect(fit,"cor.lv"); if(is.list(p)) p[[1]] else p },error=function(e) NULL)
     metrics <- lapply(factors, function(f){
       l <- load$std.all[load$lhs==f]
       if(any(abs(l)>1,na.rm=TRUE)) heywood_factors <<- c(heywood_factors,f)
@@ -63,7 +81,12 @@ result <- tryCatch({
       theta <- pmax(0,theta_raw)
       cr <- (sum(l,na.rm=TRUE)^2)/((sum(l,na.rm=TRUE)^2)+sum(theta,na.rm=TRUE))
       ave <- sum(l^2,na.rm=TRUE)/(sum(l^2,na.rm=TRUE)+sum(theta,na.rm=TRUE))
-      list(factor=f,cr=safe(cr),ave=safe(ave),
+      max_r <- NA_real_
+      if(!is.null(phi) && f %in% colnames(phi) && ncol(phi)>1)
+        max_r <- max(abs(phi[f,setdiff(colnames(phi),f)]),na.rm=TRUE)
+      list(factor=f,cr=safe(cr),ave=safe(ave),sqrt_ave=safe(sqrt(ave)),
+           max_latent_r=safe(max_r),
+           fornell_larcker_ok=if(is.finite(max_r)) sqrt(ave)>max_r else NA,
            heywood=any(theta_raw<0,na.rm=TRUE) || any(abs(l)>1,na.rm=TRUE))
     })
 
@@ -95,7 +118,11 @@ result <- tryCatch({
       }
     }
 
+    fl_bad <- vapply(metrics,function(m) isFALSE(m$fornell_larcker_ok),logical(1))
     guidance <- c(
+      if(any(fl_bad)) paste0("Fornell-Larcker requiere revisión en: ",
+        paste(vapply(metrics[fl_bad],`[[`,"","factor"),collapse=", "),".") else
+        "Evalúe Fornell-Larcker junto con HTMT y la teoría.",
       "CR ≥ .70 y AVE ≥ .50 suelen considerarse referencias orientativas.",
       paste0("HTMT se calculó con correlaciones ", correlation_type, "."),
       "HTMT debe interpretarse junto con la teoría y el patrón de cargas."
@@ -107,7 +134,9 @@ result <- tryCatch({
       guidance
     )
 
-    list(ok=TRUE,title="CR, AVE y HTMT",metrics=metrics,htmt=ht,
+    list(ok=TRUE,title="CR, AVE, Fornell-Larcker y HTMT",metrics=metrics,htmt=ht,
+         latent_correlations=if(!is.null(phi)) list(names=colnames(phi),
+           values=unname(split(round(phi,6),row(phi)))) else NULL,
          converged=converged,post_check=post_check,
          warnings_text=cap$warnings_text,
          correlation_type=correlation_type,
@@ -125,44 +154,47 @@ result <- tryCatch({
   } else if(action %in% c("invariance","multigroup")){
     if(is.null(group) || !nzchar(group) || !(group %in% names(dat))) stop("Indique una variable de grupo válida.")
 
+    level_int <- if(is_ordinal) "thresholds" else "intercepts"
     caps <- list(
       configural=fit_one(syntax,NULL),
       metric=fit_one(syntax,"loadings"),
-      scalar=fit_one(syntax,c("loadings","intercepts")),
-      strict=fit_one(syntax,c("loadings","intercepts","residuals"))
+      scalar=fit_one(syntax,c("loadings",level_int)),
+      strict=fit_one(syntax,c("loadings",level_int,"residuals"))
     )
-
-    rows <- list(); prev_cfi <- prev_rmsea <- prev_srmr <- NA_real_
-    all_warnings <- character()
-    all_converged <- TRUE
-
+    rows <- list(); prev <- NULL; prev_fit <- NULL
+    all_warnings <- character(); all_converged <- TRUE; fit_type <- NA_character_
     for(nm in names(caps)){
       fit <- caps[[nm]]$fit
       conv <- isTRUE(lavInspect(fit,"converged"))
       post <- isTRUE(lavInspect(fit,"post.check"))
       all_converged <- all_converged && conv
       all_warnings <- c(all_warnings,caps[[nm]]$warnings_text)
-      fm <- fitMeasures(fit, c("cfi","rmsea","srmr"))
-      cfi <- unname(fm["cfi"]); rmsea <- unname(fm["rmsea"]); srmr <- unname(fm["srmr"])
+      pf <- pick_fit(fit); fit_type <- pf$type
+      lrt <- if(!is.null(prev_fit)) tryCatch({
+        t <- lavTestLRT(prev_fit,fit)
+        list(dchisq=safe(t[2,"Chisq diff"]),ddf=safe(t[2,"Df diff"]),p=safe(t[2,"Pr(>Chisq)"]))
+      },error=function(e) list(dchisq=NA_real_,ddf=NA_real_,p=NA_real_)) else
+        list(dchisq=NA_real_,ddf=NA_real_,p=NA_real_)
       rows[[length(rows)+1]] <- list(
-        model=nm,cfi=safe(cfi),rmsea=safe(rmsea),srmr=safe(srmr),
+        model=nm,cfi=safe(pf$cfi),tli=safe(pf$tli),rmsea=safe(pf$rmsea),srmr=safe(pf$srmr),
         converged=conv,post_check=post,
-        delta_cfi=if(is.na(prev_cfi)) NA else safe(cfi-prev_cfi),
-        delta_rmsea=if(is.na(prev_rmsea)) NA else safe(rmsea-prev_rmsea),
-        delta_srmr=if(is.na(prev_srmr)) NA else safe(srmr-prev_srmr)
+        delta_cfi=if(is.null(prev)) NA else safe(pf$cfi-prev$cfi),
+        delta_rmsea=if(is.null(prev)) NA else safe(pf$rmsea-prev$rmsea),
+        delta_srmr=if(is.null(prev)) NA else safe(pf$srmr-prev$srmr),
+        delta_chisq=lrt$dchisq,delta_df=lrt$ddf,delta_p=lrt$p
       )
-      prev_cfi <- cfi; prev_rmsea <- rmsea; prev_srmr <- srmr
+      prev <- pf; prev_fit <- fit
     }
-
     guidance <- c(
-      "Evalúe cambios en CFI junto con RMSEA, SRMR y justificación sustantiva.",
+      paste0("Índices de ajuste: versión ",fit_type,"; estimador ",estimator,"."),
+      if(is_ordinal) "Para indicadores ordinales se restringieron umbrales y se utilizó parametrización theta; verifique la identificación de cada comparación." else "Para indicadores continuos se restringieron interceptos.",
+      "Interprete ΔCFI, ΔRMSEA, ΔSRMR y la prueba de diferencia de χ² en conjunto con teoría y tamaño muestral.",
       "La equivalencia entre grupos no debe decidirse con un único criterio."
     )
-    if(!all_converged) guidance <- c("ALERTA: al menos uno de los modelos de invariancia no convergió.",guidance)
-
+    if(!all_converged) guidance <- c("ALERTA: al menos un modelo de invariancia no convergió.",guidance)
     list(ok=TRUE,title=if(action=="multigroup") "Modelo multigrupo / invariancia" else "Invariancia factorial",
-         invariance=rows,converged=all_converged,warnings_text=unique(all_warnings),
-         guidance=guidance)
+         invariance=rows,fit_type=fit_type,converged=all_converged,
+         warnings_text=unique(all_warnings),guidance=guidance)
   } else stop("Acción avanzada no reconocida.")
 }, error=function(e) list(ok=FALSE,error=conditionMessage(e)))
 
