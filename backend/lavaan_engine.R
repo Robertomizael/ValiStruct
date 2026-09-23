@@ -40,8 +40,8 @@ available_fit_measures <- function(fit, requested) {
 result <- tryCatch({
   dat <- read.csv(text = req$csv_text, check.names = FALSE)
 
-  if (ncol(dat) > 1 && !is.numeric(dat[[1]]) &&
-      tolower(names(dat)[1]) %in% c("id","folio","participante","sujeto","caso")) {
+  if (ncol(dat) > 1 &&
+      tolower(trimws(names(dat)[1])) %in% c("id","folio","participante","sujeto","caso")) {
     dat <- dat[, -1, drop=FALSE]
   }
 
@@ -56,9 +56,14 @@ result <- tryCatch({
   if (length(requested_ordinal)) {
     ordered_vars <- requested_ordinal
   } else if (identical(data_type, "ordinal") || identical(estimator, "WLSMV")) {
-    ordered_vars <- names(dat)
+    model_ov <- tryCatch(lavNames(lavaanify(req$syntax), "ov.nox"),
+                         error = function(e) character())
+    ordered_vars <- intersect(model_ov, names(dat))
+    if (!length(ordered_vars)) stop("No se identificaron indicadores ordinales del modelo.")
   }
 
+  rotation <- req$rotation %||% "geomin"
+  is_esem <- grepl("efa\\s*\\(", req$syntax)
   missing_guidance <- character()
   if (estimator %in% c("ML","MLR")) {
     if (missing_mode %in% c("fiml","ml","ml.x")) {
@@ -93,7 +98,8 @@ result <- tryCatch({
       std.lv = TRUE,
       meanstructure = TRUE,
       se = if (boot > 0 && estimator %in% c("ML","MLR")) "bootstrap" else "standard",
-      bootstrap = if (boot > 0) boot else 1000
+      bootstrap = if (boot > 0) boot else 1000,
+      rotation = rotation
     )
   )
   fit <- fit_capture$fit
@@ -188,6 +194,12 @@ result <- tryCatch({
     else guidance <- c(guidance, "SRMR sugiere discrepancias residuales relevantes.")
   }
 
+  if (length(ordered_vars) && !is.null(fit_robust[["cfi.scaled"]]) && !is.null(fit_robust[["cfi.robust"]])) {
+    cs <- fit_robust[["cfi.scaled"]]; cr <- fit_robust[["cfi.robust"]]
+    if (is.finite(cs) && is.finite(cr) && abs(cs-cr) > .02) guidance <- c(guidance,
+      sprintf("CFI escalado (%.3f) y robusto (%.3f) discrepan: informe ambos y valore la sensibilidad al estimador.",cs,cr))
+  }
+  if (is_esem) guidance <- c(guidance,paste0("ESEM: rotación ",rotation,". Examine cargas cruzadas y sustento teórico."))
   guidance <- c(guidance, missing_guidance,
     "No modifique el modelo únicamente para mejorar índices de ajuste; conserve sustento teórico.")
 
@@ -204,6 +216,12 @@ result <- tryCatch({
     fit_robust = fit_robust,
     missing_used = lavaan_missing,
     ordered_vars = ordered_vars %||% list(),
+    rotation = if(is_esem) rotation else NULL,
+    latent_correlations = tryCatch({
+      cl <- lavInspect(fit, "cor.lv")
+      if(is.list(cl)) cl <- cl[[1]]
+      list(names=colnames(cl),values=unname(split(round(cl,6),row(cl))))
+    },error=function(e) NULL),
     parameters = params,
     modification_indices = mi_list,
     guidance = unique(guidance)
