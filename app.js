@@ -1960,7 +1960,9 @@ function renderProResults(data){
     html+='</ul></div>';
   }
 
-  html+='<h3>Índices estándar / no robustos</h3><div class="pro-fit-grid">';
+  const isOrdinalFit=Array.isArray(data.ordered_vars)&&data.ordered_vars.length>0;
+  if(isOrdinalFit)html+='<div class="sem-engine-note"><strong>Indicadores ordinales:</strong> no reporte los índices DWLS sin corrección como prueba de ajuste; consulte los índices escalados o robustos disponibles.</div>';
+  html+=`<h3>Índices estándar / no robustos${isOrdinalFit?' <small>(no reportar como ajuste final)</small>':''}</h3><div class="pro-fit-grid">`;
   const labels={
     chisq:'χ²',df:'gl',pvalue:'p',cfi:'CFI',tli:'TLI',rmsea:'RMSEA',
     'rmsea.ci.lower':'RMSEA IC inf.','rmsea.ci.upper':'RMSEA IC sup.',
@@ -1969,7 +1971,7 @@ function renderProResults(data){
   keys.forEach(k=>{
     const v=Number(fit[k]);
     if(Number.isFinite(v)){
-      const cls=fitStatus(labels[k],v);
+      const cls=isOrdinalFit?'':fitStatus(labels[k],v);
       html+=`<div class="pro-fit-card ${cls}"><span>${labels[k]}</span><strong>${k==='df'?v.toFixed(0):v.toFixed(3)}</strong></div>`;
     }
   });
@@ -2186,8 +2188,11 @@ function renderAdvanced(data){
   <p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div>`;
 
   if(data.metrics){
-    html+='<div class="workspace"><table class="results-table"><thead><tr><th>Constructo</th><th>CR</th><th>AVE</th></tr></thead><tbody>';
-    data.metrics.forEach(x=>html+=`<tr><td>${escapeHtml(x.factor)}</td><td>${fmtPro(x.cr)}</td><td>${fmtPro(x.ave)}</td></tr>`);
+    html+='<div class="workspace"><table class="results-table"><thead><tr><th>Constructo</th><th>CR</th><th>AVE</th><th>√AVE</th><th>r latente máx.</th><th>Fornell-Larcker</th></tr></thead><tbody>';
+    data.metrics.forEach(x=>{
+      const fl=x.fornell_larcker_ok===true?'Cumple':x.fornell_larcker_ok===false?'Revisar':'No evaluable';
+      html+=`<tr><td>${escapeHtml(x.factor)}</td><td>${fmtPro(x.cr)}</td><td>${fmtPro(x.ave)}</td><td>${fmtPro(x.sqrt_ave)}</td><td>${fmtPro(x.max_latent_r)}</td><td>${fl}</td></tr>`;
+    });
     html+='</tbody></table></div>';
   }
   if(data.htmt){
@@ -2205,8 +2210,12 @@ function renderAdvanced(data){
     html+='</tbody></table></div>';
   }
   if(data.invariance){
-    html+='<h3>Invariancia factorial</h3><div class="workspace"><table class="results-table"><thead><tr><th>Modelo</th><th>CFI</th><th>RMSEA</th><th>SRMR</th><th>ΔCFI</th><th>ΔRMSEA</th><th>ΔSRMR</th></tr></thead><tbody>';
-    data.invariance.forEach(x=>html+=`<tr><td>${escapeHtml(x.model)}</td><td>${fmtPro(x.cfi)}</td><td>${fmtPro(x.rmsea)}</td><td>${fmtPro(x.srmr)}</td><td>${fmtPro(x.delta_cfi)}</td><td>${fmtPro(x.delta_rmsea)}</td><td>${fmtPro(x.delta_srmr)}</td></tr>`);
+    const ft=data.fit_type?` <small>(índices ${escapeHtml(data.fit_type)})</small>`:'';
+    html+=`<h3>Invariancia factorial${ft}</h3><div class="workspace"><table class="results-table"><thead><tr><th>Modelo</th><th>CFI</th><th>TLI</th><th>RMSEA</th><th>SRMR</th><th>ΔCFI</th><th>ΔRMSEA</th><th>ΔSRMR</th><th>Δχ² (Δgl)</th><th>p</th></tr></thead><tbody>`;
+    data.invariance.forEach(x=>{
+      const dchi=x.delta_chisq==null?'—':`${fmtPro(x.delta_chisq)} (${fmtPro(x.delta_df)})`;
+      html+=`<tr><td>${escapeHtml(x.model)}</td><td>${fmtPro(x.cfi)}</td><td>${fmtPro(x.tli)}</td><td>${fmtPro(x.rmsea)}</td><td>${fmtPro(x.srmr)}</td><td>${fmtPro(x.delta_cfi)}</td><td>${fmtPro(x.delta_rmsea)}</td><td>${fmtPro(x.delta_srmr)}</td><td>${dchi}</td><td>${fmtPro(x.delta_p)}</td></tr>`;
+    });
     html+='</tbody></table></div>';
   }
   if(data.guidance?.length){
