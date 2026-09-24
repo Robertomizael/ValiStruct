@@ -105,7 +105,7 @@ function parseJasp(input){
   if(!input||!input.trim())throw Error('Pegue primero la sintaxis de JASP o lavaan.');
   const source=input.replace(/^\uFEFF/,'').trim();
   if(source.length>100000)throw Error('La sintaxis supera el límite de 100 000 caracteres.');
-  const looksLikeR=/(?:\b(?:cfa|sem|lavaan)\s*\(|\bmodel\s*(?:<-|=)|\b(?:library|require)\s*\()/i.test(source);
+  const looksLikeR=/(?:\b(?:cfa|sem|lavaan)\s*\(|\b[A-Za-z][\w.]*\s*<-|\b[A-Za-z][\w.]*::\w+\s*\(|\b(?:library|require|data\.frame)\s*\()/i.test(source);
   let model=findModelLiteral(source);
   if(!model){
     if(looksLikeR)throw Error('El código R no contiene un modelo lavaan literal reconocible. Copie las ecuaciones =~ directamente o asigne el modelo a model <- "..." .');
