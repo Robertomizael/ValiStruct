@@ -1,5 +1,5 @@
-const CACHE='valistruct-v3-0-rc6-dashboard-hotfix-1';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE='valistruct-v3-0-rc6-jasp-import-v1';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./jasp-import.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
