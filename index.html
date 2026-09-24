@@ -651,6 +651,27 @@
 
       <div id="proDatasetSummary" class="dataset-summary"></div>
 
+      <div class="model-builder" id="jaspImportPanel">
+        <h3>Importar sintaxis de JASP → ValiStruct</h3>
+        <p>Copie las ecuaciones lavaan o el código R que JASP muestre para un AFC/SEM. El importador solo lee el texto; <strong>no ejecuta código R pegado</strong>. Transfiere el modelo y las opciones compatibles al Motor Pro.</p>
+        <label for="jaspSource">Sintaxis de JASP o lavaan</label>
+        <textarea id="jaspSource" rows="9" spellcheck="false" placeholder="model <- 'F1 =~ i01 + i02 + i03&#10;F2 =~ i04 + i05 + i06'&#10;fit <- lavaan::cfa(model, data=datos, estimator='WLSMV')"></textarea>
+        <div class="button-row">
+          <button id="jaspInspect" class="primary">Leer y comprobar sintaxis</button>
+          <button id="jaspExample">Ejemplo CIVP</button>
+        </div>
+        <p id="jaspImportStatus" class="sem-engine-note" role="status" aria-live="polite">Pegue la sintaxis y pulse «Leer y comprobar». Utiliza el CSV importado en Motor Pro.</p>
+        <div id="jaspImportSummary" aria-live="polite"></div>
+        <ul id="jaspImportWarnings"></ul>
+        <label for="jaspPreview">Modelo lavaan extraído (vista previa)</label>
+        <textarea id="jaspPreview" rows="7" readonly spellcheck="false"></textarea>
+        <div class="button-row">
+          <button id="jaspApply" disabled>Pasar al Motor Pro</button>
+          <button id="jaspApplyRun" class="primary" disabled>Aplicar y calcular</button>
+        </div>
+        <div class="notice"><strong>Alcance:</strong> reproduce modelos de medición lavaan compatibles con el backend, no todos los análisis ni las opciones internas de JASP. Para reproducir resultados, use los mismos datos, estimador, tratamiento de faltantes y restricciones. El cálculo requiere el backend R conectado.</div>
+      </div>
+
       <div class="model-builder">
         <h3>Sintaxis lavaan</h3>
         <textarea id="proSyntax" rows="12" placeholder="F1 =~ I1 + I2 + I3&#10;F2 =~ I4 + I5 + I6&#10;F2 ~ F1"></textarea>
@@ -3122,6 +3143,7 @@
   </footer>
 
   <script src="app.js"></script>
+<script src="jasp-import.js"></script>
   <script>
   (function(){
     function esc(s){
