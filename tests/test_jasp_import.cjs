@@ -33,6 +33,6 @@ test('rejects generic R scripts and code with no literal model',()=>{
  assert.throws(()=>parse('fit <- jaspSem::runAnalysis(data)'),/modelo lavaan literal/);
 });
 test('rejects non-model text and malformed model lines',()=>{
- assert.throws(()=>parse('data.frame(x=1)'),/sintaxis/);
+ assert.throws(()=>parse('data.frame(x=1)'),/modelo lavaan literal/);
  assert.throws(()=>parse('F =~ i01 + i02\nthis is not lavaan'),/fuera del importador seguro/);
 });
