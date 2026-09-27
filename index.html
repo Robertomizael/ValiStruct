@@ -19,7 +19,7 @@
       <h1>ValiStruct</h1>
       <p>Plataforma inteligente para validación de instrumentos y modelamiento estructural</p>
     </div>
-    <div class="author">Dr. Roberto Joel Tirado Reyes<br><button id="headerInstallButton" class="mini-install">Instalar app</button></div>
+    <div class="author">Dr. Roberto Joel Tirado Reyes<br><small>Autor conceptual y director científico</small><br><button id="headerInstallButton" class="mini-install">Instalar app</button></div>
   </header>
 
   <nav aria-label="Navegación principal" class="nav">
@@ -106,7 +106,7 @@
   </nav>
 
   <main id="mainContent" tabindex="-1">
-  <div class="rc-banner"><strong>ValiStruct 3.0 RC6</strong> · Release Candidate para beta institucional controlada. Se priorizan estabilidad y corrección sobre nuevas funcionalidades.</div>
+  <div class="rc-banner"><strong>ValiStruct v5.1 · Rama de desarrollo</strong> · Validación interna y externa por etapas. Las funciones que todavía no están disponibles se señalan como «en construcción»; Motor Pro y las herramientas anteriores permanecen accesibles.</div>
     <section id="inicio" class="panel visible">
       <div class="hero">
         <h2>Bienvenido a ValiStruct</h2>
@@ -1687,8 +1687,8 @@
     <section id="dataimport" class="panel">
       <div class="section-heading">
         <div>
-          <h2>Importación de datos</h2>
-          <p>Cargue CSV o XLSX y reutilice la base en los módulos diagnósticos, AFE, AFC y Motor Pro.</p>
+          <h2>Centro de datos · participantes</h2>
+          <p>Importe una vez y reutilice la base en Diagnóstico, Fiabilidad, ACP/AFE, AFC y Motor Pro. La matriz independiente de jueces para V de Aiken no se modifica.</p>
         </div>
         <span class="badge">ValiStruct 3.0 RC6</span>
       </div>
@@ -1718,9 +1718,16 @@
         </label>
       </div>
 
+      <label class="participant-item-selector" for="participantItemNames">Ítems a analizar (opcional; separados por comas)
+        <input id="participantItemNames" type="text" placeholder="i01, i02, i03, i04" autocomplete="off">
+        <small>Sin selección, se utilizarán las columnas numéricas, excepto la columna identificadora detectada. Para fiabilidad y análisis factorial indique los ítems, no las covariables.</small>
+      </label>
+      <p id="participantImportStatus" class="sem-engine-note" role="status" aria-live="polite">Los datos de participantes permanecen en memoria; el proyecto no guardará registros crudos sin autorización expresa.</p>
       <div class="button-row">
         <button id="importToDiagnostics" class="primary">Enviar a Diagnóstico</button>
-        <button id="importToEfa">Enviar a AFE</button>
+        <button id="importToReliability">Enviar a Fiabilidad</button>
+        <button id="importToEfa">Enviar a ACP / AFE</button>
+        <button id="importToCfa">Enviar a AFC</button>
         <button id="importToMotorPro">Enviar a Motor Pro</button>
         <button id="downloadNormalizedCsv">Descargar CSV normalizado</button>
       </div>
@@ -3125,7 +3132,7 @@
         estructural, especialmente entre estudiantes y profesores en formación investigadora.
       </p>
       <p>
-        <strong>Autor y desarrollador académico:</strong><br />
+        <strong>Autor conceptual y director científico:</strong><br />
         Dr. Roberto Joel Tirado Reyes<br />
         Profesor-investigador<br />
         Universidad Autónoma de Sinaloa
@@ -3142,8 +3149,10 @@
     <span>Dr. Roberto Joel Tirado Reyes · Universidad Autónoma de Sinaloa</span>
   </footer>
 
+  <script src="navigation-v51.js"></script>
+  <script src="participant-data.js"></script>
   <script src="app.js"></script>
-<script src="jasp-import.js"></script>
+  <script src="jasp-import.js"></script>
   <script>
   (function(){
     function esc(s){
