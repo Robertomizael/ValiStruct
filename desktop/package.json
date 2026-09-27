@@ -40,6 +40,9 @@
     "extraResources": [
       { "from": "../index.html", "to": "app/index.html" },
       { "from": "../app.js", "to": "app/app.js" },
+      { "from": "../navigation-v51.js", "to": "app/navigation-v51.js" },
+      { "from": "../participant-data.js", "to": "app/participant-data.js" },
+      { "from": "../jasp-import.js", "to": "app/jasp-import.js" },
       { "from": "../styles.css", "to": "app/styles.css" },
       { "from": "../manifest.webmanifest", "to": "app/manifest.webmanifest" },
       { "from": "../icons", "to": "app/icons" },
