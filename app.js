@@ -391,7 +391,8 @@ document.getElementById('csvFile').addEventListener('change', e => {
 });
 
 // Reliability module v0.4
-let relData=null,relLast=null;
+// Stable adapter for project persistence, dashboard and APA reporting.
+let relData=null,relLast=null,relLastResults=null;
 const q=id=>document.getElementById(id),avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
 function vari(a){let m=avg(a);return a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1)}
 function corr(a,b){let ma=avg(a),mb=avg(b),sa=Math.sqrt(vari(a)),sb=Math.sqrt(vari(b));if(!(sa>0&&sb>0))return NaN;let s=0;for(let i=0;i<a.length;i++)s+=(a[i]-ma)*(b[i]-mb);return s/((a.length-1)*sa*sb)}
@@ -401,7 +402,7 @@ function rit(M,j){return corr(M.map(r=>r[j]),M.map(r=>r.reduce((s,x,i)=>i===j?s:
 function omegaApprox(M){return NaN} // RC4: omega web retirado; requiere modelo factorial explícito.
 function parseRelCSV(text){let rows=parseCSV(text.replace(/^\uFEFF/,'')),h=rows[0].map(x=>x.trim()),start=/^(id|folio|participante|sujeto|caso)$/i.test(h[0]||'')?1:0,names=h.slice(start),body=rows.slice(1).filter(r=>r.some(x=>String(x).trim()!=='')),M=body.map((r,i)=>{let v=r.slice(start,start+names.length).map(x=>Number(String(x).trim()));if(v.some(x=>!Number.isFinite(x)))throw Error('Dato no numérico o vacío en fila '+(i+2));return v});if(names.length<2||M.length<2)throw Error('Se requieren al menos 2 ítems y 2 participantes.');return{itemNames:names,matrix:M,n:M.length,k:names.length}}
 function renderRelData(d){let f=d.matrix.flat();q('relDatasetSummary').innerHTML=`<div class="metric-card"><span>Participantes</span><strong>${d.n}</strong></div><div class="metric-card"><span>Ítems</span><strong>${d.k}</strong></div><div class="metric-card"><span>Mínimo observado</span><strong>${Math.min(...f)}</strong></div><div class="metric-card"><span>Máximo observado</span><strong>${Math.max(...f)}</strong></div>`;let h='<table class="results-table"><thead><tr><th>#</th>'+d.itemNames.map(x=>`<th>${escapeHtml(x)}</th>`).join('')+'</tr></thead><tbody>';d.matrix.slice(0,8).forEach((r,i)=>h+=`<tr><td>${i+1}</td>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`);q('relDataPreview').innerHTML=h+'</tbody></table>';q('relActions').classList.remove('hidden');q('relResults').innerHTML=''}
-function calcRel(){if(!relData)return alert('Importe o cargue una matriz.');let M=relData.matrix,A=cronAlpha(M),AS=stdAlpha(M),rt=Number(q('relItemTotalThreshold').value),rows=relData.itemNames.map((name,j)=>{let c=M.map(r=>r[j]),R=rit(M,j),AD=relData.k>2?cronAlpha(M.map(r=>r.filter((_,i)=>i!==j))):NaN,flag=R>=rt?'Adecuado':'Revisar',cls=R>=rt?'good-bg':'warn-bg';if(Number.isFinite(AD)&&Number.isFinite(A)&&AD>A+.02){flag='Posible reactivo problemático';cls='bad-bg'}return{name,mean:avg(c),sd:Math.sqrt(vari(c)),rit:R,aDel:AD,flag,cls}});relLast={A,AS,rows};let fmt=x=>Number.isFinite(x)?x.toFixed(3):'—',bad=rows.filter(x=>x.flag!=='Adecuado').length;q('relResults').innerHTML=`<div class="results-summary"><div class="report-header"><h3>ValiStruct · Informe de confiabilidad</h3><p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div><div class="result-cards"><div class="result-card"><span>Alfa de Cronbach</span><strong>${fmt(A)}</strong></div><div class="result-card"><span>Alfa estandarizada</span><strong>${fmt(AS)}</strong></div><div class="result-card ${bad?'warn-bg':'good-bg'}"><span>Ítems a revisar</span><strong>${bad}</strong></div></div><div class="rel-note"><strong>Omega de McDonald:</strong> no se calcula en el módulo web RC4. Se retiró la estimación preliminar porque no representaba un omega factorial auténtico. Para reportar ω debe emplearse un modelo factorial explícito.</div></div><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>Media</th><th>DE</th><th>Ítem-total corregida</th><th>Alfa si se elimina</th><th>Orientación</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.name)}</td><td>${x.mean.toFixed(2)}</td><td>${x.sd.toFixed(2)}</td><td>${fmt(x.rit)}</td><td>${fmt(x.aDel)}</td><td><span class="status-chip ${x.cls}">${x.flag}</span></td></tr>`).join('')}</tbody></table></div>`}
+function calcRel(){if(!relData)return alert('Importe o cargue una matriz.');let M=relData.matrix,A=cronAlpha(M),AS=stdAlpha(M),rt=Number(q('relItemTotalThreshold').value),rows=relData.itemNames.map((name,j)=>{let c=M.map(r=>r[j]),R=rit(M,j),AD=relData.k>2?cronAlpha(M.map(r=>r.filter((_,i)=>i!==j))):NaN,flag=R>=rt?'Adecuado':'Revisar',cls=R>=rt?'good-bg':'warn-bg';if(Number.isFinite(AD)&&Number.isFinite(A)&&AD>A+.02){flag='Posible reactivo problemático';cls='bad-bg'}return{name,mean:avg(c),sd:Math.sqrt(vari(c)),rit:R,aDel:AD,flag,cls}});relLast={A,AS,rows};relLastResults={alpha:A,alphaStandardized:AS,itemRows:rows,omegaApprox:null};let fmt=x=>Number.isFinite(x)?x.toFixed(3):'—',bad=rows.filter(x=>x.flag!=='Adecuado').length;q('relResults').innerHTML=`<div class="results-summary"><div class="report-header"><h3>ValiStruct · Informe de confiabilidad</h3><p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div><div class="result-cards"><div class="result-card"><span>Alfa de Cronbach</span><strong>${fmt(A)}</strong></div><div class="result-card"><span>Alfa estandarizada</span><strong>${fmt(AS)}</strong></div><div class="result-card ${bad?'warn-bg':'good-bg'}"><span>Ítems a revisar</span><strong>${bad}</strong></div></div><div class="rel-note"><strong>Omega de McDonald:</strong> no se calcula en el módulo web RC4. Se retiró la estimación preliminar porque no representaba un omega factorial auténtico. Para reportar ω debe emplearse un modelo factorial explícito.</div></div><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>Media</th><th>DE</th><th>Ítem-total corregida</th><th>Alfa si se elimina</th><th>Orientación</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.name)}</td><td>${x.mean.toFixed(2)}</td><td>${x.sd.toFixed(2)}</td><td>${fmt(x.rit)}</td><td>${fmt(x.aDel)}</td><td><span class="status-chip ${x.cls}">${x.flag}</span></td></tr>`).join('')}</tbody></table></div>`}
 function relTemplate(){let rows=[['ID','Item1','Item2','Item3','Item4','Item5'],['P001',5,4,5,4,5],['P002',4,4,4,3,4],['P003',3,4,3,4,3]];saveBlob('\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_plantilla_confiabilidad.csv')}
 function relExample(){let names=['Item1','Item2','Item3','Item4','Item5','Item6'],M=[[5,5,4,5,4,5],[4,4,4,5,4,4],[5,4,5,5,5,5],[4,5,4,4,4,4],[3,4,3,4,3,3],[5,5,5,4,5,5],[4,4,5,4,4,4],[3,3,4,3,3,2],[5,4,5,5,4,5],[4,5,4,5,4,4],[2,3,2,3,2,2],[4,4,4,4,5,4],[5,5,4,5,5,5],[3,4,3,3,4,3],[4,4,5,4,4,5],[5,4,5,4,5,5],[3,3,3,4,3,3],[4,5,4,4,5,4],[5,5,5,5,4,5],[2,3,3,2,3,2]];relData={itemNames:names,matrix:M,n:M.length,k:names.length};renderRelData(relData)}
 function relResultsCSV(){if(!relLast)return alert('Primero calcule la confiabilidad.');let r=relLast,rows=[['Indicador','Valor'],['Alfa_Cronbach',r.A],['Alfa_estandarizada',r.AS],['Omega_preliminar',r.O],[],['Item','Media','DE','Item_total_corregida','Alfa_si_elimina','Orientacion']];r.rows.forEach(x=>rows.push([x.name,x.mean,x.sd,x.rit,x.aDel,x.flag]));saveBlob('\ufeff'+rows.map(z=>z.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_confiabilidad_resultados.csv')}
@@ -2544,6 +2545,11 @@ document.getElementById('applyProDiagram')?.addEventListener('click',applyProCoe
 // v1.1 Gestión de proyectos
 // -----------------------------
 const PROJECT_KEY='valistruct_projects_v1';
+// Privacy must be enforced even if a later compatibility wrapper fails to initialize.
+function rawProjectDataConsent(){
+  try { return JSON.parse(localStorage.getItem('valistruct_privacy_v21')||'{}').rawData==='yes'; }
+  catch(_) { return false; }
+}
 function projectState(){
   return {
     version:'1.1',
@@ -2552,10 +2558,10 @@ function projectState(){
     author:(document.getElementById('projectAuthor')?.value||'').trim(),
     semNodes,
     semEdges,
-    semData,
+    semData:rawProjectDataConsent()?semData:null,
     semStructuralResults,
     semMediationResults,
-    proCsvText,
+    proCsvText:rawProjectDataConsent()?proCsvText:null,
     proLastResponse,
     advancedLastResponse,
     aiken:lastResults,
@@ -2597,6 +2603,7 @@ function restoreProject(state){
     advancedLastResponse=state.advancedLastResponse||null;
     if(Array.isArray(state.aiken))lastResults=state.aiken;
     relLastResults=state.reliability||null;
+    relLast=relLastResults?{A:relLastResults.alpha,AS:relLastResults.alphaStandardized,rows:relLastResults.itemRows||[]}:null;
     efaLastResults=state.efa||null;
     cfaLastResults=state.cfa||null;
     if(document.getElementById('reportStudyTitle'))document.getElementById('reportStudyTitle').value=state.reportTitle||'';
@@ -2604,6 +2611,7 @@ function restoreProject(state){
     if(semSyntax)semSyntax.value=state.latenciaSyntax||'';
     renderSem();
     renderSemDataset();
+    if(typeof buildQualityDashboard==='function')buildQualityDashboard();
     if(proCsvText)summarizeProCsv(proCsvText);
     alert('Proyecto cargado.');
   }catch(e){alert('No fue posible cargar el proyecto: '+e.message);}
