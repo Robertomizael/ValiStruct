@@ -479,11 +479,23 @@ async function injectDesktopUX(win) {
   const cssPath = path.join(__dirname, 'ux-shell.css');
   const jsPath = path.join(__dirname, 'ux-shell.js');
   const excelPath = path.join(__dirname, 'excel-import.js');
-  if (fs.existsSync(cssPath)) {
-    await win.webContents.insertCSS(fs.readFileSync(cssPath, 'utf8'));
-  }
-  if (fs.existsSync(jsPath)) {
-    await win.webContents.executeJavaScript(fs.readFileSync(jsPath, 'utf8'));
+
+  // The legacy desktop shell reconstructs the navigation and the home page.
+  // In v5.1 the frontend already groups modules scientifically; re-injecting
+  // the old shell would silently replace the reengineered interface.
+  const newNavigation = await win.webContents.executeJavaScript(
+    "document.querySelector('nav.nav')?.dataset.v51Grouped === 'yes'",
+    true
+  );
+  if (!newNavigation) {
+    if (fs.existsSync(cssPath)) {
+      await win.webContents.insertCSS(fs.readFileSync(cssPath, 'utf8'));
+    }
+    if (fs.existsSync(jsPath)) {
+      await win.webContents.executeJavaScript(fs.readFileSync(jsPath, 'utf8'));
+    }
+  } else {
+    console.log('[ValiStruct] v5.1 scientific navigation detected; skipping legacy desktop shell.');
   }
   if (fs.existsSync(excelPath)) {
     await win.webContents.executeJavaScript(fs.readFileSync(excelPath, 'utf8'));
@@ -504,7 +516,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v3.0.0 Beta 1',
+    title: 'ValiStruct v5.1 Beta · Fase 1',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
