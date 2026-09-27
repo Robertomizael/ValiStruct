@@ -1,7 +1,7 @@
 {
   "name": "valistruct-desktop",
-  "version": "3.0.1-beta.1",
-  "description": "ValiStruct Desktop 3.0.1 Beta",
+  "version": "5.1.0-beta.1",
+  "description": "ValiStruct Desktop 5.1 Beta · Fase 1 de reingeniería",
   "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
