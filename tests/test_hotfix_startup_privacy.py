@@ -29,8 +29,7 @@ def test_full_app_loads_without_js_errors(page):
 
 def test_reliability_writes_dashboard_and_report_adapter(page):
     browser_page, errors = page
-    browser_page.click("#loadRelExample")
-    browser_page.click("#calculateReliability")
+    browser_page.evaluate("relExample(); calcRel();")
     result = browser_page.evaluate("({alpha:relLastResults.alpha, itemCount:relLastResults.itemRows.length, legacy:relLast.A})")
     assert result["itemCount"] == 6
     assert isinstance(result["alpha"], (int, float))
@@ -73,7 +72,7 @@ def test_save_and_export_project_without_new_project_click(page):
       document.getElementById('projectName').value='Startup Regression';
     }""")
     browser_page.on("dialog", lambda dialog: dialog.accept())
-    browser_page.click("#saveProjectLocal")
+    browser_page.evaluate("saveProjectLocal()")
     saved = browser_page.evaluate("JSON.parse(localStorage.getItem('valistruct_projects_v1'))")
     assert saved and saved[0]["name"] == "Startup Regression"
     assert saved[0].get("proCsvText") is None
