@@ -1,7 +1,7 @@
 {
   "name": "valistruct-desktop",
-  "version": "5.1.0-beta.1",
-  "description": "ValiStruct Desktop 5.1 Beta · Fase 1 de reingeniería",
+  "version": "5.2.0-beta.1",
+  "description": "ValiStruct Desktop 5.2 Beta · Interfaz modular y validación externa",
   "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
@@ -41,6 +41,8 @@
       { "from": "../index.html", "to": "app/index.html" },
       { "from": "../app.js", "to": "app/app.js" },
       { "from": "../navigation-v51.js", "to": "app/navigation-v51.js" },
+      { "from": "../v52-shell.js", "to": "app/v52-shell.js" },
+      { "from": "../v52.css", "to": "app/v52.css" },
       { "from": "../participant-data.js", "to": "app/participant-data.js" },
       { "from": "../jasp-import.js", "to": "app/jasp-import.js" },
       { "from": "../styles.css", "to": "app/styles.css" },

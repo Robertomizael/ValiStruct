@@ -1,0 +1,40 @@
+name: ValiStruct v5.2 UX and external workspaces
+on:
+  push:
+    branches: [feature/v5-2-ux-validacion-externa]
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install test dependencies
+        run: |
+          python -m pip install pytest playwright
+          python -m playwright install --with-deps chromium
+      - name: Static checks and protected JASP
+        run: |
+          node --check app.js
+          node --check navigation-v51.js
+          node --check participant-data.js
+          node --check v52-shell.js
+          node --check desktop/main.js
+          node --test tests/test_jasp_import.cjs
+          python tests/static_frontend_audit.py
+      - name: Serve frontend
+        run: |
+          python -m http.server 8000 >/tmp/v52.log 2>&1 &
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:8000/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/v52.log
+          exit 1
+      - name: Browser regression and UX tests
+        env: {VALISTRUCT_FRONTEND_URL: 'http://127.0.0.1:8000'}
+        run: |
+          pytest -q tests/test_hotfix_startup_privacy.py
+          pytest -q tests/test_v52_ux.py

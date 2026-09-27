@@ -516,7 +516,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v5.1 Beta · Fase 1',
+    title: 'ValiStruct v5.2 Beta · Interfaz modular',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
