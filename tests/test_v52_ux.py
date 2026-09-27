@@ -16,6 +16,11 @@ def page():
         yield page,errors
         browser.close()
 
+def open_group(page,name):
+    group=page.locator(".vs-v52-group").filter(has=page.locator("summary",has_text=name))
+    if not group.evaluate("(el) => el.open"):
+        group.locator("summary").click()
+
 def test_home_is_focused_and_navigation_preserves_legacy_modules(page):
     p,errors=page
     assert p.locator(".nav-v52").count()==1
@@ -49,6 +54,7 @@ def test_module_isolation_external_navigation_and_accordions(page):
 
 def test_external_configuration_is_honest_and_never_calculates(page):
     p,errors=page
+    open_group(p,"Validación externa")
     p.locator('.nav button[data-section="performance"]').click()
     panel=p.locator("#performance")
     assert "implementación" in panel.locator(".vs-v52-method-note").inner_text()
@@ -61,12 +67,14 @@ def test_external_configuration_is_honest_and_never_calculates(page):
 
 def test_shared_data_is_preserved_from_phase_one(page):
     p,errors=page
+    open_group(p,"Centro de datos")
     p.locator('.nav button[data-section="dataimport"]').click()
     p.locator("#unifiedDataFile").set_input_files({
         "name":"simulados.csv","mimeType":"text/csv",
         "buffer": b"ID,Total,Diagnostico\n1,10,1\n2,5,0\n3,7,1\n"
     })
     p.wait_for_function("window.ValiStructParticipantData?.summary?.n === 3")
+    open_group(p,"Validación externa")
     p.locator('.nav button[data-section="performance"]').click()
     assert "3 participantes" in p.locator("#performance .vs-v52-linked-data").inner_text()
     p.locator("#performance .vs-v52-variable").fill("Total")
