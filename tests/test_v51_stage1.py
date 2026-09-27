@@ -48,11 +48,11 @@ def test_one_import_reuses_participant_data_and_preserves_judges(page):
     assert p.evaluate("lastResults[0].item") == "JUECES"
     p.locator('.nav button[data-section="dataimport"]').click()
     p.locator("#importToEfa").click()
-    assert p.evaluate("efaData.n") == 2
-    assert p.locator("#efaDatasetSummary").inner_text().count("2") >= 1
+    assert p.evaluate("efaData.n") == 3
+    assert p.locator("#efaDatasetSummary").inner_text().count("3") >= 1
     p.locator('.nav button[data-section="dataimport"]').click()
     p.locator("#importToCfa").click()
-    assert p.evaluate("cfaData.n") == 2
+    assert p.evaluate("cfaData.n") == 3
     assert p.evaluate("cfaData.itemNames.join(',')") == "i1,i2,i3"
     assert p.evaluate("lastResults[0].item") == "JUECES"
     assert not errors,repr(errors)
