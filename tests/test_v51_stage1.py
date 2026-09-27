@@ -5,7 +5,7 @@ pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import sync_playwright
 
 BASE = os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
-CSV = b"ID,i1,i2,i3,sexo\nP001,1,2,3,F\nP002,2,,4,M\nP003,4,5,6,F\n"
+CSV = b"ID,i1,i2,i3,sexo\nP001,1,2,3,F\nP002,2,,4,M\nP003,4,5,6,F\nP004,5,6,7,M\n"
 
 @pytest.fixture()
 def page():
@@ -24,7 +24,7 @@ def upload(page):
     page.locator("#unifiedDataFile").set_input_files({
         "name":"participantes.csv","mimeType":"text/csv","buffer":CSV
     })
-    page.wait_for_function("window.ValiStructParticipantData?.summary?.n === 3")
+    page.wait_for_function("window.ValiStructParticipantData?.summary?.n === 4")
     page.locator("#participantItemNames").fill("i1, i2, i3")
 
 def test_scientific_navigation_is_grouped_and_legacy_tools_survive(page):
@@ -40,10 +40,10 @@ def test_one_import_reuses_participant_data_and_preserves_judges(page):
     p,errors=page
     p.evaluate("lastResults=[{v:0.85,item:'JUECES',criterion:'Claridad'}]")
     upload(p)
-    assert p.evaluate("window.ValiStructParticipantData.summary.n")==3
+    assert p.evaluate("window.ValiStructParticipantData.summary.n")==4
     p.locator("#importToReliability").click()
-    assert p.locator("#relDatasetSummary").inner_text().count("2") >= 1
-    assert p.evaluate("relData.n") == 2
+    assert p.locator("#relDatasetSummary").inner_text().count("3") >= 1
+    assert p.evaluate("relData.n") == 3
     assert p.evaluate("relData.k") == 3
     assert p.evaluate("lastResults[0].item") == "JUECES"
     p.locator('.nav button[data-section="dataimport"]').click()
