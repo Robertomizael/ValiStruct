@@ -5,8 +5,11 @@ on:
   push:
     branches:
       - main
+      - feature/v5-1-fase1-diseno-datamanager
     paths:
       - "desktop/**"
+      - "navigation-v51.js"
+      - "participant-data.js"
       - "backend/**"
       - "index.html"
       - "app.js"
@@ -29,6 +32,13 @@ jobs:
           auto-activate-base: true
           channels: conda-forge
           channel-priority: strict
+      - name: Verify v5.1 desktop frontend assets
+        shell: pwsh
+        run: |
+          if (Test-Path navigation-v51.js) {
+            if (!(Test-Path participant-data.js)) { throw 'Missing participant-data.js' }
+            if (-not (Select-String -Path desktop/main.js -Pattern 'skipping legacy desktop shell' -Quiet)) { throw 'v5.1 desktop shell compatibility missing' }
+          }
       - name: Build integrated Windows runtime
         shell: pwsh
         run: ./desktop/scripts/build_runtime_windows.ps1
@@ -59,6 +69,13 @@ jobs:
           auto-activate-base: true
           channels: conda-forge
           channel-priority: strict
+      - name: Verify v5.1 desktop frontend assets
+        shell: bash
+        run: |
+          if [ -f navigation-v51.js ]; then
+            test -f participant-data.js
+            grep -q 'skipping legacy desktop shell' desktop/main.js
+          fi
       - name: Build integrated macOS runtime
         shell: bash -el {0}
         run: bash ./desktop/scripts/build_runtime_macos.sh
