@@ -4803,10 +4803,41 @@ let unifiedCsvText=null;
 let unifiedSourceName='';
 let unifiedXlsxFile=null;
 
+// Cambiar la base de participantes invalida sus resultados, nunca los de jueces.
+function invalidateParticipantAnalyses(){
+  relLast=null;relLastResults=null;efaLastResults=null;cfaLastResults=null;
+  proLastResponse=null;advancedLastResponse=null;
+  if(typeof diagLast!=='undefined')diagLast=null;
+  if(typeof multiLast!=='undefined')multiLast=null;
+  if(typeof qualityLast!=='undefined')qualityLast=null;
+  ['relResults','efaResults','cfaResults','proResults'].forEach(id=>{
+    const target=document.getElementById(id);
+    if(target)target.innerHTML='<div class="notice">Base de participantes actualizada: ejecute de nuevo este análisis.</div>';
+  });
+}
+function selectedParticipantItems(){
+  return (document.getElementById('participantItemNames')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getUnifiedParticipantMatrix(){
+  if(!unifiedCsvText)throw new Error('Cargue primero un archivo.');
+  const manager=window.ValiStructParticipantData;
+  manager.setCsv(unifiedCsvText,{source:unifiedSourceName||'Centro de datos',format:unifiedSourceName.split('.').pop()||'csv'});
+  const data=manager.numericMatrix({firstColumn:document.getElementById('importFirstColumn').value,
+    items:selectedParticipantItems()});
+  document.getElementById('participantImportStatus').textContent=
+    `Base: ${data.source} · ${data.n} casos completos · ${data.nExcluded} excluidos por datos faltantes en los ítems seleccionados · ${data.k} ítems.`;
+  return data;
+}
+
+
 function normalizeCsvText(text){
   return text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
 }
 function previewUnifiedCsv(text){
+  const source=unifiedSourceName||'Centro de datos';
+  const summary=window.ValiStructParticipantData.setCsv(text,{source,format:source.split('.').pop()||'csv'});
+  document.getElementById('participantImportStatus').textContent=
+    `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
   const rows=parseCSV(normalizeCsvText(text));
   if(!rows.length) return;
   const headers=rows[0];
@@ -4879,26 +4910,37 @@ document.getElementById('importToDiagnostics')?.addEventListener('click',()=>{
   }catch(e){alert(e.message);}
 });
 
+document.getElementById('importToReliability')?.addEventListener('click',()=>{
+  try {
+    const data=getUnifiedParticipantMatrix();
+    relData=parseRelCSV(data.csv);
+    renderRelData(relData);
+    document.querySelector('.nav button[data-section="reliability"]')?.click();
+  } catch(e){alert(e.message);}
+});
+
 document.getElementById('importToEfa')?.addEventListener('click',()=>{
-  if(!unifiedCsvText)return alert('Cargue primero un archivo.');
-  try{
-    const rows=parseCSV(unifiedCsvText);
-    const headers=rows[0];
-    const body=rows.slice(1).filter(r=>r.some(x=>String(x).trim()!==''));
-    let start=0;
-    if(document.getElementById('importFirstColumn').value==='id' ||
-      (document.getElementById('importFirstColumn').value==='auto' && /^(id|folio|participante|sujeto|caso)$/i.test(headers[0]||''))) start=1;
-    const itemNames=headers.slice(start);
-    const matrix=body.map(r=>r.slice(start,start+itemNames.length).map(Number));
-    if(matrix.some(r=>r.some(v=>!Number.isFinite(v)))) throw new Error('AFE requiere datos numéricos completos en esta importación.');
-    efaData={itemNames,matrix,n:matrix.length,k:itemNames.length};
-    document.querySelector('[data-section="efa"]')?.click();
-    if(typeof renderEfaDataset==='function') renderEfaDataset();
-  }catch(e){alert(e.message);}
+  try {
+    const data=getUnifiedParticipantMatrix();
+    efaData={itemNames:[...data.itemNames],matrix:data.matrix.map(r=>[...r]),n:data.n,k:data.k};
+    renderEfaDataset(efaData);
+    document.querySelector('.nav button[data-section="efa"]')?.click();
+  } catch(e){alert(e.message);}
+});
+
+document.getElementById('importToCfa')?.addEventListener('click',()=>{
+  try {
+    const data=getUnifiedParticipantMatrix();
+    cfaData=parseCfaCSV(data.csv);
+    renderCfaDataset(cfaData);
+    document.querySelector('.nav button[data-section="cfa"]')?.click();
+    validateCfaModel();
+  } catch(e){alert(e.message);}
 });
 
 document.getElementById('importToMotorPro')?.addEventListener('click',()=>{
   if(!unifiedCsvText)return alert('Cargue primero un archivo.');
+  window.ValiStructParticipantData.setCsv(unifiedCsvText,{source:unifiedSourceName||'Centro de datos'});
   proCsvText=unifiedCsvText;
   document.querySelector('[data-section="motorpro"]')?.click();
   summarizeProCsv(unifiedCsvText);
