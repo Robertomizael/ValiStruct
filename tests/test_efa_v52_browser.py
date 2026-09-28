@@ -22,8 +22,11 @@ def test_efa_toolbar_diagnostics_and_local_export():
         assert page.locator("#efaExtraction option").count()==7
         assert page.locator("#efaExtraction option[value='image']").get_attribute("disabled") is not None
         page.locator("#loadEfaExample").click()
+        page.route("**/efa",lambda route:route.fulfill(status=503,content_type="application/json",
+            headers={"Access-Control-Allow-Origin":"*"},body='{"ok":false,"error":"R desconectado (prueba)"}'))
         page.locator("#efaDiagnostics").click()
         page.wait_for_function("document.querySelector('#efaDiagnosticResults')?.innerText.includes('KMO global')",timeout=10000)
+        assert "requiere R" in page.locator("#efaEngineStatus").inner_text()
         page.locator("#efaExtraction").select_option("pca")
         page.locator("#calculateEfa").click()
         page.wait_for_function("document.querySelector('#efaResults')?.innerText.includes('KMO global')",timeout=12000)
