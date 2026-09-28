@@ -71,6 +71,75 @@ def test_desktop_patch_does_not_replace_one_canonical_motor_action(csv_text):
     assert "stopImmediatePropagation()" not in source
     assert "runProModel" in source  # normalize syntax, never start a second estimate
 
+def test_five_factor_civp_style_350_by_28_with_mlr():
+    import csv, io, requests
+    rng=random.Random(371)
+    out=io.StringIO();writer=csv.writer(out)
+    items=[f"i{x:02d}" for x in range(1,29)]
+    writer.writerow(["ID"]+items)
+    blocks=[items[0:5],items[5:11],items[11:17],items[17:23],items[23:28]]
+    for n in range(350):
+        common=rng.gauss(0,1)
+        latent=[.25*common+rng.gauss(0,1) for _ in blocks]
+        values=[]
+        for j,group in enumerate(blocks):
+            values.extend([round(.75*latent[j]+rng.gauss(0,.60),6) for _ in group])
+        writer.writerow([n+1]+values)
+    syntax="\\n".join(
+        f"F{j+1} =~ "+" + ".join(group) for j,group in enumerate(blocks))
+    resp=requests.post(BACKEND+"/estimate",json={
+        "csv_text":out.getvalue(),"syntax":syntax,"estimator":"MLR",
+        "data_type":"continuous","missing":"listwise","bootstrap":0
+    },timeout=240)
+    assert resp.status_code==200,resp.text
+    data=resp.json()
+    assert data["ok"],data
+    assert data["converged"]
+    assert data["n"]==350
+    assert data["estimator"]=="MLR"
+    assert len([x for x in data["parameters"] if x["op"]=="=~"])==28
+
+
+def test_reuse_multivariate_data_and_normalization(csv_text):
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page()
+        errors=[]
+        page.on("pageerror",lambda err:errors.append(str(err)))
+        page.goto(FRONTEND,wait_until="load")
+        page.evaluate("""() => {
+          multiData={names:['i01','i02','i03'],matrix:[[1,2,3],[2,3,4],[3,4,5]],
+            n:3,k:3};
+        }""")
+        page.locator('.nav button[data-section="motorpro"]').click()
+        page.locator("#useMotorMultiData").click()
+        assert page.evaluate("proCsvText.split('\\n').length")==4
+        assert page.evaluate("proCsvText.startsWith('i01,i02,i03')")
+        assert "3 casos" in page.locator("#motorProDataStatus").inner_text()
+        assert not errors,repr(errors)
+        browser.close()
+
+
+def test_injected_electron_renderer_patch_preserves_canonical_executor():
+    from pathlib import Path
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page()
+        errors=[];page.on("pageerror",lambda err:errors.append(str(err)))
+        page.goto(FRONTEND,wait_until="load")
+        patch=(Path(__file__).resolve().parents[1]/"desktop"/"renderer-fixes.js").read_text()
+        page.add_script_tag(content=patch)
+        assert page.locator("#sendCfaToMotorPro").count()==1
+        page.locator('.nav button[data-section="motorpro"]').click()
+        page.locator("#proSyntax").fill("F1 = i01, i02, i03")
+        page.on("dialog",lambda dialog:dialog.accept())
+        page.locator("#runProModel").click()
+        assert page.locator("#proSyntax").input_value()=="F1 =~ i01 + i02 + i03"
+        assert "Importe" in page.locator("#proResults").inner_text()
+        assert not errors,repr(errors)
+        browser.close()
+
+
 def test_missing_data_has_clear_feedback():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
