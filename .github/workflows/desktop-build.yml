@@ -7,12 +7,15 @@ on:
       - main
       - feature/v5-1-fase1-diseno-datamanager
       - feature/v5-2-ux-validacion-externa
+      - fix/v5-2-afe-estadistica-exportaciones
     paths:
       - "desktop/**"
       - "navigation-v51.js"
       - "participant-data.js"
       - "v52-shell.js"
       - "v52.css"
+      - "efa-v52.css"
+      - "efa-v52.js"
       - "backend/**"
       - "index.html"
       - "app.js"
@@ -40,6 +43,7 @@ jobs:
         run: |
           if (Test-Path v52-shell.js) {
             if (!(Test-Path v52.css)) { throw 'Missing v52.css' }
+            if (Test-Path efa-v52.js) { if (!(Test-Path efa-v52.css)) { throw 'Missing efa-v52.css' } }
           }
           if (Test-Path navigation-v51.js) {
             if (!(Test-Path participant-data.js)) { throw 'Missing participant-data.js' }
@@ -80,6 +84,7 @@ jobs:
         run: |
           if [ -f v52-shell.js ]; then
             test -f v52.css
+            if [ -f efa-v52.js ]; then test -f efa-v52.css; fi
           fi
           if [ -f navigation-v51.js ]; then
             test -f participant-data.js

@@ -424,6 +424,42 @@ const efaResults = document.getElementById('efaResults');
 function matrixTranspose(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
 function identity(n){ return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0)); }
 
+// Eigendescomposición Jacobi simétrica: usada por ACP, rotaciones y AFC locales.
+// Cada vector propio se devuelve como columna; autovalores ordenados de mayor
+// a menor. Antes de esta corrección se invocaba sin existir.
+function jacobiEigen(input){
+  if(!Array.isArray(input)||!input.length||input.some(row=>row.length!==input.length))
+    throw new Error('Jacobi requiere una matriz cuadrada.');
+  const n=input.length,A=input.map((row,i)=>row.map((v,j)=>(v+input[j][i])/2));
+  const V=identity(n),limit=Math.max(100,100*n*n);
+  for(let step=0;step<limit;step++){
+    let p=0,q=0,max=0;
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+      const v=Math.abs(A[i][j]);if(v>max){max=v;p=i;q=j;}
+    }
+    if(max<1e-11){
+      const order=Array.from({length:n},(_,i)=>i).sort((a,b)=>A[b][b]-A[a][a]);
+      return {values:order.map(i=>A[i][i]),vectors:order.map(j=>V.map(row=>row[j]))};
+    }
+    const app=A[p][p],aqq=A[q][q],apq=A[p][q];
+    const tau=(aqq-app)/(2*apq);
+    const t=(tau>=0?1:-1)/(Math.abs(tau)+Math.sqrt(1+tau*tau));
+    const c=1/Math.sqrt(1+t*t),si=t*c;
+    for(let k=0;k<n;k++)if(k!==p&&k!==q){
+      const kp=A[k][p],kq=A[k][q];
+      A[k][p]=A[p][k]=c*kp-si*kq;
+      A[k][q]=A[q][k]=si*kp+c*kq;
+    }
+    A[p][p]=app-t*apq;A[q][q]=aqq+t*apq;
+    A[p][q]=A[q][p]=0;
+    for(let k=0;k<n;k++){
+      const kp=V[k][p],kq=V[k][q];
+      V[k][p]=c*kp-si*kq;V[k][q]=si*kp+c*kq;
+    }
+  }
+  throw new Error('La descomposición Jacobi no convergió; revise la matriz.');
+}
+
 function matrixInverse(A){
   const n=A.length;
   let M=A.map((r,i)=>[...r,...identity(n)[i]]);
@@ -459,6 +495,11 @@ function matrixDeterminant(A){
   }
   return det;
 }
+
+// Compatibilidad: versiones antiguas del módulo usan `correlation`, mientras
+// el motor local compartido expone `corr`. El alias recupera KMO/Bartlett,
+// ACP y las puntuaciones del AFC sin alterar el procedimiento matemático.
+function correlation(a,b){return corr(a,b);}
 
 function efaCorrelationMatrix(matrix){
   const k=matrix[0].length;

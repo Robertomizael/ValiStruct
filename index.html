@@ -6,6 +6,7 @@
   <title>ValiStruct</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="v52.css" />
+  <link rel="stylesheet" href="efa-v52.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#7c1f2a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -313,6 +314,16 @@
         <strong>ValiStruct orienta, no decide por el investigador.</strong>
         KMO, Bartlett, autovalores, análisis paralelo, comunalidades y cargas factoriales deben interpretarse conjuntamente con la teoría del constructo.
       </div>
+      <div id="efaActions" class="efa-action-toolbar" role="group" aria-label="Calcular y exportar análisis factorial">
+        <button id="efaDiagnostics" type="button">Calcular KMO · Bartlett · Mardia</button>
+        <button id="calculateEfa" class="primary" type="button">Ejecutar extracción seleccionada</button>
+        <button id="downloadEfaResults" type="button">Descargar resultados CSV</button>
+        <button id="downloadEfaReport" type="button">Descargar informe HTML</button>
+        <button id="printEfaReport" type="button">Imprimir / Guardar PDF</button>
+        <button id="efaExportSyntax" type="button">Exportar sintaxis R</button>
+      </div>
+      <p id="efaEngineStatus" role="status" aria-live="polite" class="efa-engine-status">ACP: disponible sin conexión. Extracción de factores comunes y prueba de Mardia: requieren motor R activo.</p>
+      <div id="efaDiagnosticResults" aria-live="polite"></div>
 
       <div class="import-box">
         <div>
@@ -328,10 +339,16 @@
         </div>
       </div>
 
-      <div class="config-grid">
+      <div class="config-grid efa-method-grid">
         <label>Método de extracción
           <select id="efaExtraction">
-            <option value="pca" selected>Componentes principales (prototipo)</option>
+            <option value="pca" selected>Componentes principales (ACP · navegador)</option>
+            <option value="uls">Mínimos cuadrados no ponderados (ULS / MINRES · R)</option>
+            <option value="gls">Mínimos cuadrados generalizados (GLS · R)</option>
+            <option value="ml">Máxima verosimilitud (ML · R)</option>
+            <option value="pa">Factorización de ejes principales (PAF · R)</option>
+            <option value="alpha">Factorización alfa (R)</option>
+            <option value="image" disabled>Factorización de imágenes (pendiente de validación)</option>
           </select>
         </label>
         <label>Rotación
@@ -365,12 +382,7 @@
       <div id="efaDatasetSummary" class="dataset-summary"></div>
       <div id="efaDataPreview" class="workspace"></div>
 
-      <div id="efaActions" class="button-row hidden">
-        <button id="calculateEfa" class="primary">Ejecutar AFE</button>
-        <button id="downloadEfaResults">Descargar resultados CSV</button>
-        <button id="downloadEfaReport">Generar informe HTML</button>
-        <button id="printEfaReport">Imprimir / Guardar PDF</button>
-      </div>
+
 
       <div id="efaResults"></div>
     </section>
@@ -3155,6 +3167,7 @@
   <script src="participant-data.js"></script>
   <script src="app.js"></script>
   <script src="jasp-import.js"></script>
+  <script src="efa-v52.js"></script>
   <script>
   (function(){
     function esc(s){
