@@ -61,6 +61,35 @@ def health():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 503
 
+@app.post("/efa")
+def efa_professional():
+    """R/psych: factorización común y diagnósticos independientes de ACP."""
+    _user, _auth_err = _compute_auth_guard()
+    if _auth_err: return _auth_err
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload.get("csv_text"), str) or len(payload["csv_text"]) > 15_000_000:
+        return jsonify({"ok":False,"error":"Se requiere un CSV de tamaño permitido."}),400
+    if payload.get("method") not in {"diagnostics","uls","gls","ml","pa","alpha","minres"}:
+        return jsonify({"ok":False,"error":"Método no implementado. Consulte las opciones disponibles."}),400
+    rscript = find_rscript()
+    if not rscript:
+        return jsonify({"ok":False,"error":"Motor R no disponible; KMO y Bartlett locales siguen accesibles."}),503
+    with tempfile.TemporaryDirectory() as td:
+        inp=os.path.join(td,"in.json")
+        outp=os.path.join(td,"out.json")
+        with open(inp,"w",encoding="utf-8") as out: json.dump(payload,out,ensure_ascii=False)
+        try:
+            proc=subprocess.run([rscript,os.path.join(HERE,"efa_engine.R"),inp,outp],
+                capture_output=True,text=True,timeout=300)
+        except subprocess.TimeoutExpired:
+            return jsonify({"ok":False,"error":"El cálculo R agotó el tiempo máximo."}),504
+        if proc.returncode or not os.path.exists(outp):
+            return jsonify({"ok":False,"error":(proc.stderr or proc.stdout or "Error del motor R")[-3000:]}),500
+        with open(outp,"r",encoding="utf-8") as result_file:
+            result=json.load(result_file)
+        return jsonify(result),200 if result.get("ok") else 422
+
+
 @app.post("/estimate")
 def estimate():
     _user, _auth_err = _compute_auth_guard()
