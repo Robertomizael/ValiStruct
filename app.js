@@ -2369,7 +2369,7 @@ document.getElementById('useMotorMultiData')?.addEventListener('click',()=>{
     motorDataNotice('No hay datos multivariados. Importe primero una base en Diagnóstico multivariado.',true);return;
   }
   const csv=[multiData.names.map(csvEscape).join(','),
-    ...multiData.matrix.map(row=>row.map(v=>v===null||v===undefined?'':csvEscape(v)).join(','))].join('\\n');
+    ...multiData.matrix.map(row=>row.map(v=>v===null||v===undefined?'':csvEscape(v)).join(','))].join('\n');
   proCsvText=csv;summarizeProCsv(csv);proLastResponse=null;
   motorDataNotice('Se reutilizaron '+multiData.n+' casos y '+multiData.k+
     ' variables del Diagnóstico multivariado. Revise los ítems y el manejo de faltantes.');
