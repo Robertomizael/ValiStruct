@@ -99,3 +99,31 @@ def test_desktop_renderer_patch_does_not_hijack_motorpro_execution():
         assert "No se pudo ejecutar" not in page.locator("#proResults").inner_text()
         assert not errors,repr(errors)
         browser.close()
+
+
+def test_undefined_fit_indices_are_labelled_not_reported_as_zero():
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page(viewport={"width":1440,"height":900})
+        page.goto(URL,wait_until="load")
+        open_motor(page)
+        page.evaluate("""() => {
+            renderProResults({
+              ok:true,converged:true,post_check:true,
+              estimator:'MLR',
+              fit:{chisq:14.317,df:8,pvalue:.074,cfi:null,tli:null,
+                rmsea:null,'rmsea.ci.lower':null,'rmsea.ci.upper':null,srmr:.041},
+              fit_robust:{'cfi.robust':null,'tli.robust':null,'rmsea.robust':null},
+              parameters:[{lhs:'F1',op:'=~',rhs:'i01',est:1,se:null,
+                z:null,pvalue:null,std_all:.73}],
+              warnings_text:['Los índices robustos no se pudieron calcular.']
+            });
+        }""")
+        text=page.locator("#proResults").inner_text()
+        assert "χ²" in text and "14.317" in text
+        assert "CFI" in text and "TLI" in text and "RMSEA" in text
+        assert "No estimable" in text
+        assert "0.000" not in text
+        assert "0.041" in text  # SRMR was available
+        assert "Los índices robustos no se pudieron calcular." in text
+        browser.close()
