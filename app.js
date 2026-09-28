@@ -2246,8 +2246,8 @@ async function runProModel(){
   }catch(e){
     const msg=e?.name==='AbortError'?'El cálculo excedió 5 minutos y fue cancelado.':String(e?.message||e);
     proLastResponse=null;
-    proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${escapeHtml(msg)}<br><br><button type="button" id="retryProEngineInline">Comprobar motor y reintentar</button></div>`;
-    setTimeout(()=>document.getElementById('retryProEngineInline')?.addEventListener('click',async()=>{await checkProEngine();runProModel();}),0);
+    proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${escapeHtml(msg)}<br><br><button type="button" class="retry-pro-engine-inline">Comprobar motor y reintentar</button></div>`;
+    setTimeout(()=>proResults.querySelector('.retry-pro-engine-inline')?.addEventListener('click',async()=>{await checkProEngine();runProModel();}),0);
   }finally{if(button)button.disabled=false;}
 }
 
