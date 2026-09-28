@@ -161,7 +161,15 @@ def test_standalone_same_origin_ignores_stale_server_address(csv_text):
         page.locator("#proBootstrap").fill("0")
         page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03\\nF2 =~ i04 + i05 + i06")
         page.locator("#runProModel").click()
-        page.wait_for_function("proLastResponse?.ok===true",timeout=180000)
+        page.wait_for_function(
+            "proLastResponse?.ok===true || document.querySelector('#proResults .model-error')",
+            timeout=30000)
+        assert page.evaluate("proLastResponse?.ok===true"), {
+            "error":page.locator("#proResults").inner_text(),
+            "engine":page.locator("#proEngineStatusText").inner_text(),
+            "api":page.evaluate("getProApiBase()"),
+            "pageErrors":errors
+        }
         assert "Convergencia" in page.locator("#proResults").inner_text()
         assert not errors,repr(errors)
         browser.close()
