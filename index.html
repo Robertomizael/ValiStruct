@@ -986,7 +986,7 @@
           <h2>Diagnóstico multivariado</h2>
           <p>Evalúe normalidad multivariada, valores atípicos multivariados y patrones de correlación antes de AFC/SEM.</p>
         </div>
-        <span class="badge">ValiStruct v1.4</span>
+        <span class="badge">Diagnóstico multivariado · ValiStruct v5.2.2 Beta</span>
       </div>
 
       <div class="import-box">
@@ -1017,12 +1017,14 @@
       </div>
 
       <div class="button-row">
-        <button id="runMultiDiagnostics" class="primary">Ejecutar diagnóstico multivariado</button>
+        <button id="runMultiDiagnostics" class="primary" type="button">Calcular Mahalanobis y Mardia</button>
         <button id="downloadMultiResults">Descargar resultados CSV</button>
         <button id="downloadMultiReport">Generar informe HTML</button>
         <button id="exportCorrPng">Exportar matriz como PNG</button>
       </div>
 
+      <p id="multiRunStatus" class="efa-engine-status" role="status" aria-live="polite">Cargue una base numérica o utilice el ejemplo; después pulse «Calcular Mahalanobis y Mardia».</p>
+      <div class="sem-engine-note">La distancia de Mahalanobis utiliza la matriz de covarianzas de la muestra y un umbral χ² aproximado. Mardia se calcula sobre casos completos; un caso señalado requiere revisión, no eliminación automática.</div>
       <div id="multiSummary" class="dataset-summary"></div>
       <div id="multiResults"></div>
     </section>
