@@ -40,6 +40,12 @@ def test_diagnostics_button_example_and_csv_download(page):
     with pg.expect_download() as result_csv:
         pg.locator("#downloadMultiResults").click()
     assert result_csv.value.suggested_filename.endswith(".csv")
+    from pathlib import Path
+    import csv
+    exported=list(csv.reader(Path(result_csv.value.path()).read_text(encoding="utf-8-sig").splitlines()))
+    assert ["Caso_fila_original_1based","Mahalanobis_D2","Supera_umbral"] in exported
+    case_header=exported.index(["Caso_fila_original_1based","Mahalanobis_D2","Supera_umbral"])
+    assert len(exported[case_header+1:])==result["n"]
     with pg.expect_download() as report:
         pg.locator("#downloadMultiReport").click()
     assert report.value.suggested_filename.endswith(".html")
