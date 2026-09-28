@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory, abort
 from flask_cors import CORS
 from pathlib import Path
 import subprocess
@@ -43,6 +43,31 @@ def _compute_auth_guard(roles=None):
 
 R_MAX_N = int(os.environ.get("VALISTRUCT_MONTECARLO_MAX_N","100000"))
 R_MAX_REPS = int(os.environ.get("VALISTRUCT_MONTECARLO_MAX_REPS","5000"))
+
+
+# Desktop's UI is served by its OWN loopback backend, so R and the page
+# share the same origin. The earlier file:// -> localhost flow was blocked by
+# browser security on some systems. Only allow the explicitly shipped UI assets;
+# never expose Python, R, project stores or arbitrary repository files.
+FRONTEND_DIR = os.path.realpath(
+    os.environ.get("VALISTRUCT_FRONTEND_DIR",os.path.join(HERE,"..")))
+_FRONTEND_ASSETS = {
+    "index.html","app.js","styles.css","v52.css","v52-shell.js",
+    "navigation-v51.js","participant-data.js","jasp-import.js",
+    "efa-v52.js","efa-v52.css","manifest.webmanifest","service-worker.js",
+}
+@app.get("/")
+def desktop_frontend():
+    return send_from_directory(FRONTEND_DIR,"index.html")
+
+@app.get("/<path:asset>")
+def desktop_frontend_asset(asset):
+    if asset in _FRONTEND_ASSETS or (
+        asset.startswith("icons/") and asset.count("/")==1
+        and asset.lower().endswith((".png",".svg",".ico",".webp"))
+    ):
+        return send_from_directory(FRONTEND_DIR,asset)
+    abort(404)
 
 
 @app.get("/health")

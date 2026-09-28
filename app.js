@@ -2047,6 +2047,10 @@ document.getElementById('downloadSemReport').addEventListener('click',()=>{const
 // -----------------------------
 const DEFAULT_PRO_API_BASE = 'http://127.0.0.1:8765';
 function getProApiBase(){
+  // The standalone DMG/EXE always owns its local loopback backend.
+  // Older releases could persist a remote or obsolete URL in localStorage,
+  // silently redirecting subsequent Motor Pro runs to a dead endpoint.
+  if(location.protocol==='file:' || (['127.0.0.1','localhost'].includes(location.hostname) && location.port==='8765'))return DEFAULT_PRO_API_BASE;
   return localStorage.getItem('valistruct_api_base') || DEFAULT_PRO_API_BASE;
 }
 let proCsvText = null;
@@ -2062,13 +2066,13 @@ async function checkProEngine(){
   proStatusBox.classList.remove('engine-online','engine-offline');
   try{
     const res=await fetch(`${getProApiBase()}/health`,{method:'GET'});
-    if(!res.ok)throw new Error('Respuesta no válida');
     const data=await res.json();
+    if(!res.ok || data.ok!==true)throw new Error(data.error||'Respuesta no válida');
     proStatusText.innerHTML=`🟢 Motor disponible · R ${escapeHtml(data.r_version||'')} · lavaan ${escapeHtml(data.lavaan_version||'')}`;
     proStatusBox.classList.add('engine-online');
     return true;
   }catch(e){
-    proStatusText.innerHTML='🟠 Motor profesional no está activo. Inicie el backend incluido en la carpeta <strong>backend</strong>.';
+    proStatusText.textContent='🟠 Motor no disponible: '+(e.message||String(e))+'. En Desktop reinicie la aplicación y revise la instalación del motor integrado.';
     proStatusBox.classList.add('engine-offline');
     return false;
   }
@@ -2188,23 +2192,40 @@ function buildProPayload(){
   const syntax=document.getElementById('proSyntax').value.trim();
   if(!syntax)throw new Error('Ingrese sintaxis lavaan.');
   if(!proCsvText)throw new Error('Importe un archivo CSV.');
+  const estimator=document.getElementById('proEstimator').value;
+  const bootstrap=Number(document.getElementById('proBootstrap').value)||0;
+  if(!Number.isInteger(bootstrap)||bootstrap<0||bootstrap>10000)
+    throw new Error('Bootstrap debe ser un entero de 0 a 10000.');
+  if(bootstrap>0 && estimator!=='ML')
+    throw new Error('Bootstrap clásico en esta versión requiere ML. Para MLR o WLSMV establezca bootstrap = 0 y utilice los errores estándar robustos.');
   return {
     syntax,
     csv_text:proCsvText,
-    estimator:document.getElementById('proEstimator').value,
+    estimator,
     data_type:document.getElementById('proDataType').value,
     missing:document.getElementById('proMissing').value,
-    bootstrap:Number(document.getElementById('proBootstrap').value)||0,
+    bootstrap,
     ordinal_vars: (document.getElementById('proOrdinalVars')?.value||'').split(',').map(x=>x.trim()).filter(Boolean)
   };
 }
 
 async function runProModel(){
+  const runButton=document.getElementById('runProModel');
+  if(runButton?.disabled)return;
   let payload;
-  try{ payload=buildProPayload(); }catch(e){return alert(e.message);}
-  proResults.innerHTML='<div class="notice">Ejecutando modelo…</div>';
+  try{payload=buildProPayload()}catch(e){
+    proResults.innerHTML='<div class="model-error"><strong>Revise los datos del Motor Pro.</strong><br>'+escapeHtml(e.message)+'</div>';
+    return;
+  }
+  proLastResponse=null;
+  runButton.disabled=true;
+  proResults.innerHTML='<div class="notice" role="status">Ejecutando modelo con R/lavaan… No cierre ValiStruct mientras se estima el modelo.</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/estimate`,{
+    const health=await fetch(getProApiBase()+'/health',{method:'GET'});
+    const diagnostic=await health.json();
+    if(!health.ok || diagnostic.ok!==true)
+      throw new Error('El motor R/lavaan no está preparado: '+(diagnostic.error||'verifique el backend.'));
+    const res=await fetch(getProApiBase()+'/estimate',{
       method:'POST',
       headers:authHeaders({'Content-Type':'application/json'}),
       body:JSON.stringify(payload)
@@ -2214,7 +2235,13 @@ async function runProModel(){
     proLastResponse=data;
     renderProResults(data);
   }catch(e){
-    proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${escapeHtml(e.message)}<br><br>Compruebe que el backend incluido en ValiStruct v0.9 esté activo.</div>`;
+    const hint=/fetch|network|connection|conexión/i.test(String(e.message||e))?
+      '<br>Compruebe la conexión del motor estadístico desde el botón «Comprobar motor».':
+      '<br>Revise la configuración, los nombres de las variables y los mensajes de R.';
+    proResults.innerHTML='<div class="model-error" role="alert"><strong>No se pudo ejecutar el Motor Pro.</strong><br>'+
+      escapeHtml(e.message||String(e))+hint+'</div>';
+  }finally{
+    runButton.disabled=false;
   }
 }
 
@@ -2319,9 +2346,33 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
   const f=e.target.files?.[0];
   if(!f)return;
   const reader=new FileReader();
-  reader.onload=()=>{proCsvText=reader.result;summarizeProCsv(proCsvText);};
+  reader.onload=()=>{
+    proCsvText=reader.result;summarizeProCsv(proCsvText);proLastResponse=null;
+    motorDataNotice('Base importada: '+f.name+'. Verifique sus nombres de variables antes de ejecutar.');
+  };
   reader.readAsText(f,'utf-8');
   e.target.value='';
+});
+// Explicit dataset reuse: do not silently bind a different cohort to a model.
+function motorDataNotice(message,error=false){
+  const target=document.getElementById('motorProDataStatus');
+  if(target){target.textContent=message;target.classList.toggle('efa-error',error)}
+}
+document.getElementById('useMotorParticipantData')?.addEventListener('click',()=>{
+  const csv=typeof unifiedCsvText==='string'&&unifiedCsvText.trim()?unifiedCsvText:null;
+  if(!csv){motorDataNotice('No hay base central cargada. Abra Centro de datos e importe participantes.',true);return}
+  proCsvText=csv;summarizeProCsv(csv);proLastResponse=null;
+  motorDataNotice('Base central reutilizada en Motor Pro. Compruebe los nombres de variables de la sintaxis y ejecute el modelo.');
+});
+document.getElementById('useMotorMultiData')?.addEventListener('click',()=>{
+  if(typeof multiData==='undefined'||!multiData?.matrix?.length){
+    motorDataNotice('No hay datos multivariados. Importe primero una base en Diagnóstico multivariado.',true);return;
+  }
+  const csv=[multiData.names.map(csvEscape).join(','),
+    ...multiData.matrix.map(row=>row.map(v=>v===null||v===undefined?'':csvEscape(v)).join(','))].join('\n');
+  proCsvText=csv;summarizeProCsv(csv);proLastResponse=null;
+  motorDataNotice('Se reutilizaron '+multiData.n+' casos y '+multiData.k+
+    ' variables del Diagnóstico multivariado. Revise los ítems y el manejo de faltantes.');
 });
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();

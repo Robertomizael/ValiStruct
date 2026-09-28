@@ -1,0 +1,51 @@
+name: ValiStruct Motor Pro recovery — real lavaan and desktop patch
+on:
+  push:
+    branches: [hotfix/v5-2-motorpro-restauracion]
+  workflow_dispatch:
+jobs:
+  motor-pro-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: {use-public-rspm: true}
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::lavaan
+            any::jsonlite
+            any::psych
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install browser and API dependencies
+        run: |
+          python -m pip install pytest requests playwright Flask flask-cors
+          python -m playwright install --with-deps chromium
+      - name: Syntax and JASP regression
+        run: |
+          node --check app.js
+          node --check desktop/renderer-fixes.js
+          node --check desktop/main.js
+          node --test tests/test_jasp_import.cjs
+      - name: Start frontend and real R/lavaan API
+        env:
+          VALISTRUCT_AUTH_ENABLED: "false"
+          VALISTRUCT_ENV: development
+        run: |
+          python -m http.server 8000 >/tmp/vs-motor-frontend.log 2>&1 &
+          python -m flask --app backend.api run --host 127.0.0.1 --port 8765 >/tmp/vs-motor-api.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8765/health >/dev/null; then
+              curl -fsS http://127.0.0.1:8000/index.html >/dev/null && exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/vs-motor-api.log
+          exit 1
+      - name: Real lavaan estimation and browser report
+        env:
+          VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
+          VALISTRUCT_API_URL: http://127.0.0.1:8765
+        run: pytest -q tests/test_motorpro_recovery.py

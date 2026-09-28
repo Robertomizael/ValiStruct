@@ -601,7 +601,7 @@
           <h2>Motor estadístico profesional · lavaan</h2>
           <p>Interfaz de conexión con el backend de producción para AFC, SEM, estimadores robustos y análisis avanzados.</p>
         </div>
-        <span class="badge">Arquitectura funcional v0.9</span>
+        <span class="badge">Motor Pro · R/lavaan · v5.2.3 Beta</span>
       </div>
 
       <div class="notice">
@@ -645,7 +645,8 @@
           </select>
         </label>
         <label>Bootstrap
-          <input id="proBootstrap" type="number" min="0" max="10000" step="100" value="1000">
+          <input id="proBootstrap" type="number" min="0" max="10000" step="100" value="0">
+          <small>Por defecto 0. Para modelos robustos MLR/WLSMV utilice los errores estándar robustos; bootstrap clásico solo con ML.</small>
         </label>
       </div>
 
@@ -658,10 +659,13 @@
           <label class="file-button">Importar CSV
             <input id="proCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useMotorParticipantData" type="button">Reutilizar base de participantes</button>
+          <button id="useMotorMultiData" type="button">Reutilizar diagnóstico multivariado</button>
           <button id="copyLatenciaSyntax">Usar sintaxis de Latencia</button>
         </div>
       </div>
 
+      <p id="motorProDataStatus" class="sem-engine-note" role="status" aria-live="polite">Cargue un CSV o reutilice una de las bases existentes; la sintaxis por sí sola no aporta los datos para estimar el modelo.</p>
       <div id="proDatasetSummary" class="dataset-summary"></div>
 
       <div class="model-builder" id="jaspImportPanel">
