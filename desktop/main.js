@@ -427,21 +427,35 @@ function findSystemRuntime() {
   return { python, rscript, env: process.env };
 }
 
-function waitForBackend(timeoutMs = 45000) {
+function waitForBackend(timeoutMs = 90000) {
   const started = Date.now();
+  let lastError = 'El servicio todavía no responde.';
   return new Promise((resolve, reject) => {
     const probe = () => {
-      const req = http.get('http://127.0.0.1:8765/health', (res) => {
-        res.resume();
-        if (res.statusCode && res.statusCode < 500) return resolve();
-        if (Date.now() - started > timeoutMs) return reject(new Error('Backend no disponible'));
-        setTimeout(probe, 700);
+      if (backendProcess && backendProcess.exitCode !== null) {
+        reject(new Error('El backend finalizó antes de iniciar; código ' + backendProcess.exitCode));
+        return;
+      }
+      const req = http.get('http://127.0.0.1:8765/health', res => {
+        let body='';
+        res.on('data',chunk=>{if(body.length<10000)body+=chunk.toString()});
+        res.on('end',()=>{
+          let payload=null;
+          try{payload=JSON.parse(body)}catch(_){}
+          // /health may return 503 while lavaan/R are missing. 503 must NOT
+          // be mistaken for a ready engine merely because it is < 500.
+          if(res.statusCode===200 && payload?.ok===true){resolve();return}
+          lastError=payload?.error || 'El motor todavía no está listo (HTTP '+res.statusCode+').';
+          if(Date.now()-started>timeoutMs){reject(new Error(lastError));return}
+          setTimeout(probe,900);
+        });
       });
-      req.on('error', () => {
-        if (Date.now() - started > timeoutMs) return reject(new Error('Backend no disponible'));
-        setTimeout(probe, 700);
+      req.on('error',e=>{
+        lastError=e.message;
+        if(Date.now()-started>timeoutMs){reject(new Error('Backend no disponible: '+lastError));return}
+        setTimeout(probe,900);
       });
-      req.setTimeout(1500, () => req.destroy());
+      req.setTimeout(3000,()=>req.destroy());
     };
     probe();
   });
@@ -516,7 +530,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v5.2 Beta · Interfaz modular',
+    title: 'ValiStruct v5.2.3 Beta · Motor Pro restaurado',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
