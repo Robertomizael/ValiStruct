@@ -2064,11 +2064,12 @@ async function checkProEngine(){
     const res=await fetch(`${getProApiBase()}/health`,{method:'GET'});
     if(!res.ok)throw new Error('Respuesta no válida');
     const data=await res.json();
+    if(data.ok!==true)throw new Error(data.error||'El motor no está preparado.');
     proStatusText.innerHTML=`🟢 Motor disponible · R ${escapeHtml(data.r_version||'')} · lavaan ${escapeHtml(data.lavaan_version||'')}`;
     proStatusBox.classList.add('engine-online');
     return true;
   }catch(e){
-    proStatusText.innerHTML='🟠 Motor profesional no está activo. Inicie el backend incluido en la carpeta <strong>backend</strong>.';
+    proStatusText.innerHTML='🟠 Motor profesional no disponible: '+escapeHtml(String(e?.message||e))+'. Compruebe el motor integrado o vuelva a intentarlo.';
     proStatusBox.classList.add('engine-offline');
     return false;
   }
@@ -2290,11 +2291,11 @@ function renderProResults(data){
     srmr:'SRMR',aic:'AIC',bic:'BIC'
   };
   keys.forEach(k=>{
-    const v=Number(fit[k]);
-    if(Number.isFinite(v)){
-      const cls=isOrdinalFit?'':fitStatus(labels[k],v);
-      html+=`<div class="pro-fit-card ${cls}"><span>${labels[k]}</span><strong>${k==='df'?v.toFixed(0):v.toFixed(3)}</strong></div>`;
-    }
+    const raw=fit[k],v=raw==null?NaN:Number(raw);
+    const available=Number.isFinite(v);
+    const cls=available && !isOrdinalFit?fitStatus(labels[k],v):'';
+    const display=available?(k==='df'?v.toFixed(0):k==='pvalue' && v<.001?'&lt; .001':v.toFixed(k==='pvalue'?4:3)):'No estimable';
+    html+=`<div class="pro-fit-card ${cls}"><span>${labels[k]}</span><strong>${display}</strong></div>`;
   });
   html+='</div>';
 
@@ -2307,11 +2308,10 @@ function renderProResults(data){
   if(Object.keys(robust).length){
     html+='<h3>Índices robustos / escalados del estimador</h3><div class="pro-fit-grid">';
     robustKeys.forEach(([k,label])=>{
-      const v=Number(robust[k]);
-      if(Number.isFinite(v)){
-        const cls=fitStatus(label.includes('CFI')?'CFI':label.includes('TLI')?'TLI':label.includes('RMSEA')?'RMSEA':'',v);
-        html+=`<div class="pro-fit-card ${cls}"><span>${label}</span><strong>${k.includes('df')?v.toFixed(0):v.toFixed(3)}</strong></div>`;
-      }
+      const raw=robust[k],v=raw==null?NaN:Number(raw);
+      const available=Number.isFinite(v);
+      const cls=available?fitStatus(label.includes('CFI')?'CFI':label.includes('TLI')?'TLI':label.includes('RMSEA')?'RMSEA':'',v):'';
+      html+=`<div class="pro-fit-card ${cls}"><span>${label}</span><strong>${available?(k.includes('df')?v.toFixed(0):k.includes('pvalue')&&v<.001?'&lt; .001':v.toFixed(3)):'No estimable'}</strong></div>`;
     });
     html+='</div><div class="sem-engine-note">Cuando el estimador es robusto/ordinal, priorice para el reporte los índices robustos o escalados disponibles y declare claramente el estimador utilizado.</div>';
   }
@@ -2344,7 +2344,8 @@ function renderProResults(data){
 }
 
 function fmtPro(v){
-  const n=Number(v); return Number.isFinite(n)?n.toFixed(3):'—';
+  if(v===null || v===undefined || v==='')return '—';
+  const n=Number(v);return Number.isFinite(n)?n.toFixed(3):'—';
 }
 
 document.getElementById('checkProEngine').addEventListener('click',checkProEngine);
