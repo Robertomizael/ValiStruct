@@ -1,4 +1,4 @@
-const CACHE='valistruct-v5-2-3-motorpro-20260927';
+const CACHE='valistruct-v5-2-4-motorpro-20260927';
 const ASSETS=['./','./index.html','./styles.css','./v52.css','./efa-v52.css','./efa-v52.js','./app.js','./navigation-v51.js','./v52-shell.js','./participant-data.js','./jasp-import.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install',event=>{

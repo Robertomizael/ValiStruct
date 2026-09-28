@@ -10,10 +10,28 @@ suppressPackageStartupMessages({
 req <- fromJSON(args[1], simplifyVector = FALSE)
 out_file <- args[2]
 
+# JSON must never contain NA/NaN/Inf. Use a scalar finite-number contract.
 safe_num <- function(x) {
-  if (length(x) == 0 || is.null(x) || is.na(x)) return(NULL)
-  as.numeric(x)
+  # Scalar NA_real_ serializes as JSON null (with na="null").
+  # A bare R NULL inside a named list serializes as {}, not JSON null.
+  if (is.null(x) || length(x) != 1L) return(NA_real_)
+  v <- suppressWarnings(as.numeric(x))
+  if (length(v) != 1L || !is.finite(v)) return(NA_real_)
+  unname(v)
 }
+is_valid_num <- function(x) {
+  !is.null(x) && length(x) == 1L && is.numeric(x) && is.finite(x)
+}
+usable_fit_num <- function(x) {
+  if (is_valid_num(x)) unname(as.numeric(x)) else NULL
+}
+first_available_num <- function(...) {
+  for (candidate in list(...)) {
+    if (is_valid_num(candidate)) return(unname(as.numeric(candidate)))
+  }
+  NULL
+}
+
 
 capture_lavaan_fit <- function(expr) {
   warnings_text <- character()
@@ -32,7 +50,8 @@ available_fit_measures <- function(fit, requested) {
   use <- intersect(requested, all_names)
   if (!length(use)) return(list())
   fm <- fitMeasures(fit, use)
-  out <- as.list(unname(fm))
+  out <- lapply(as.list(fm), safe_num)
+  # Preserve available measure names even where undefined, e.g. df=0/robust.
   names(out) <- names(fm)
   out
 }
@@ -112,7 +131,9 @@ result <- tryCatch({
   requested_estimator <- toupper(req$estimator %||% "AUTO")
   requested_data_type <- tolower(req$data_type %||% "auto")
   missing_mode <- tolower(req$missing %||% "fiml")
-  boot <- as.integer(req$bootstrap %||% 0)
+  boot <- suppressWarnings(as.integer(req$bootstrap %||% 0))
+  if (length(boot) != 1L || is.na(boot) || boot < 0L || boot > 10000L)
+    stop("El número de remuestreos bootstrap debe estar entre 0 y 10000.")
 
   requested_ordinal <- unlist(req$ordinal_vars %||% list())
   requested_ordinal <- intersect(requested_ordinal, names(dat))
@@ -277,36 +298,41 @@ result <- tryCatch({
   if (heywood) guidance <- c(guidance, "Se detectó un posible caso Heywood (varianza negativa y/o carga estandarizada > |1|). Revise especificación, datos e identificación.")
   if (length(warnings_text)) guidance <- c(guidance, "lavaan emitió advertencias durante el ajuste; revíselas antes de interpretar el modelo.")
 
-  cfi_for_guidance <- fit_robust[["cfi.robust"]] %||% fit_robust[["cfi.scaled"]] %||% fit_standard[["cfi"]]
-  tli_for_guidance <- fit_robust[["tli.robust"]] %||% fit_robust[["tli.scaled"]] %||% fit_standard[["tli"]]
-  rmsea_for_guidance <- fit_robust[["rmsea.robust"]] %||% fit_robust[["rmsea.scaled"]] %||% fit_standard[["rmsea"]]
+  cfi_for_guidance <- first_available_num(fit_robust[["cfi.robust"]],fit_robust[["cfi.scaled"]],fit_standard[["cfi"]])
+  tli_for_guidance <- first_available_num(fit_robust[["tli.robust"]],fit_robust[["tli.scaled"]],fit_standard[["tli"]])
+  rmsea_for_guidance <- first_available_num(fit_robust[["rmsea.robust"]],fit_robust[["rmsea.scaled"]],fit_standard[["rmsea"]])
   srmr_for_guidance <- fit_standard[["srmr"]]
 
-  if (!is.null(cfi_for_guidance)) {
+  if (is_valid_num(cfi_for_guidance)) {
     if (cfi_for_guidance >= .95) guidance <- c(guidance, "CFI muestra ajuste comparativo favorable.")
     else if (cfi_for_guidance >= .90) guidance <- c(guidance, "CFI es aceptable, pero conviene revisar el modelo junto con otros índices.")
     else guidance <- c(guidance, "CFI sugiere ajuste insuficiente; revise especificación y teoría.")
   }
-  if (!is.null(tli_for_guidance)) {
+  if (is_valid_num(tli_for_guidance)) {
     if (tli_for_guidance >= .95) guidance <- c(guidance, "TLI muestra ajuste incremental favorable.")
     else if (tli_for_guidance < .90) guidance <- c(guidance, "TLI sugiere ajuste insuficiente; interprete junto con CFI, RMSEA y SRMR.")
   }
-  if (!is.null(rmsea_for_guidance)) {
+  if (is_valid_num(rmsea_for_guidance)) {
     if (rmsea_for_guidance <= .06) guidance <- c(guidance, "RMSEA muestra error de aproximación bajo.")
     else if (rmsea_for_guidance <= .08) guidance <- c(guidance, "RMSEA se encuentra en rango razonable.")
     else guidance <- c(guidance, "RMSEA es elevado; revise el modelo.")
   }
-  if (!is.null(srmr_for_guidance)) {
+  if (is_valid_num(srmr_for_guidance)) {
     if (srmr_for_guidance <= .08) guidance <- c(guidance, "SRMR se encuentra en rango favorable.")
     else guidance <- c(guidance, "SRMR sugiere discrepancias residuales relevantes.")
   }
 
   if (length(ordered_vars) && !is.null(fit_robust[["cfi.scaled"]]) && !is.null(fit_robust[["cfi.robust"]])) {
     cs <- fit_robust[["cfi.scaled"]]; cr <- fit_robust[["cfi.robust"]]
-    if (is.finite(cs) && is.finite(cr) && abs(cs-cr) > .02) guidance <- c(guidance,
+    if (is_valid_num(cs) && is_valid_num(cr) && abs(cs-cr) > .02) guidance <- c(guidance,
       sprintf("CFI escalado (%.3f) y robusto (%.3f) discrepan: informe ambos y valore la sensibilidad al estimador.",cs,cr))
   }
   if (is_esem) guidance <- c(guidance,paste0("ESEM: rotación ",rotation,". Examine cargas cruzadas y sustento teórico."))
+  if (!is_valid_num(cfi_for_guidance) || !is_valid_num(tli_for_guidance) ||
+      !is_valid_num(rmsea_for_guidance) || !is_valid_num(srmr_for_guidance)) {
+    guidance <- c(guidance,
+      "Algunos índices de ajuste no están definidos para esta solución (por ejemplo, gl=0 o estimación no convergente). Se muestran como «No estimable» y no se sustituyen por valores ficticios.")
+  }
   guidance <- c(guidance, missing_guidance,
     "La rotación ortogonal/oblicua corresponde al AFE y no es una alternativa a ML, MLR o WLSMV en AFC.",
     "No modifique el modelo únicamente para mejorar índices de ajuste; conserve sustento teórico.")
@@ -319,7 +345,7 @@ result <- tryCatch({
     data_type = data_type,
     auto_detected_ordinal = auto_ordinal,
     mardia = mardia,
-    n = nrow(dat),
+    n = tryCatch(as.integer(lavInspect(fit, "nobs")),error=function(e)nrow(dat)),
     converged = converged,
     post_check = post_check,
     heywood = heywood,
