@@ -1,7 +1,7 @@
 name: ValiStruct Motor Pro recovery
 on:
   push:
-    branches: [hotfix/v5-2-motorpro-recovery]
+    branches: [hotfix/v5-2-motorpro-recovery, hotfix/v5-2-4-motorpro-numerics-contextmenu]
   workflow_dispatch:
 jobs:
   motorpro:
@@ -28,7 +28,10 @@ jobs:
         run: |
           node --check app.js
           node --test tests/test_jasp_import.cjs
+          node --test tests/test_desktop_context_menu.cjs
           python tests/static_frontend_audit.py
+      - name: Numerically verify real lavaan (5 factors / 28 indicators and undefined indices)
+        run: pytest -q tests/test_motorpro_numerical_regression.py
       - name: Start backend
         env:
           VALISTRUCT_AUTH_ENABLED: "false"
