@@ -140,16 +140,18 @@ def test_injected_electron_renderer_patch_preserves_canonical_executor():
         browser.close()
 
 
-def test_standalone_file_protocol_ignores_stale_server_address(csv_text):
-    from pathlib import Path
-    file_url=(Path(__file__).resolve().parents[1]/"index.html").as_uri()
+def test_standalone_same_origin_ignores_stale_server_address(csv_text):
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1440,"height":900})
         errors=[];page.on("pageerror",lambda err:errors.append(str(err)))
-        page.goto(file_url,wait_until="load")
+        page.goto(BACKEND+"/",wait_until="load")
+        assert page.evaluate("location.origin")==BACKEND
         page.evaluate("localStorage.setItem('valistruct_api_base','https://obsolete.example.org')")
         assert page.evaluate("getProApiBase()")=="http://127.0.0.1:8765"
+        import requests
+        assert requests.get(BACKEND+'/backend/api.py',timeout=15).status_code==404
+        assert requests.get(BACKEND+'/app.js',timeout=15).status_code==200
         page.locator('.nav button[data-section="motorpro"]').click()
         page.locator("#proCsvFile").set_input_files({
             "name":"standalone.csv","mimeType":"text/csv","buffer":csv_text.encode()
@@ -162,6 +164,18 @@ def test_standalone_file_protocol_ignores_stale_server_address(csv_text):
         page.wait_for_function("proLastResponse?.ok===true",timeout=180000)
         assert "Convergencia" in page.locator("#proResults").inner_text()
         assert not errors,repr(errors)
+        browser.close()
+
+
+def test_file_protocol_fallback_targets_local_engine():
+    from pathlib import Path
+    index=(Path(__file__).resolve().parents[1]/"index.html").as_uri()
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page()
+        page.goto(index,wait_until="load")
+        page.evaluate("localStorage.setItem('valistruct_api_base','https://obsolete.example.org')")
+        assert page.evaluate("getProApiBase()")=="http://127.0.0.1:8765"
         browser.close()
 
 
