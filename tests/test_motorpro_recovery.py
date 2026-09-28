@@ -85,7 +85,7 @@ def test_five_factor_civp_style_350_by_28_with_mlr():
         for j,group in enumerate(blocks):
             values.extend([round(.75*latent[j]+rng.gauss(0,.60),6) for _ in group])
         writer.writerow([n+1]+values)
-    syntax="\\n".join(
+    syntax="\n".join(
         f"F{j+1} =~ "+" + ".join(group) for j,group in enumerate(blocks))
     resp=requests.post(BACKEND+"/estimate",json={
         "csv_text":out.getvalue(),"syntax":syntax,"estimator":"MLR",
@@ -114,7 +114,7 @@ def test_reuse_multivariate_data_and_normalization(csv_text):
         page.locator('.nav button[data-section="motorpro"]').click()
         page.locator("#useMotorMultiData").click()
         assert page.evaluate("proCsvText.split('\\n').length")==4
-        assert page.evaluate("proCsvText.startsWith('i01,i02,i03')")
+        assert page.evaluate('proCsvText.startsWith(\'"i01","i02","i03"\')')
         assert "3 casos" in page.locator("#motorProDataStatus").inner_text()
         assert not errors,repr(errors)
         browser.close()
