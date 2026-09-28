@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -502,6 +502,30 @@ async function injectDesktopUX(win) {
   }
 }
 
+// Native right-click actions on editable text fields and selected report text.
+// Electron does not always expose a browser-like context menu by default.
+function installTextContextMenu(win) {
+  win.webContents.on('context-menu', (_event, params) => {
+    const editable = Boolean(params.isEditable);
+    const selected = Boolean(params.selectionText && params.selectionText.length);
+    if (!editable && !selected) return;
+    const flags = params.editFlags || {};
+    const template = editable ? [
+      { label: 'Deshacer', role: 'undo', enabled: Boolean(flags.canUndo) },
+      { label: 'Rehacer', role: 'redo', enabled: Boolean(flags.canRedo) },
+      { type: 'separator' },
+      { label: 'Cortar', role: 'cut', enabled: Boolean(flags.canCut) },
+      { label: 'Copiar', role: 'copy', enabled: Boolean(flags.canCopy) || selected },
+      { label: 'Pegar', role: 'paste', enabled: Boolean(flags.canPaste) || Boolean(clipboard.readText()) },
+      { label: 'Seleccionar todo', role: 'selectAll' }
+    ] : [
+      { label: 'Copiar', role: 'copy', enabled: selected },
+      { label: 'Seleccionar todo', role: 'selectAll' }
+    ];
+    Menu.buildFromTemplate(template).popup({ window: win });
+  });
+}
+
 async function createWindow() {
   try {
     runtimeInfo = await ensureBundledRuntime();
@@ -516,7 +540,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v5.2 Beta · Interfaz modular',
+    title: 'ValiStruct v5.2.4 Beta · Motor Pro y edición',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -530,6 +554,7 @@ async function createWindow() {
     ? resourcePath('app', 'index.html')
     : path.resolve(__dirname, '..', 'index.html');
 
+  installTextContextMenu(win);
   await win.loadFile(frontend);
   await injectDesktopUX(win);
   win.maximize();
