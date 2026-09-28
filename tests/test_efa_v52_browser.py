@@ -36,6 +36,17 @@ def test_efa_toolbar_diagnostics_and_local_export():
         assert not errors,repr(errors)
         browser.close()
 
+def test_restored_jacobi_eigen_decomposition():
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page()
+        page.goto(URL,wait_until="load")
+        eig=page.evaluate("jacobiEigen([[2,1],[1,2]])")
+        assert abs(eig["values"][0]-3)<1e-8
+        assert abs(eig["values"][1]-1)<1e-8
+        assert len(eig["vectors"])==2
+        browser.close()
+
 def test_r_factor_methods_do_not_fall_back_silently():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
