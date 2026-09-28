@@ -1,5 +1,5 @@
-const CACHE='valistruct-v5-2-ux-20260927';
-const ASSETS=['./','./index.html','./styles.css','./v52.css','./app.js','./navigation-v51.js','./v52-shell.js','./participant-data.js','./jasp-import.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE='valistruct-v5-2-afe-r-20260927';
+const ASSETS=['./','./index.html','./styles.css','./v52.css','./efa-v52.css','./efa-v52.js','./app.js','./navigation-v51.js','./v52-shell.js','./participant-data.js','./jasp-import.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
