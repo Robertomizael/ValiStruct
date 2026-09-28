@@ -330,9 +330,9 @@ function runtimeExecutables(runtimeDir) {
 
 function bundledRuntimeDir() {
   if (process.platform === 'darwin') {
-    return path.join(app.getPath('home'), '.valistruct', 'runtime-v2');
+    return path.join(app.getPath('home'), '.valistruct', 'runtime-v3');
   }
-  return path.join(app.getPath('userData'), 'runtime-v2');
+  return path.join(app.getPath('userData'), 'runtime-v3');
 }
 
 async function ensureBundledRuntime() {
