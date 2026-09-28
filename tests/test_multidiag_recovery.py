@@ -14,6 +14,9 @@ def page():
         errors=[]
         pg.on("pageerror",lambda e:errors.append(str(e)))
         pg.goto(URL,wait_until="load")
+        group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Centro de datos"))
+        if not group.evaluate("(el)=>el.open"):
+            group.locator("summary").click()
         pg.locator('.nav button[data-section="multidiag"]').click()
         yield pg,errors
         browser.close()
