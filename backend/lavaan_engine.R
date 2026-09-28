@@ -12,9 +12,11 @@ out_file <- args[2]
 
 # JSON must never contain NA/NaN/Inf. Use a scalar finite-number contract.
 safe_num <- function(x) {
-  if (is.null(x) || length(x) != 1L) return(NULL)
+  # Scalar NA_real_ serializes as JSON null (with na="null").
+  # A bare R NULL inside a named list serializes as {}, not JSON null.
+  if (is.null(x) || length(x) != 1L) return(NA_real_)
   v <- suppressWarnings(as.numeric(x))
-  if (length(v) != 1L || !is.finite(v)) return(NULL)
+  if (length(v) != 1L || !is.finite(v)) return(NA_real_)
   unname(v)
 }
 is_valid_num <- function(x) {
@@ -22,6 +24,12 @@ is_valid_num <- function(x) {
 }
 usable_fit_num <- function(x) {
   if (is_valid_num(x)) unname(as.numeric(x)) else NULL
+}
+first_available_num <- function(...) {
+  for (candidate in list(...)) {
+    if (is_valid_num(candidate)) return(unname(as.numeric(candidate)))
+  }
+  NULL
 }
 
 
@@ -290,9 +298,9 @@ result <- tryCatch({
   if (heywood) guidance <- c(guidance, "Se detectó un posible caso Heywood (varianza negativa y/o carga estandarizada > |1|). Revise especificación, datos e identificación.")
   if (length(warnings_text)) guidance <- c(guidance, "lavaan emitió advertencias durante el ajuste; revíselas antes de interpretar el modelo.")
 
-  cfi_for_guidance <- fit_robust[["cfi.robust"]] %||% fit_robust[["cfi.scaled"]] %||% fit_standard[["cfi"]]
-  tli_for_guidance <- fit_robust[["tli.robust"]] %||% fit_robust[["tli.scaled"]] %||% fit_standard[["tli"]]
-  rmsea_for_guidance <- fit_robust[["rmsea.robust"]] %||% fit_robust[["rmsea.scaled"]] %||% fit_standard[["rmsea"]]
+  cfi_for_guidance <- first_available_num(fit_robust[["cfi.robust"]],fit_robust[["cfi.scaled"]],fit_standard[["cfi"]])
+  tli_for_guidance <- first_available_num(fit_robust[["tli.robust"]],fit_robust[["tli.scaled"]],fit_standard[["tli"]])
+  rmsea_for_guidance <- first_available_num(fit_robust[["rmsea.robust"]],fit_robust[["rmsea.scaled"]],fit_standard[["rmsea"]])
   srmr_for_guidance <- fit_standard[["srmr"]]
 
   if (is_valid_num(cfi_for_guidance)) {
