@@ -18,3 +18,10 @@ La v5.2 heredó de v5.1 el desplegable AFE con una única opción ACP. KMO y Bar
 
 ## Auditoría Claude
 Revise diferencias contra feature/v5-2-ux-validacion-externa, seguridad del endpoint POST /efa, reproducción R de ULS/GLS/ML/PAF/alpha, dimensiones de salida para rotaciones ortogonales y oblicuas y equivalencia numérica de KMO/Bartlett/Mardia. Revise la accesibilidad del toolbar y exportaciones en Electron macOS/Windows. Informe hallazgos pendientes y pruebas necesarias antes de autorizar la integración.
+
+## Estado validado por GitHub Actions (28/09/2026, UTC)
+- Rama correctiva validada: `1839ba164531d53fc8d2523f7cf5fe42815276c9`.
+- Flujo AFE integral `36362395773`: **aprobado**. Incluye pruebas R reales para cinco métodos, diagnósticos, importador JASP, Chromium, fallos de R, botones de descarga y prueba E2E navegador → Flask → R/psych → descargas CSV y HTML.
+- Flujo RC `36362385075`: **aprobado** (commit funcional `8ed741ae01f8357d51a59878a47a56e0098cf5cf`).
+- La ejecución desktop `36362196634` compila el código funcional `94499807963a39522747d4369875818ce98da2cc`; requiere verificar DMG/EXE por separado y prueba manual de escritorio antes de distribuir.
+- Límites: factorización de imágenes desactivada; Mardia requiere R conectado; resultados ACP deben identificarse como componentes y no factores comunes; validación externa sigue pendiente de motores estadísticos.
