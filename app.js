@@ -460,6 +460,11 @@ function matrixDeterminant(A){
   return det;
 }
 
+// Compatibilidad: versiones antiguas del módulo usan `correlation`, mientras
+// el motor local compartido expone `corr`. El alias recupera KMO/Bartlett,
+// ACP y las puntuaciones del AFC sin alterar el procedimiento matemático.
+function correlation(a,b){return corr(a,b);}
+
 function efaCorrelationMatrix(matrix){
   const k=matrix[0].length;
   const cols=Array.from({length:k},(_,j)=>matrix.map(r=>r[j]));
