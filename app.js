@@ -2346,9 +2346,33 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
   const f=e.target.files?.[0];
   if(!f)return;
   const reader=new FileReader();
-  reader.onload=()=>{proCsvText=reader.result;summarizeProCsv(proCsvText);};
+  reader.onload=()=>{
+    proCsvText=reader.result;summarizeProCsv(proCsvText);proLastResponse=null;
+    motorDataNotice('Base importada: '+f.name+'. Verifique sus nombres de variables antes de ejecutar.');
+  };
   reader.readAsText(f,'utf-8');
   e.target.value='';
+});
+// Explicit dataset reuse: do not silently bind a different cohort to a model.
+function motorDataNotice(message,error=false){
+  const target=document.getElementById('motorProDataStatus');
+  if(target){target.textContent=message;target.classList.toggle('efa-error',error)}
+}
+document.getElementById('useMotorParticipantData')?.addEventListener('click',()=>{
+  const csv=typeof unifiedCsvText==='string'&&unifiedCsvText.trim()?unifiedCsvText:null;
+  if(!csv){motorDataNotice('No hay base central cargada. Abra Centro de datos e importe participantes.',true);return}
+  proCsvText=csv;summarizeProCsv(csv);proLastResponse=null;
+  motorDataNotice('Base central reutilizada en Motor Pro. Compruebe los nombres de variables de la sintaxis y ejecute el modelo.');
+});
+document.getElementById('useMotorMultiData')?.addEventListener('click',()=>{
+  if(typeof multiData==='undefined'||!multiData?.matrix?.length){
+    motorDataNotice('No hay datos multivariados. Importe primero una base en Diagnóstico multivariado.',true);return;
+  }
+  const csv=[multiData.names.map(csvEscape).join(','),
+    ...multiData.matrix.map(row=>row.map(v=>v===null||v===undefined?'':csvEscape(v)).join(','))].join('\\n');
+  proCsvText=csv;summarizeProCsv(csv);proLastResponse=null;
+  motorDataNotice('Se reutilizaron '+multiData.n+' casos y '+multiData.k+
+    ' variables del Diagnóstico multivariado. Revise los ítems y el manejo de faltantes.');
 });
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();
