@@ -8,6 +8,7 @@ on:
       - feature/v5-1-fase1-diseno-datamanager
       - feature/v5-2-ux-validacion-externa
       - fix/v5-2-afe-estadistica-exportaciones
+      - hotfix/v5-2-mahalanobis-mardia
     paths:
       - "desktop/**"
       - "navigation-v51.js"
