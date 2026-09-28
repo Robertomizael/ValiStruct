@@ -3403,7 +3403,7 @@ function runMultiDiagnostics(){
     for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++)
       if(Math.abs(R[i][j])>=highThr)highPairs.push({a:multiData.names[i],b:multiData.names[j],r:R[i][j]});
     multiLast={n:matrix.length,k:multiData.k,nOriginal:multiData.n,
-      nExcluded:multiData.n-matrix.length,md,cutoff,outIdx,mardia,R,highPairs,names:multiData.names};
+      nExcluded:multiData.n-matrix.length,md,caseIndexes:complete.map(x=>x.index+1),cutoff,outIdx,mardia,R,highPairs,names:multiData.names};
     renderMultiDiagnostics(multiLast);
     multiStatus('Cálculo completado: '+matrix.length+' casos completos, '+outIdx.length+' posibles atípicos. Los resultados se pueden exportar.');
     if(typeof logHistory==='function')
@@ -3426,6 +3426,12 @@ function renderMultiDiagnostics(r){
   html+=`<div class="${r.outIdx.length?'multi-warning':'multi-good'}"><strong>Mahalanobis:</strong> punto de corte χ² aproximado = ${fmtPro(r.cutoff)}. Se identificaron ${r.outIdx.length} caso(s) por encima del percentil configurado. No elimine casos automáticamente; revise plausibilidad y calidad de captura.</div>`;
   if(r.highPairs.length){
     html+=`<div class="multi-warning"><strong>Correlaciones altas:</strong> ${r.highPairs.map(x=>`${escapeHtml(x.a)}–${escapeHtml(x.b)} (${x.r.toFixed(2)})`).join('; ')}. Revise redundancia o colinealidad.</div>`;
+  }
+  if(r.outIdx.length){
+    html+='<details class="multi-outlier-list"><summary>Ver casos señalados por Mahalanobis ('+r.outIdx.length+')</summary>'+
+      '<div class="workspace"><table class="results-table"><thead><tr><th>Fila original</th><th>D²</th><th>Umbral</th></tr></thead><tbody>'+
+      r.outIdx.map(x=>'<tr><td>'+x.originalIndex+'</td><td>'+fmtPro(x.v)+'</td><td>'+fmtPro(r.cutoff)+'</td></tr>').join('')+
+      '</tbody></table></div><p>Estas observaciones requieren revisión; no se eliminan automáticamente.</p></details>';
   }
   html+='<div class="heatmap-wrap"><h3>Matriz de correlaciones</h3><table class="heatmap-table"><thead><tr><th></th>';
   r.names.forEach(n=>html+=`<th>${escapeHtml(n)}</th>`);
@@ -3457,8 +3463,8 @@ function loadMultiExample(){
 }
 function downloadMultiResults(){
   if(!multiLast)return alert('Primero ejecute el diagnóstico multivariado.');
-  const rows=[['Indicador','Valor'],['N_original',multiLast.nOriginal],['N_completo',multiLast.n],['N_excluidos',multiLast.nExcluded],['Variables',multiLast.k],['Mardia_skewness',multiLast.mardia.skewness],['Mardia_skewness_chi2',multiLast.mardia.skewChi2],['Mardia_skewness_gl',multiLast.mardia.skewDf],['Mardia_skewness_p_aprox',multiLast.mardia.skewP],['Mardia_kurtosis',multiLast.mardia.kurtosis],['Mardia_kurtosis_z',multiLast.mardia.zK],['Mahalanobis_cutoff',multiLast.cutoff],['Outliers_multivariados',multiLast.outIdx.length],[],['Caso_fila_original_1based','Mahalanobis_D2']];
-  multiLast.outIdx.forEach(x=>rows.push([x.originalIndex,x.v]));
+  const rows=[['Indicador','Valor'],['N_original',multiLast.nOriginal],['N_completo',multiLast.n],['N_excluidos',multiLast.nExcluded],['Variables',multiLast.k],['Mardia_skewness',multiLast.mardia.skewness],['Mardia_skewness_chi2',multiLast.mardia.skewChi2],['Mardia_skewness_gl',multiLast.mardia.skewDf],['Mardia_skewness_p_aprox',multiLast.mardia.skewP],['Mardia_kurtosis',multiLast.mardia.kurtosis],['Mardia_kurtosis_z',multiLast.mardia.zK],['Mahalanobis_cutoff',multiLast.cutoff],['Outliers_multivariados',multiLast.outIdx.length],[],['Caso_fila_original_1based','Mahalanobis_D2','Supera_umbral']];
+  multiLast.md.forEach((d2,i)=>rows.push([multiLast.caseIndexes[i],d2,d2>multiLast.cutoff?'Sí':'No']));
   saveBlob("\ufeff"+rows.map(r=>r.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_diagnostico_multivariado.csv');
 }
 function downloadMultiReport(){
