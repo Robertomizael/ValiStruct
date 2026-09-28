@@ -10,6 +10,7 @@ on:
       - fix/v5-2-afe-estadistica-exportaciones
       - hotfix/v5-2-mahalanobis-mardia
       - hotfix/v5-2-motorpro-recovery
+      - hotfix/v5-2-4-motorpro-numerics-contextmenu
     paths:
       - "desktop/**"
       - "navigation-v51.js"
