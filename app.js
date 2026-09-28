@@ -2184,8 +2184,22 @@ function isResidualMiCandidate(m){
   return observed.has(String(m.lhs)) && observed.has(String(m.rhs)) && String(m.lhs)!==String(m.rhs);
 }
 
+function normalizeProSyntax(raw){
+  return String(raw||'').split(/\r?\n/).map(line=>{
+    const t=line.trim();
+    if(!t || t.startsWith('#') || t.includes('=~') || t.includes('~~') || /(^|\s)~(\s|$)/.test(t) || t.includes(':='))return line;
+    const m=t.match(/^([^=]+?)\s*=\s*(.+)$/);
+    if(!m)return line;
+    const lhs=m[1].trim();
+    const rhs=m[2].split(/[,+]/).map(x=>x.trim()).filter(Boolean);
+    return lhs&&rhs.length?lhs+' =~ '+rhs.join(' + '):line;
+  }).join('\n');
+}
+
 function buildProPayload(){
-  const syntax=document.getElementById('proSyntax').value.trim();
+  const box=document.getElementById('proSyntax');
+  if(box)box.value=normalizeProSyntax(box.value);
+  const syntax=box?.value.trim()||'';
   if(!syntax)throw new Error('Ingrese sintaxis lavaan.');
   if(!proCsvText)throw new Error('Importe un archivo CSV.');
   return {
@@ -2200,22 +2214,41 @@ function buildProPayload(){
 }
 
 async function runProModel(){
+  const button=document.getElementById('runProModel');
   let payload;
-  try{ payload=buildProPayload(); }catch(e){return alert(e.message);}
-  proResults.innerHTML='<div class="notice">Ejecutando modelo…</div>';
+  try{ payload=buildProPayload(); }catch(e){
+    proResults.innerHTML='<div class="model-error"><strong>No se puede iniciar el modelo.</strong><br>'+escapeHtml(e.message)+'</div>';
+    return;
+  }
+  if(button)button.disabled=true;
+  proResults.innerHTML='<div class="notice"><strong>Motor Pro:</strong> verificando R/lavaan y ejecutando el modelo…</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/estimate`,{
-      method:'POST',
-      headers:authHeaders({'Content-Type':'application/json'}),
-      body:JSON.stringify(payload)
-    });
-    const data=await res.json();
+    const engineOk=await checkProEngine();
+    if(!engineOk)throw new Error('El backend R/lavaan no responde en '+getProApiBase()+'. En la versión de escritorio espere a que termine de preparar el motor integrado y vuelva a intentar.');
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),300000);
+    let res;
+    try{
+      res=await fetch(`${getProApiBase()}/estimate`,{
+        method:'POST',
+        headers:authHeaders({'Content-Type':'application/json'}),
+        body:JSON.stringify(payload),
+        signal:controller.signal
+      });
+    }finally{clearTimeout(timer);}
+    let data;
+    try{data=await res.json();}catch(_){throw new Error('El backend respondió en un formato no válido.');}
     if(!res.ok || data.ok===false)throw new Error(data.error||'No fue posible estimar el modelo.');
     proLastResponse=data;
     renderProResults(data);
+    const status=document.getElementById('proRunStatus');
+    if(status)status.textContent='Modelo estimado correctamente con '+(data.estimator||payload.estimator)+' · '+(data.converged===false?'no convergente':'convergencia informada por lavaan')+'.';
   }catch(e){
-    proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${escapeHtml(e.message)}<br><br>Compruebe que el backend incluido en ValiStruct v0.9 esté activo.</div>`;
-  }
+    const msg=e?.name==='AbortError'?'El cálculo excedió 5 minutos y fue cancelado.':String(e?.message||e);
+    proLastResponse=null;
+    proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${escapeHtml(msg)}<br><br><button type="button" id="retryProEngineInline">Comprobar motor y reintentar</button></div>`;
+    setTimeout(()=>document.getElementById('retryProEngineInline')?.addEventListener('click',async()=>{await checkProEngine();runProModel();}),0);
+  }finally{if(button)button.disabled=false;}
 }
 
 function fitStatus(name,val){
