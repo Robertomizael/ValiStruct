@@ -78,6 +78,7 @@ def test_missing_data_has_clear_feedback():
         page.on("dialog",lambda dialog:dialog.accept())
         page.goto(FRONTEND,wait_until="load")
         page.locator('.nav button[data-section="motorpro"]').click()
+        page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03")
         page.locator("#runProModel").click()
         assert "importe" in page.locator("#proResults").inner_text().lower() or "base" in page.locator("#proResults").inner_text().lower()
         browser.close()
