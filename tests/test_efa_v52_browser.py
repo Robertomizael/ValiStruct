@@ -20,7 +20,7 @@ def test_efa_toolbar_diagnostics_and_local_export():
         assert page.locator("#downloadEfaResults").is_visible()
         assert page.locator("#downloadEfaReport").is_visible()
         assert page.locator("#efaExtraction option").count()==7
-        assert page.locator("#efaExtraction option[value='image']").is_disabled()
+        assert page.locator("#efaExtraction option[value='image']").get_attribute("disabled") is not None
         page.locator("#loadEfaExample").click()
         page.locator("#efaDiagnostics").click()
         page.wait_for_function("document.querySelector('#efaDiagnosticResults')?.innerText.includes('KMO global')",timeout=10000)
