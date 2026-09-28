@@ -14,6 +14,7 @@ function status(message,isError=false){
 }
 function clearRemote(){
   remote=null;diagnostics=null;sourceRevision=null;
+  if(typeof efaLastResults!=='undefined')efaLastResults=null;
   const t=el('efaDiagnosticResults');if(t)t.replaceChildren();
 }
 function csvSource(){
@@ -23,7 +24,9 @@ function csvSource(){
 }
 function sourceToken(){
   return JSON.stringify({items:efaData?.itemNames,n:efaData?.n,
-    matrix:efaData?.matrix,revision:window.ValiStructParticipantData?.revision||0});
+    matrix:efaData?.matrix,revision:window.ValiStructParticipantData?.revision||0,
+    method:el('efaExtraction').value,rotation:el('efaRotation').value,
+    factors:el('efaFactors').value,parallel:el('efaParallelRuns').value});
 }
 async function callR(method){
   const payload={method,csv_text:csvSource(),item_names:efaData.itemNames,
@@ -146,6 +149,10 @@ el('efaExtraction').addEventListener('change',()=>{
   status(el('efaExtraction').value==='pca'?'ACP local seleccionada. Puede calcular KMO y Bartlett; Mardia requiere R.':
     'Método de factores comunes: requiere R/psych activo. KMO, Bartlett y Mardia disponibles por separado.');
 });
+['efaRotation','efaFactors','efaParallelRuns'].forEach(id=>el(id)?.addEventListener('change',()=>{
+  clearRemote();el('efaResults').replaceChildren();
+  status('La configuración ha cambiado. Ejecute de nuevo el análisis antes de exportar.');
+}));
 el('efaExportSyntax').addEventListener('click',()=>{
   const m=el('efaExtraction').value;
   if(m==='pca'){status('La sintaxis R de ACP se incorporará después; utilice las exportaciones del prototipo local.',true);return;}
