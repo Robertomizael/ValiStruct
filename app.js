@@ -2356,6 +2356,36 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
   reader.readAsText(f,'utf-8');
   e.target.value='';
 });
+
+function reuseCentralDataForMotorPro(){
+  let csv=null,source='';
+  try{
+    if(typeof unifiedCsvText!=='undefined' && unifiedCsvText){
+      csv=unifiedCsvText;source=unifiedSourceName||'Centro de datos';
+    }else if(typeof legacyCsvText!=='undefined' && legacyCsvText){
+      csv=legacyCsvText;source='Importación SAV/DTA';
+    }
+  }catch(_){}
+  if(!csv){
+    const status=document.getElementById('proRunStatus');
+    if(status)status.textContent='No hay una base activa en el Centro de datos. Importe CSV/XLSX/SAV/DTA allí o use «Importar CSV» en este módulo.';
+    return false;
+  }
+  proCsvText=csv;
+  summarizeProCsv(csv);
+  const status=document.getElementById('proRunStatus');
+  if(status)status.textContent='Base reutilizada desde '+source+'. Revise que los nombres de la sintaxis coincidan exactamente con las variables.';
+  populateResidualCovarianceSelectors();
+  return true;
+}
+document.getElementById('useCentralDataForPro')?.addEventListener('click',reuseCentralDataForMotorPro);
+document.querySelector('.nav button[data-section="motorpro"]')?.addEventListener('click',()=>{
+  setTimeout(()=>{
+    if(!proCsvText)reuseCentralDataForMotorPro();
+    checkProEngine();
+  },0);
+});
+
 document.getElementById('copyLatenciaSyntax').addEventListener('click',()=>{
   generateSemSyntax();
   document.getElementById('proSyntax').value=semSyntax.value.replace(/# Modelo vacío/g,'');
