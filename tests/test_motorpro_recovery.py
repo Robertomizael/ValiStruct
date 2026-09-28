@@ -140,6 +140,31 @@ def test_injected_electron_renderer_patch_preserves_canonical_executor():
         browser.close()
 
 
+def test_standalone_file_protocol_ignores_stale_server_address(csv_text):
+    from pathlib import Path
+    file_url=(Path(__file__).resolve().parents[1]/"index.html").as_uri()
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page(viewport={"width":1440,"height":900})
+        errors=[];page.on("pageerror",lambda err:errors.append(str(err)))
+        page.goto(file_url,wait_until="load")
+        page.evaluate("localStorage.setItem('valistruct_api_base','https://obsolete.example.org')")
+        assert page.evaluate("getProApiBase()")=="http://127.0.0.1:8765"
+        page.locator('.nav button[data-section="motorpro"]').click()
+        page.locator("#proCsvFile").set_input_files({
+            "name":"standalone.csv","mimeType":"text/csv","buffer":csv_text.encode()
+        })
+        page.wait_for_function("proCsvText?.includes('i01')")
+        page.locator("#proEstimator").select_option("ML")
+        page.locator("#proBootstrap").fill("0")
+        page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03\\nF2 =~ i04 + i05 + i06")
+        page.locator("#runProModel").click()
+        page.wait_for_function("proLastResponse?.ok===true",timeout=180000)
+        assert "Convergencia" in page.locator("#proResults").inner_text()
+        assert not errors,repr(errors)
+        browser.close()
+
+
 def test_missing_data_has_clear_feedback():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
