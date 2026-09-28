@@ -3285,6 +3285,22 @@ document.getElementById('applyOrdinalGuide')?.addEventListener('click',()=>{
 // -----------------------------
 // v1.4 Multivariate diagnostics
 // -----------------------------
+// Restore shared statistical helpers: these were referenced in diagnostic
+// modules but were absent from app.js, causing silent ReferenceErrors.
+function mean(values){
+  if(!Array.isArray(values)||values.length===0)return NaN;
+  return values.reduce((sum,v)=>sum+v,0)/values.length;
+}
+function variance(values,sample=true){
+  if(!Array.isArray(values)||values.length<(sample?2:1))return NaN;
+  const m=mean(values);
+  return values.reduce((sum,v)=>sum+(v-m)*(v-m),0)/(values.length-(sample?1:0));
+}
+function covariance(a,b){
+  if(a.length!==b.length||a.length<2)return NaN;
+  const ma=mean(a),mb=mean(b);
+  return a.reduce((sum,v,i)=>sum+(v-ma)*(b[i]-mb),0)/(a.length-1);
+}
 let multiData=null, multiLast=null;
 
 function parseMultiCSV(text){
@@ -3330,53 +3346,78 @@ function chiSquareQuantileApprox(p,df){
 }
 function mardiaStats(matrix){
   const n=matrix.length,p=matrix[0].length;
+  if(n<=p+1)return null;
   const mu=columnMeans(matrix);
-  const S=covMatrix(matrix);
-  const inv=matrixInverse(S);
+  // Mardia uses the ML covariance (divisor n), not the sample covariance (n-1).
+  const centered=matrix.map(row=>row.map((v,j)=>v-mu[j]));
+  const Sc=covMatrix(matrix).map(row=>row.map(v=>v*(n-1)/n));
+  const inv=matrixInverse(Sc);
   if(!inv)return null;
-  const centered=matrix.map(r=>r.map((v,j)=>v-mu[j]));
-  let b1=0;
+  // Compute U=Xcentered * S^-1 once: O(n*p^2 + n^2*p)
+  // rather than O(n^2*p^2), which froze the UI for 350 x 28 datasets.
+  const projected=centered.map(row=>inv[0].map((_,j)=>row.reduce((sum,v,k)=>sum+v*inv[k][j],0)));
+  let b1sum=0,b2sum=0;
   for(let i=0;i<n;i++){
+    const d2=projected[i].reduce((sum,v,j)=>sum+v*centered[i][j],0);
+    b2sum+=d2*d2;
     for(let j=0;j<n;j++){
-      const vi=centered[i],vj=centered[j];
-      let q=0;
-      for(let a=0;a<p;a++)for(let b=0;b<p;b++)q+=vi[a]*inv[a][b]*vj[b];
-      b1+=Math.pow(q,3);
+      const cross=projected[i].reduce((sum,v,k)=>sum+v*centered[j][k],0);
+      b1sum+=cross*cross*cross;
     }
   }
-  b1/=n*n;
-  let b2=0;
-  for(let i=0;i<n;i++){
-    const vi=centered[i];
-    const q=vecMatVec(vi,inv);
-    b2+=q*q;
-  }
-  b2/=n;
+  const skewness=b1sum/(n*n),kurtosis=b2sum/n;
   const expectedK=p*(p+2);
-  const zK=(b2-expectedK)/Math.sqrt(8*p*(p+2)/n);
-  return {skewness:b1,kurtosis:b2,expectedK,zK};
+  const zK=(kurtosis-expectedK)/Math.sqrt(8*p*(p+2)/n);
+  const chi2=n*skewness/6,df=p*(p+1)*(p+2)/6;
+  return {skewness,kurtosis,expectedK,zK,skewChi2:chi2,skewDf:df,
+    skewP:chiSquareSurvivalApprox(chi2,df),
+    kurtosisP:typeof normalCdf==='function'?2*(1-normalCdf(Math.abs(zK))):null};
+}
+function multiStatus(message,error=false){
+  const el=document.getElementById('multiRunStatus');
+  if(el){el.textContent=message;el.classList.toggle('efa-error',error);}
 }
 function runMultiDiagnostics(){
-  if(!multiData)return alert('Importe o cargue una base.');
-  const matrix=completeNumericMatrix(multiData);
-  if(matrix.length<Math.max(10,multiData.k+2))return alert('Se requieren más casos completos para diagnóstico multivariado.');
-  const md=mahalanobisDistances(matrix);
-  if(!md)return alert('No fue posible invertir la matriz de covarianzas. Revise colinealidad o variables sin variación.');
-  const perc=Number(document.getElementById('mahalPercentile').value)||.99;
-  const cutoff=chiSquareQuantileApprox(perc,multiData.k);
-  const outIdx=md.map((v,i)=>({v,i})).filter(x=>x.v>cutoff);
-  const mardia=mardiaStats(matrix);
-  const R=efaCorrelationMatrix(matrix);
-  const highThr=Number(document.getElementById('corrHighThreshold').value)||.90;
-  const highPairs=[];
-  for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++)if(Math.abs(R[i][j])>=highThr)highPairs.push({a:multiData.names[i],b:multiData.names[j],r:R[i][j]});
-  multiLast={n:matrix.length,k:multiData.k,md,cutoff,outIdx,mardia,R,highPairs,names:multiData.names};
-  renderMultiDiagnostics(multiLast);
-  logHistory('Diagnóstico multivariado','Ejecutar',{n:matrix.length,k:multiData.k,outliers:outIdx.length});
+  const button=document.getElementById('runMultiDiagnostics');
+  if(!multiData){multiStatus('Importe o cargue primero una base de datos.',true);return;}
+  if(button)button.disabled=true;
+  multiStatus('Calculando las distancias de Mahalanobis y las pruebas multivariadas…');
+  try{
+    const complete=multiData.matrix.map((row,index)=>({row,index}))
+      .filter(x=>x.row.every(Number.isFinite));
+    const matrix=complete.map(x=>x.row);
+    if(matrix.length<Math.max(10,multiData.k+2))
+      throw new Error('Se requieren al menos max(10, p+2) casos completos; disponibles: '+matrix.length+'.');
+    const md=mahalanobisDistances(matrix);
+    if(!md)throw new Error('La matriz de covarianzas es singular. Revise la colinealidad y los ítems sin variación.');
+    const perc=Number(document.getElementById('mahalPercentile').value)||.99;
+    const cutoff=chiSquareQuantileApprox(perc,multiData.k);
+    const outIdx=md.map((v,i)=>({v,i,originalIndex:complete[i].index+1})).filter(x=>x.v>cutoff);
+    const mardia=mardiaStats(matrix);
+    if(!mardia)throw new Error('Mardia no es estimable: revise n, p y la matriz de covarianzas.');
+    const R=efaCorrelationMatrix(matrix);
+    if(R.some(row=>row.some(v=>!Number.isFinite(v))))
+      throw new Error('Hay correlaciones no finitas; revise ítems sin variabilidad.');
+    const highThr=Number(document.getElementById('corrHighThreshold').value)||.90;
+    const highPairs=[];
+    for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++)
+      if(Math.abs(R[i][j])>=highThr)highPairs.push({a:multiData.names[i],b:multiData.names[j],r:R[i][j]});
+    multiLast={n:matrix.length,k:multiData.k,nOriginal:multiData.n,
+      nExcluded:multiData.n-matrix.length,md,caseIndexes:complete.map(x=>x.index+1),cutoff,outIdx,mardia,R,highPairs,names:multiData.names};
+    renderMultiDiagnostics(multiLast);
+    multiStatus('Cálculo completado: '+matrix.length+' casos completos, '+outIdx.length+' posibles atípicos. Los resultados se pueden exportar.');
+    if(typeof logHistory==='function')
+      logHistory('Diagnóstico multivariado','Ejecutar',{n:matrix.length,k:multiData.k,outliers:outIdx.length});
+  }catch(e){
+    multiLast=null;
+    document.getElementById('multiResults').innerHTML='';
+    multiStatus('No se pudo realizar el diagnóstico: '+e.message,true);
+  }finally{if(button)button.disabled=false;}
 }
 function renderMultiDiagnostics(r){
   const nonnormal=Math.abs(r.mardia.zK)>1.96;
   document.getElementById('multiSummary').innerHTML=`
+    <div class="metric-card"><span>Casos excluidos por faltantes</span><strong>${r.nExcluded}</strong></div>
     <div class="metric-card"><span>Casos completos</span><strong>${r.n}</strong></div>
     <div class="metric-card"><span>Variables</span><strong>${r.k}</strong></div>
     <div class="metric-card ${r.outIdx.length?'diag-alert':'diag-ok'}"><span>Atípicos multivariados</span><strong>${r.outIdx.length}</strong></div>
@@ -3385,6 +3426,12 @@ function renderMultiDiagnostics(r){
   html+=`<div class="${r.outIdx.length?'multi-warning':'multi-good'}"><strong>Mahalanobis:</strong> punto de corte χ² aproximado = ${fmtPro(r.cutoff)}. Se identificaron ${r.outIdx.length} caso(s) por encima del percentil configurado. No elimine casos automáticamente; revise plausibilidad y calidad de captura.</div>`;
   if(r.highPairs.length){
     html+=`<div class="multi-warning"><strong>Correlaciones altas:</strong> ${r.highPairs.map(x=>`${escapeHtml(x.a)}–${escapeHtml(x.b)} (${x.r.toFixed(2)})`).join('; ')}. Revise redundancia o colinealidad.</div>`;
+  }
+  if(r.outIdx.length){
+    html+='<details class="multi-outlier-list"><summary>Ver casos señalados por Mahalanobis ('+r.outIdx.length+')</summary>'+
+      '<div class="workspace"><table class="results-table"><thead><tr><th>Fila original</th><th>D²</th><th>Umbral</th></tr></thead><tbody>'+
+      r.outIdx.map(x=>'<tr><td>'+x.originalIndex+'</td><td>'+fmtPro(x.v)+'</td><td>'+fmtPro(r.cutoff)+'</td></tr>').join('')+
+      '</tbody></table></div><p>Estas observaciones requieren revisión; no se eliminan automáticamente.</p></details>';
   }
   html+='<div class="heatmap-wrap"><h3>Matriz de correlaciones</h3><table class="heatmap-table"><thead><tr><th></th>';
   r.names.forEach(n=>html+=`<th>${escapeHtml(n)}</th>`);
@@ -3416,8 +3463,8 @@ function loadMultiExample(){
 }
 function downloadMultiResults(){
   if(!multiLast)return alert('Primero ejecute el diagnóstico multivariado.');
-  const rows=[['Indicador','Valor'],['N_completo',multiLast.n],['Variables',multiLast.k],['Mardia_skewness',multiLast.mardia.skewness],['Mardia_kurtosis',multiLast.mardia.kurtosis],['Mardia_kurtosis_z',multiLast.mardia.zK],['Mahalanobis_cutoff',multiLast.cutoff],['Outliers_multivariados',multiLast.outIdx.length],[],['Caso_index_0based','Mahalanobis_D2']];
-  multiLast.outIdx.forEach(x=>rows.push([x.i,x.v]));
+  const rows=[['Indicador','Valor'],['N_original',multiLast.nOriginal],['N_completo',multiLast.n],['N_excluidos',multiLast.nExcluded],['Variables',multiLast.k],['Mardia_skewness',multiLast.mardia.skewness],['Mardia_skewness_chi2',multiLast.mardia.skewChi2],['Mardia_skewness_gl',multiLast.mardia.skewDf],['Mardia_skewness_p_aprox',multiLast.mardia.skewP],['Mardia_kurtosis',multiLast.mardia.kurtosis],['Mardia_kurtosis_z',multiLast.mardia.zK],['Mahalanobis_cutoff',multiLast.cutoff],['Outliers_multivariados',multiLast.outIdx.length],[],['Caso_fila_original_1based','Mahalanobis_D2','Supera_umbral']];
+  multiLast.md.forEach((d2,i)=>rows.push([multiLast.caseIndexes[i],d2,d2>multiLast.cutoff?'Sí':'No']));
   saveBlob("\ufeff"+rows.map(r=>r.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_diagnostico_multivariado.csv');
 }
 function downloadMultiReport(){

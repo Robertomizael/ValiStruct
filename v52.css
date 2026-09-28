@@ -106,3 +106,10 @@ body.vs-v52 #inicio.vs-v52-home>*:not(.vs-v52-dashboard){display:none!important}
   .vs-v52-quick-grid,.vs-v52-form-grid{grid-template-columns:1fr}
   .vs-v52-module-header{flex-direction:column}
 }
+/* Mahalanobis/Mardia recovery: visible calculation and exception feedback. */
+body.vs-v52 #multidiag #multiRunStatus{display:block;margin:13px 0 19px;padding:12px 16px;background:#eef6fd;color:#234e70;border-left:4px solid #377fae;border-radius:8px;font-size:13px;line-height:1.55}
+body.vs-v52 #multidiag #multiRunStatus.efa-error{background:#fff2f1;color:#934543;border-left-color:#c65c57}
+body.vs-v52 #multidiag .multi-outlier-list{border:1px solid #dce5ef;background:#fff;border-radius:11px;padding:13px;margin:16px 0}
+body.vs-v52 #multidiag .multi-outlier-list summary{cursor:pointer;font-weight:700;color:#225475}
+body.vs-v52 #multidiag #runMultiDiagnostics:disabled{opacity:.55;cursor:wait}
+body.vs-v52 #multidiag .heatmap-wrap{max-width:100%;overflow-x:auto}

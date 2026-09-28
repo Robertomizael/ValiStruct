@@ -1,7 +1,7 @@
 {
   "name": "valistruct-desktop",
-  "version": "5.2.1-beta.1",
-  "description": "ValiStruct Desktop 5.2 Beta · Interfaz modular y validación externa",
+  "version": "5.2.2-beta.1",
+  "description": "ValiStruct Desktop 5.2 Beta · Mahalanobis y Mardia recuperados",
   "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
