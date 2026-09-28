@@ -89,7 +89,19 @@ async function run(method){
     }else{
       renderDiagnostics(data);renderR(data);status('Extracción '+(methodName[method]||method)+' terminada; puede descargar resultados e informe.');
     }
-  }catch(e){status(e.message,true);el('efaDiagnosticResults').innerHTML='<div class="efa-method-warning">'+esc(e.message)+'</div>';}
+  }catch(e){
+    if(method==='diagnostics' && efaData?.matrix?.length){
+      try{
+        const R=efaCorrelationMatrix(efaData.matrix),kmo=kmoOverall(R),bart=bartlettTest(R,efaData.n);
+        const fallback={ok:true,engine:'Navegador',n_complete:efaData.n,n_excluded:0,
+          item_names:efaData.itemNames,kmo:{overall:kmo.overall,per_item:kmo.perItem},
+          bartlett:{chi2:bart.chi2,df:bart.df,p:bart.p},
+          mardia:{ok:false,reason:'Mardia requiere R conectado; KMO y Bartlett se calcularon localmente (p de Bartlett aproximado).'}};
+        renderDiagnostics(fallback);
+        status('KMO y Bartlett disponibles localmente. Mardia requiere R; '+e.message,true);
+      }catch(_){status(e.message,true)}
+    }else{status(e.message,true);el('efaDiagnosticResults').innerHTML='<div class="efa-method-warning">'+esc(e.message)+'</div>';}
+  }
   finally{busyState(false);}
 }
 const calc=el('calculateEfa');
@@ -139,6 +151,7 @@ el('efaExportSyntax').addEventListener('click',()=>{
   if(m==='pca'){status('La sintaxis R de ACP se incorporará después; utilice las exportaciones del prototipo local.',true);return;}
   const fm={uls:'minres',gls:'gls',ml:'ml',pa:'pa',alpha:'alpha'}[m];
   if(!fm){status('Esta extracción todavía no está validada.',true);return;}
+  if(!efaData){status('Cargue primero una base de participantes para generar sintaxis.',true);return;}
   const rotation=el('efaRotation').value,factors=Number(el('efaFactors').value);
   const script='# ValiStruct v5.2 · sintaxis reproducible (base de participantes exportada como CSV)\n'+
     'library(psych)\nd <- read.csv("participantes.csv",check.names=FALSE)\n'+
