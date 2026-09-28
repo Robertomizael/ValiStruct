@@ -2050,7 +2050,7 @@ function getProApiBase(){
   // The standalone DMG/EXE always owns its local loopback backend.
   // Older releases could persist a remote or obsolete URL in localStorage,
   // silently redirecting subsequent Motor Pro runs to a dead endpoint.
-  if(location.protocol==='file:')return DEFAULT_PRO_API_BASE;
+  if(location.protocol==='file:' || (['127.0.0.1','localhost'].includes(location.hostname) && location.port==='8765'))return DEFAULT_PRO_API_BASE;
   return localStorage.getItem('valistruct_api_base') || DEFAULT_PRO_API_BASE;
 }
 let proCsvText = null;
