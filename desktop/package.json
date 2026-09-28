@@ -1,7 +1,7 @@
 {
   "name": "valistruct-desktop",
-  "version": "5.2.2-beta.1",
-  "description": "ValiStruct Desktop 5.2 Beta · Mahalanobis y Mardia recuperados",
+  "version": "5.2.3-beta.1",
+  "description": "ValiStruct Desktop 5.2 Beta · Motor Pro R/lavaan restaurado",
   "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
