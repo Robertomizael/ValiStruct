@@ -159,7 +159,7 @@ def test_standalone_same_origin_ignores_stale_server_address(csv_text):
         page.wait_for_function("proCsvText?.includes('i01')")
         page.locator("#proEstimator").select_option("ML")
         page.locator("#proBootstrap").fill("0")
-        page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03\\nF2 =~ i04 + i05 + i06")
+        page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03\nF2 =~ i04 + i05 + i06")
         page.locator("#runProModel").click()
         page.wait_for_function(
             "proLastResponse?.ok===true || document.querySelector('#proResults .model-error')",
