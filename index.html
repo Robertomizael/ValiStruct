@@ -659,10 +659,13 @@
           <label class="file-button">Importar CSV
             <input id="proCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useMotorParticipantData" type="button">Reutilizar base de participantes</button>
+          <button id="useMotorMultiData" type="button">Reutilizar diagnóstico multivariado</button>
           <button id="copyLatenciaSyntax">Usar sintaxis de Latencia</button>
         </div>
       </div>
 
+      <p id="motorProDataStatus" class="sem-engine-note" role="status" aria-live="polite">Cargue un CSV o reutilice una de las bases existentes; la sintaxis por sí sola no aporta los datos para estimar el modelo.</p>
       <div id="proDatasetSummary" class="dataset-summary"></div>
 
       <div class="model-builder" id="jaspImportPanel">
