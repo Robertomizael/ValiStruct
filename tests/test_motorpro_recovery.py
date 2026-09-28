@@ -43,7 +43,7 @@ def test_motorpro_real_model_and_json_downloads():
         page.locator("#proSyntax").fill("F1 =~ i01 + i02 + i03\nF2 =~ i04 + i05 + i06\nF1 ~~ F2")
         assert page.locator("#runProModel").is_enabled()
         page.locator("#runProModel").click()
-        page.wait_for_function("window.proLastResponse?.ok === true",timeout=180000)
+        page.wait_for_function("document.querySelector(\'#proResults\')?.innerText.includes(\'CFI\')",timeout=180000)
         assert "Motor Pro" in page.locator("#proResults").inner_text()
         assert "CFI" in page.locator("#proResults").inner_text()
         assert "RMSEA" in page.locator("#proResults").inner_text()
@@ -75,4 +75,27 @@ def test_motorpro_missing_dataset_and_offline_backend_show_visible_error():
         page.locator("#runProModel").click()
         page.wait_for_function("document.querySelector('#proResults')?.innerText.includes('No se pudo ejecutar')",timeout=15000)
         assert "No se pudo ejecutar" in page.locator("#proResults").inner_text()
+        browser.close()
+
+
+def test_desktop_renderer_patch_does_not_hijack_motorpro_execution():
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True)
+        page=browser.new_page(viewport={"width":1440,"height":900})
+        errors=[]
+        page.on("pageerror",lambda e:errors.append(str(e)))
+        page.goto(URL,wait_until="load")
+        page.add_script_tag(url=URL+"/desktop/renderer-fixes.js")
+        open_motor(page)
+        page.locator("#proCsvFile").set_input_files({
+            "name":"desktop_motor.csv","mimeType":"text/csv","buffer":csv_data(140)
+        })
+        page.wait_for_function("document.querySelector('#proDatasetSummary')?.innerText.includes('140')")
+        page.locator("#proBootstrap").fill("0")
+        page.locator("#proSyntax").fill("F1 = i01, i02, i03\nF2 = i04, i05, i06")
+        page.locator("#runProModel").click()
+        page.wait_for_function("document.querySelector('#proResults')?.innerText.includes('CFI')",timeout=180000)
+        assert "=~" in page.locator("#proSyntax").input_value()
+        assert "No se pudo ejecutar" not in page.locator("#proResults").inner_text()
+        assert not errors,repr(errors)
         browser.close()
