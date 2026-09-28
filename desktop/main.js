@@ -478,7 +478,8 @@ function startBackend() {
       VALISTRUCT_AUTH_ENABLED: 'false',
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
-      FLASK_RUN_PORT: '8765'
+      FLASK_RUN_PORT: '8765',
+      VALISTRUCT_FRONTEND_DIR: app.isPackaged ? resourcePath('app') : path.resolve(__dirname, '..')
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true
@@ -544,7 +545,14 @@ async function createWindow() {
     ? resourcePath('app', 'index.html')
     : path.resolve(__dirname, '..', 'index.html');
 
-  await win.loadFile(frontend);
+  // Same-origin UI prevents file:// CORS failures when the app calls localhost.
+  // Keep a readable offline fallback if the backend cannot start.
+  try {
+    await win.loadURL('http://127.0.0.1:8765/');
+  } catch (err) {
+    console.error('[ValiStruct] local UI server unavailable; loading offline shell:', err);
+    await win.loadFile(frontend);
+  }
   await injectDesktopUX(win);
   win.maximize();
 }
