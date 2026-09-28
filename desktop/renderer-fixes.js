@@ -172,33 +172,14 @@
     };
   }
 
-  // Replace the Motor Pro click path. It fixes the former auth TDZ issue and
-  // normalizes quick-AFC syntax before it reaches lavaan.
+  // Keep a single Motor Pro execution path. The page's canonical runProModel now
+  // owns health checks, auth headers, timeout, error recovery and result rendering.
+  // This desktop patch only normalizes legacy AFC notation before that listener runs.
   const runBtn=document.getElementById('runProModel');
   if(runBtn){
-    runBtn.addEventListener('click',async ev=>{
-      ev.preventDefault(); ev.stopImmediatePropagation();
+    runBtn.addEventListener('click',()=>{
       const proSyntaxBox=document.getElementById('proSyntax');
       if(proSyntaxBox)proSyntaxBox.value=toLavaanSyntax(proSyntaxBox.value);
-      let payload;
-      try{payload=buildProPayload();}catch(e){return alert(e.message);}
-      proResults.innerHTML='<div class="notice">Ejecutando modelo con R/lavaan…</div>';
-      try{
-        const headers={'Content-Type':'application/json'};
-        try{
-          const token=sessionStorage.getItem('valistruct_auth_token_v23');
-          if(token)headers.Authorization=`Bearer ${token}`;
-        }catch(_){}
-        const res=await fetch(`${getProApiBase()}/estimate`,{method:'POST',headers,body:JSON.stringify(payload)});
-        const data=await res.json();
-        if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible estimar el modelo.');
-        proLastResponse=data;
-        renderProResults(data);
-      }catch(e){
-        const msg=String(e.message||e);
-        const syntaxError=/lav_parse|unexpected character|parse|syntax/i.test(msg);
-        proResults.innerHTML=`<div class="model-error"><strong>No se pudo ejecutar el Motor Pro.</strong><br>${esc(msg)}<br><br>${syntaxError?'La conexión con R/lavaan funciona, pero la sintaxis del modelo no es válida. ValiStruct intentó convertir automáticamente la notación AFC; revise nombres de variables y especificación del modelo.':'Compruebe que el backend incluido en ValiStruct esté activo.'}</div>`;
-      }
     },true);
   }
 

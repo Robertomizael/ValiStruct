@@ -658,6 +658,7 @@
           <label class="file-button">Importar CSV
             <input id="proCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useCentralDataForPro" type="button">Usar base del Centro de datos</button>
           <button id="copyLatenciaSyntax">Usar sintaxis de Latencia</button>
         </div>
       </div>
@@ -694,6 +695,7 @@
           <button id="downloadProReport">Descargar informe JSON</button>
           <button id="applyProDiagram">Aplicar coeficientes al diagrama</button>
         </div>
+        <p id="proRunStatus" class="efa-engine-status" role="status" aria-live="polite">Antes de ejecutar, importe la base y compruebe el motor R/lavaan. En la app de escritorio el backend integrado usa http://127.0.0.1:8765.</p>
       </div>
 
       <div class="model-builder" id="residualCovariancePanel">
