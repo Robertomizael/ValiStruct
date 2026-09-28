@@ -601,7 +601,7 @@
           <h2>Motor estadístico profesional · lavaan</h2>
           <p>Interfaz de conexión con el backend de producción para AFC, SEM, estimadores robustos y análisis avanzados.</p>
         </div>
-        <span class="badge">Arquitectura funcional v0.9</span>
+        <span class="badge">Motor Pro · R/lavaan · v5.2.3 Beta</span>
       </div>
 
       <div class="notice">
@@ -645,7 +645,8 @@
           </select>
         </label>
         <label>Bootstrap
-          <input id="proBootstrap" type="number" min="0" max="10000" step="100" value="1000">
+          <input id="proBootstrap" type="number" min="0" max="10000" step="100" value="0">
+          <small>Por defecto 0. Para modelos robustos MLR/WLSMV utilice los errores estándar robustos; bootstrap clásico solo con ML.</small>
         </label>
       </div>
 
