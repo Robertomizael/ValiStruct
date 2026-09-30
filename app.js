@@ -5241,7 +5241,7 @@ document.getElementById('clearLocalResearchData')?.addEventListener('click',()=>
 });
 document.getElementById('downloadPrivacyPolicy')?.addEventListener('click',()=>{
   const p=loadPrivacySettings();
-  const txt=`ValiStruct 2.1 · Política local de privacidad
+  const txt=`ValiStruct · Política local de privacidad
 
 Autor: Dr. Roberto Joel Tirado Reyes
 Universidad Autónoma de Sinaloa
