@@ -5482,8 +5482,9 @@ document.querySelectorAll('input,select,textarea').forEach(el=>{
 // -----------------------------
 const VERSION_INFO={
   app:'ValiStruct',
-  version:'2.2',
-  projectFormat:'2.2',
+  version:'5.3.0-beta.1',
+  displayVersion:'5.3 Beta',
+  projectFormat:'3.0',
   minimumReadableProject:'0.7',
   author:'Dr. Roberto Joel Tirado Reyes',
   institution:'Universidad Autónoma de Sinaloa'
@@ -7019,11 +7020,11 @@ document.getElementById('downloadBetaMetrics')?.addEventListener('click',()=>{
 // ============================================================
 const VALISTRUCT_RELEASE = Object.freeze({
   app: 'ValiStruct',
-  version: '3.0.0-rc.6',
-  displayVersion: '3.0 RC6',
+  version: '5.3.0-beta.1',
+  displayVersion: '5.3 Beta',
   projectFormat: '3.0',
-  releaseChannel: 'release-candidate',
-  featureFreeze: true,
+  releaseChannel: 'beta',
+  featureFreeze: false,
   author: 'Dr. Roberto Joel Tirado Reyes',
   institution: 'Universidad Autónoma de Sinaloa'
 });
@@ -7054,7 +7055,7 @@ function migrateToV30(state){
   const from = String(s.schemaVersion || s.version || 'legacy');
   s.version='3.0';
   s.schemaVersion='3.0';
-  s.release={channel:'release-candidate',appVersion:'3.0.0-rc.6',migratedFrom:from};
+  s.release={channel:VALISTRUCT_RELEASE.releaseChannel,appVersion:VALISTRUCT_RELEASE.version,migratedFrom:from};
   if(!s.preferences)s.preferences={};
   if(!s.preferences.profile && typeof loadProfile==='function')s.preferences.profile=loadProfile();
   if(!s.preferences.settings && typeof loadSettings==='function')s.preferences.settings=loadSettings();
