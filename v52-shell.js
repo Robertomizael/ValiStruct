@@ -221,7 +221,7 @@
   const groupElements=[];
   const appendDirect=(id,glyph,className='vs-v53-direct')=>{
     const button=byId.get(id);if(!button)return;
-    button.classList.add(className);
+    String(className||'').split(/\s+/).filter(Boolean).forEach(token=>button.classList.add(token));
     if(glyph)button.insertAdjacentHTML('afterbegin','<span class="vs-v53-direct-icon" aria-hidden="true">'+glyph+'</span>');
     nav.appendChild(button);
   };
