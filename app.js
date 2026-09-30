@@ -5267,11 +5267,11 @@ renderPrivacySettings();
 const originalProjectStateV21 = projectState;
 projectState = function(){
   const state=originalProjectStateV21();
-  const privacy=loadPrivacySettings();
+  const privacy=typeof loadPrivacySettings === 'function' ? (loadPrivacySettings() || {}) : {};
   state.version='2.1';
   state.privacy=privacy;
-  state.settings=loadSettings();
-  state.profile=loadProfile();
+  state.settings=typeof loadSettings === 'function' ? (loadSettings() || null) : null;
+  state.profile=typeof loadProfile === 'function' ? (loadProfile() || null) : null;
   if(privacy.rawData!=='yes'){
     delete state.semData;
     delete state.proCsvText;
