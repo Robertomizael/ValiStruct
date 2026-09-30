@@ -484,7 +484,7 @@ async function injectDesktopUX(win) {
   // In v5.1 the frontend already groups modules scientifically; re-injecting
   // the old shell would silently replace the reengineered interface.
   const newNavigation = await win.webContents.executeJavaScript(
-    "document.querySelector('nav.nav')?.dataset.v51Grouped === 'yes'",
+    "document.querySelector('nav.nav')?.dataset.valistructNav === 'v5' || document.querySelector('nav.nav')?.dataset.v51Grouped === 'yes'",
     true
   );
   if (!newNavigation) {
