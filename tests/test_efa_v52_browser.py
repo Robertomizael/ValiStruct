@@ -6,6 +6,11 @@ from playwright.sync_api import sync_playwright
 
 URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
 
+def open_efa(page):
+    """Open AFE independently of the current accordion state."""
+    page.locator(".nav button[data-section=\'efa\']").evaluate("(el)=>el.click()")
+    page.wait_for_function("document.getElementById(\'efa\')?.classList.contains(\'visible\')")
+
 def test_efa_toolbar_diagnostics_and_local_export():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
