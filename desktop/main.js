@@ -540,7 +540,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v5.2.4 Beta · Motor Pro y edición',
+    title: 'ValiStruct v5.3 Beta · Simplificación científica',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
