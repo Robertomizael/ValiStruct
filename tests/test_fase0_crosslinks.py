@@ -29,4 +29,6 @@ add("desktop/ux-shell.js","data-section",re.findall(r'data-section=["\']([^"\']+
 
 missing=sorted({(src,kind,value) for src,kind,value in destinations
                 if value and "${" not in value and value not in all_sections})
-assert not missing, "Broken navigation destinations: "+repr(missing)
+
+def test_all_crosslinks_resolve_to_existing_sections():
+    assert not missing, "Broken navigation destinations: "+repr(missing)
