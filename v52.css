@@ -113,3 +113,43 @@ body.vs-v52 #multidiag .multi-outlier-list{border:1px solid #dce5ef;background:#
 body.vs-v52 #multidiag .multi-outlier-list summary{cursor:pointer;font-weight:700;color:#225475}
 body.vs-v52 #multidiag #runMultiDiagnostics:disabled{opacity:.55;cursor:wait}
 body.vs-v52 #multidiag .heatmap-wrap{max-width:100%;overflow-x:auto}
+
+
+/* ValiStruct v5.3 · Fase 1 — simplificación reversible */
+body.vs-v53 .nav-v53 .vs-v53-direct{display:flex;align-items:center;gap:11px;font-weight:700;margin:2px 0}
+body.vs-v53 .nav-v53 .vs-v53-direct-icon{font-size:17px;color:#e6c477;width:22px;text-align:center;flex:0 0 22px}
+body.vs-v53 .nav-v53 .vs-v53-nav-status{display:block;margin-left:auto;padding:3px 6px;border:1px solid rgba(237,200,113,.45);border-radius:999px;color:#f0d79e;font-size:8px;letter-spacing:.25px;white-space:nowrap}
+body.vs-v53 .nav-v53 button[data-vs-status="preparing"]{display:flex;align-items:center;gap:8px}
+body.vs-v53 .nav-v53 .vs-v53-parent-active{background:#204f77!important;color:#fff!important;box-shadow:inset 3px 0 #d8b461!important}
+body.vs-v53 .vs-v53-integrated-store,
+body.vs-v53 .vs-v53-qa-store,
+body.vs-v53 .vs-v53-admin-group[hidden]{display:none!important}
+body.vs-v53 .vs-v53-admin-group{border:1px dashed rgba(229,193,111,.45)!important;margin-top:8px!important}
+body.vs-v53 .vs-v53-admin-group>summary{color:#f0d79e!important}
+body.vs-v53 .vs-v53-admin-group .vs-v52-group-items{max-height:220px!important;overflow:auto!important}
+
+body.vs-v53 .vs-v53-tools{margin:15px 0 23px;padding:14px 16px;border:1px solid #dce7f2;background:#fff;border-radius:13px;box-shadow:0 3px 18px rgba(22,52,82,.035)}
+body.vs-v53 .vs-v53-tools-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+body.vs-v53 .vs-v53-tools-title strong{font-size:12px;color:#234764}
+body.vs-v53 .vs-v53-tools-title small{font-size:10px;color:#7b8c9d}
+body.vs-v53 .vs-v53-tools-actions{display:flex;flex-wrap:wrap;gap:7px}
+body.vs-v53 .vs-v53-tools-actions button{border:1px solid #cad9e7;background:#f7fbff;color:#24577e;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer}
+body.vs-v53 .vs-v53-tools-actions button:hover{background:#eaf4fc;border-color:#91b7d4}
+body.vs-v53 #inicio .vs-v53-tools{margin:0;background:#f9fbfe}
+body.vs-v53 #inicio .vs-v53-tools-title{margin-bottom:9px}
+
+body.vs-v53 .vs-v53-institutional-control{margin:13px 0 22px;padding:14px 16px;border:1px solid #eadcb7;background:#fffaf0;border-radius:11px}
+body.vs-v53 .vs-v53-institutional-control label{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;color:#684f21}
+body.vs-v53 .vs-v53-institutional-control input{width:auto}
+body.vs-v53 .vs-v53-institutional-control p{margin:7px 0 0;font-size:11px;line-height:1.55;color:#806c43}
+
+body.vs-v53 .vs-v53-preparing{background:#fff7df!important;border-color:#e9d39b!important;color:#805f1e!important}
+body.vs-v53 .vs-v53-home-status{display:inline-block;padding:2px 6px;border-radius:999px;background:#fff0c5;color:#755713;font-size:9px;text-transform:uppercase;letter-spacing:.35px}
+
+@media(max-width:810px){
+  body.vs-v53 .vs-v53-tools-title{align-items:flex-start;flex-direction:column;gap:3px}
+  body.vs-v53 .vs-v53-tools-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  body.vs-v53 .vs-v53-tools-actions{grid-template-columns:1fr}
+}
