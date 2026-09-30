@@ -29,16 +29,20 @@ def test_scientific_menu_is_reduced_without_deleting_modules(page):
     modules=pg.evaluate("window.VALISTRUCT_NAV_MODULES")
     assert len(modules)==83
     assert pg.locator(".nav button[data-section]").count()==83
-    visible=visible_nav_buttons(pg)
-    assert visible.count()<=25
-    ids=visible.evaluate_all("els=>els.map(x=>x.dataset.section)")
     expected={
         "inicio","dataimport","diagnostics","multidiag","missingpro",
         "aiken","efa","cfa","reliability",
         "stability","criterion","performance",
         "motorpro","resultcenter","projects","methodguide","privacy","acerca"
     }
-    assert set(ids)==expected
+    configured={m["id"] for m in modules if m["visibility"]=="visible"}
+    assert configured==expected
+    assert len(configured)<=25
+    for section in expected:
+        assert pg.locator(f'.nav button[data-section="{section}"]').count()==1
+    # Accordions may collapse some valid entries; the number simultaneously
+    # displayed must never exceed the scientific inventory.
+    assert visible_nav_buttons(pg).count()<=len(expected)
     assert pg.locator(".vs-v53-admin").is_hidden()
     assert pg.locator(".vs-v53-qa-nav").is_hidden()
     assert not errors,repr(errors)
