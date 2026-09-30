@@ -5478,12 +5478,12 @@ document.querySelectorAll('input,select,textarea').forEach(el=>{
 });
 
 // -----------------------------
-// ValiStruct 2.2 Versioning / compatibility
+// ValiStruct 5.3 Versioning / compatibility
 // -----------------------------
 const VERSION_INFO={
   app:'ValiStruct',
-  version:'2.2',
-  projectFormat:'2.2',
+  version:'5.3.0-beta.1',
+  projectFormat:'3.0',
   minimumReadableProject:'0.7',
   author:'Dr. Roberto Joel Tirado Reyes',
   institution:'Universidad Autónoma de Sinaloa'
@@ -7015,14 +7015,14 @@ document.getElementById('downloadBetaMetrics')?.addEventListener('click',()=>{
 
 
 // ============================================================
-// ValiStruct 3.0 RC6 · Consolidation layer
+// ValiStruct 5.3 Beta · compatibility/release layer
 // ============================================================
 const VALISTRUCT_RELEASE = Object.freeze({
   app: 'ValiStruct',
-  version: '3.0.0-rc.6',
-  displayVersion: '3.0 RC6',
+  version: '5.3.0-beta.1',
+  displayVersion: '5.3 Beta',
   projectFormat: '3.0',
-  releaseChannel: 'release-candidate',
+  releaseChannel: 'beta',
   featureFreeze: true,
   author: 'Dr. Roberto Joel Tirado Reyes',
   institution: 'Universidad Autónoma de Sinaloa'
