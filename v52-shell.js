@@ -223,7 +223,7 @@
 
   const visibleGroups=[
     {key:'data',name:'Centro de datos',glyph:icon('database'),open:true},
-    {key:'internal',name:'Validación interna',glyph:icon('internal'),open:true},
+    {key:'internal',name:'Validación interna',glyph:icon('internal'),open:false},
     {key:'external',name:'Validación externa',glyph:icon('external'),open:false}
   ];
   const groupElements=[];
