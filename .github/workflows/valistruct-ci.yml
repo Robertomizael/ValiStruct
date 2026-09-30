@@ -99,6 +99,7 @@ jobs:
           pytest -q tests/test_fase0_sections_sweep.py
           pytest -q tests/test_fase0_projects_roundtrip.py
           pytest -q tests/test_fase0_desktop_nav_marker.py
+          pytest -q tests/test_fase0_core_numeric.py
 
       - name: Start scientific backend
         env:
