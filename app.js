@@ -5490,6 +5490,11 @@ const VERSION_INFO={
   institution:'Universidad Autónoma de Sinaloa'
 };
 
+const aboutAppVersion=document.getElementById('aboutAppVersion');
+const aboutProjectFormat=document.getElementById('aboutProjectFormat');
+if(aboutAppVersion)aboutAppVersion.textContent=VERSION_INFO.displayVersion||VERSION_INFO.version;
+if(aboutProjectFormat)aboutProjectFormat.textContent=VERSION_INFO.projectFormat;
+
 function showVersionInfo(){
   document.getElementById('versionInfo').innerHTML=`
     <div class="version-card">
