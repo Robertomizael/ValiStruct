@@ -2,6 +2,7 @@ import os, json, hashlib, tempfile
 import pytest
 
 os.environ.setdefault("VALISTRUCT_AUTH_ENABLED","false")
+os.environ.setdefault("VALISTRUCT_INSTITUTIONAL_MODE","true")
 os.environ.setdefault("VALISTRUCT_PROJECT_LIBRARY_ENABLED","false")
 
 import sys
