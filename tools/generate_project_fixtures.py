@@ -43,6 +43,13 @@ def capture_state(url):
           if(name)name.value='Fixture histórico';
           if(author)author.value='Dr. Roberto Joel Tirado Reyes';
           try { localStorage.removeItem('valistruct_privacy_v21'); } catch (_) {}
+          // Historical RC6 projectState referenced result globals that were never
+          // declared until later releases. Seed only absent persistence slots with
+          // their intended empty value so the real historical serializer can run.
+          // This does not patch historical code or fabricate analysis results.
+          for (const key of ['relLastResults','efaLastResults','cfaLastResults']) {
+            if (!(key in globalThis)) globalThis[key]=null;
+          }
           return projectState();
         }""")
         browser.close()
