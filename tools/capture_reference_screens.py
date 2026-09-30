@@ -23,7 +23,7 @@ def main():
         for module in MODULES:
             page.locator(f'.nav button[data-section="{module}"]').evaluate("(el)=>el.click()")
             page.wait_for_function(
-                "(id)=>document.getElementById(id)?.classList.contains('visible')",module)
+                "(id)=>document.getElementById(id)?.classList.contains('visible')",arg=module)
             page.screenshot(path=str(out/f"{module}.png"),full_page=True)
         browser.close()
 
