@@ -14,6 +14,7 @@ def _zip_bytes(entries):
     return bio
 
 def test_restore_rejects_path_traversal(monkeypatch, tmp_path):
+    monkeypatch.setenv("VALISTRUCT_INSTITUTIONAL_MODE","true")
     monkeypatch.setattr(api,"PROJECT_DIR",tmp_path/"projects")
     api.PROJECT_DIR.mkdir(parents=True,exist_ok=True)
     monkeypatch.setattr(api,"AUTH_ENABLED",False)
