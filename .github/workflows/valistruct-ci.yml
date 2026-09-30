@@ -102,6 +102,16 @@ jobs:
           pytest -q tests/test_fase0_core_numeric.py
           pytest -q tests/test_fase0_historical_projects.py
 
+      - name: Capture Fase-0 reference screens
+        run: python tools/capture_reference_screens.py --out tests/reference-screens
+
+      - name: Upload reference screens
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-fase0-reference-screens
+          path: tests/reference-screens/*.png
+          if-no-files-found: error
+
       - name: Start scientific backend
         env:
           VALISTRUCT_AUTH_ENABLED: "false"
