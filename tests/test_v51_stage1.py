@@ -21,7 +21,7 @@ def page():
 
 def open_section(page, section):
     page.locator(f'.nav button[data-section="{section}"]').evaluate("(el)=>el.click()")
-    page.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')", section)
+    page.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')", arg=section)
 
 def upload(page):
     open_section(page,"dataimport")
