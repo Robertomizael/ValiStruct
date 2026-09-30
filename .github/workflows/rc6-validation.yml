@@ -50,6 +50,8 @@ jobs:
 
       - name: Backend tests
         working-directory: backend
+        env:
+          VALISTRUCT_INSTITUTIONAL_MODE: "true"
         run: pytest -q tests
 
       - name: Statistical equivalence vs direct lavaan
@@ -61,6 +63,7 @@ jobs:
           VALISTRUCT_AUTH_ENABLED: "false"
           VALISTRUCT_PROJECT_LIBRARY_ENABLED: "false"
           VALISTRUCT_ENV: "development"
+          VALISTRUCT_INSTITUTIONAL_MODE: "true"
         run: |
           gunicorn --workers 2 --threads 4 --timeout 360 --bind 127.0.0.1:8765 api:app > /tmp/valistruct.log 2>&1 &
           echo $! > /tmp/valistruct.pid
