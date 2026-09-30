@@ -65,6 +65,7 @@ jobs:
           node --test tests/test_desktop_context_menu.cjs
           python tests/static_frontend_audit.py
           python tests/static_backend_audit.py
+          pytest -q tests/test_fase0_crosslinks.py
 
       - name: Numerical R and backend regression
         env:
@@ -93,6 +94,7 @@ jobs:
           pytest -q tests/test_v52_ux.py
           pytest -q tests/test_multidiag_recovery.py
           pytest -q tests/test_efa_v52_browser.py
+          pytest -q tests/test_fase0_sections_sweep.py
 
       - name: Start scientific backend
         env:
@@ -112,3 +114,4 @@ jobs:
         run: |
           pytest -q tests/test_efa_real_e2e.py
           pytest -q tests/test_motorpro_recovery.py
+          pytest -q tests/test_fase0_sections_sweep.py
