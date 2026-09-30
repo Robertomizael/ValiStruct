@@ -1,7 +1,7 @@
 {
   "name": "valistruct-desktop",
-  "version": "5.2.4-beta.1",
-  "description": "ValiStruct Desktop 5.2 Beta · Motor Pro robusto y menú contextual",
+  "version": "5.3.0-beta.1",
+  "description": "ValiStruct Desktop 5.3 Beta · navegación científica simplificada",
   "main": "main-patched.js",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "license": "UNLICENSED",
