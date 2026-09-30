@@ -9,6 +9,10 @@ on:
       - "hotfix/**"
   workflow_dispatch:
 
+concurrency:
+  group: valistruct-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   VALISTRUCT_REQUIRE_R: "1"
   VALISTRUCT_FRONTEND_URL: "http://127.0.0.1:8000"
