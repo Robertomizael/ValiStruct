@@ -26,7 +26,7 @@ def test_all_registered_sections_open_without_pageerror():
                 page.locator(f'.nav button[data-section="{section}"]').evaluate("(el)=>el.click()")
                 page.wait_for_function(
                     "(id)=>document.getElementById(id)?.classList.contains('visible')",
-                    section,timeout=3000)
+                    arg=section,timeout=3000)
             except Exception as exc:
                 failures.append((section,str(exc)))
         assert not failures, failures
