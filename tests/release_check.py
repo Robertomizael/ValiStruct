@@ -63,12 +63,25 @@ for script in ["static_backend_audit.py","static_frontend_audit.py"]:
         errors.append(f"{script}: {rr.stdout.strip()} {rr.stderr.strip()}")
 
 v=json.loads((ROOT/"version.json").read_text(encoding="utf-8"))
-if v.get("version")!="3.0.0-rc.6":
-    errors.append("version.json mismatch")
+app_version=str(v.get("version") or "")
+display_version=str(v.get("displayVersion") or app_version)
+project_format=str(v.get("projectFormat") or "")
+if not re.fullmatch(r"\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?",app_version):
+    errors.append("version.json has invalid semantic app version")
+if project_format!="3.0":
+    errors.append("projectFormat must remain 3.0 during v5.3 navigation refactor")
+app_text=(ROOT/"app.js").read_text(encoding="utf-8")
+if f"version: '{app_version}'" not in app_text:
+    errors.append("app.js VALISTRUCT_RELEASE version differs from version.json")
+desktop_package=ROOT/"desktop"/"package.json"
+if desktop_package.exists():
+    desktop=json.loads(desktop_package.read_text(encoding="utf-8"))
+    if desktop.get("version")!=app_version:
+        errors.append("desktop/package.json version differs from version.json")
 
 if warnings:
     print("\n".join("WARN: "+x for x in warnings))
 if errors:
     print("\n".join("FAIL: "+x for x in errors))
     sys.exit(1)
-print("PASS: ValiStruct 3.0 RC6 static release checks")
+print(f"PASS: ValiStruct {display_version} static release checks · project format {project_format}")
