@@ -79,7 +79,7 @@ def test_integrated_tools_remain_reachable_and_parent_is_highlighted(page):
     open_section(pg,"dataimport")
     pg.locator('#dataimport [data-vs-target="legacyimport"]').click()
     assert pg.locator("#legacyimport").is_visible()
-    assert pg.locator('.nav button[data-section="dataimport"]').get_attribute("class").find("vs-v53-parent-active")>=0
+    assert "vs-v53-parent-active" in (pg.locator('.nav button[data-section="dataimport"]').get_attribute("class") or "")
     assert not errors,errors
 
 def test_admin_is_opt_in_but_qa_never_enters_normal_navigation(page):
@@ -113,7 +113,15 @@ def test_external_validation_is_explicitly_preparing(page):
 
 def test_old_version_badges_are_not_visible(page):
     pg,errors=page
-    texts=pg.locator(".badge:visible").all_inner_texts()
-    bad=[x for x in texts if re.search(r"(ValiStruct\s*\d|\bv\d|RC\d|functional\s+v|Beta\b)",x,re.I)]
+    bad=[]
+    for section in VISIBLE:
+        open_section(pg,section)
+        for txt in pg.locator(".badge:visible").all_inner_texts():
+            if re.search(r"(ValiStruct\\s*\\d|\\bv\\d|RC\\d|functional\\s+v|Beta\\b)",txt,re.I):
+                bad.append((section,txt))
     assert not bad,bad
+    open_section(pg,"acerca")
+    about=pg.locator("#acerca").inner_text()
+    assert "5.3 Beta" in about
+    assert "Formato de proyecto: 3.0" in about
     assert not errors,errors
