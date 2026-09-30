@@ -28,5 +28,5 @@ for body in re.findall(r"const\s+map\s*=\s*\{([^}]+)\}",app):
 add("desktop/ux-shell.js","data-section",re.findall(r'data-section=["\']([^"\']+)["\']',ux))
 
 missing=sorted({(src,kind,value) for src,kind,value in destinations
-                if value and value not in all_sections})
+                if value and "${" not in value and value not in all_sections})
 assert not missing, "Broken navigation destinations: "+repr(missing)
