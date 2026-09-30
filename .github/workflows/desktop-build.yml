@@ -28,6 +28,10 @@ on:
       - "icons/**"
       - ".github/workflows/desktop-build.yml"
 
+concurrency:
+  group: valistruct-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
