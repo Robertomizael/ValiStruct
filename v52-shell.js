@@ -10,6 +10,7 @@
   if (!nav || !main || nav.dataset.v52Ready === 'yes') return;
   document.body.classList.add('vs-v52');
   nav.dataset.v52Ready = 'yes';
+  nav.dataset.valistructNav = 'v5';
 
   const original = [...nav.querySelectorAll('button[data-section]')];
   const byId = new Map(original.map(button => [button.dataset.section, button]));
