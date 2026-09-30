@@ -55,7 +55,7 @@ def test_one_import_reuses_participant_data_and_preserves_judges(page):
     p.locator("#importToEfa").click()
     assert p.evaluate("efaData.n") == 3
     assert p.locator("#efaDatasetSummary").inner_text().count("3") >= 1
-    p.locator('.nav button[data-section="dataimport"]').click()
+    open_section(p,"dataimport")
     p.locator("#importToCfa").click()
     assert p.evaluate("cfaData.n") == 3
     assert p.evaluate("cfaData.itemNames.join(',')") == "i1,i2,i3"
