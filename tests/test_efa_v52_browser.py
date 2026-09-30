@@ -18,7 +18,7 @@ def test_efa_toolbar_diagnostics_and_local_export():
         errors=[]
         page.on("pageerror",lambda e: errors.append(str(e)))
         page.goto(URL,wait_until="load")
-        page.locator(".nav button[data-section='efa']").click()
+        open_efa(page)
         assert page.locator("#efaActions").is_visible()
         assert page.locator("#efaDiagnostics").is_visible()
         assert page.locator("#calculateEfa").is_visible()
@@ -57,7 +57,7 @@ def test_r_factor_methods_do_not_fall_back_silently():
         browser=p.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1440,"height":900})
         page.goto(URL,wait_until="load")
-        page.locator(".nav button[data-section='efa']").click()
+        open_efa(page)
         page.locator("#loadEfaExample").click()
         page.locator("#efaExtraction").select_option("pa")
         # Intercept the request; no R backend here. The app must explain failure
