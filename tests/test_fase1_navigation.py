@@ -27,8 +27,8 @@ def visible_nav_buttons(pg):
 def test_scientific_menu_is_reduced_without_deleting_modules(page):
     pg,errors=page
     modules=pg.evaluate("window.VALISTRUCT_NAV_MODULES")
-    assert len(modules)>=82
-    assert pg.locator(".nav button[data-section]").count()>=82
+    assert len(modules)==83
+    assert pg.locator(".nav button[data-section]").count()==83
     visible=visible_nav_buttons(pg)
     assert visible.count()<=25
     ids=visible.evaluate_all("els=>els.map(x=>x.dataset.section)")
