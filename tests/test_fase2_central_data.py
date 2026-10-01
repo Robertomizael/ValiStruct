@@ -214,3 +214,25 @@ def test_data_center_routes_directly_to_new_shared_destinations(page):
     assert p.locator("#latencia").is_visible()
     assert p.evaluate("semData.n")==29
     assert not errors,repr(errors)
+
+
+def test_project_state_keeps_canonical_data_private_by_default_and_restores_with_consent(page):
+    p,errors=page
+    load_central(p)
+    private_state=p.evaluate("projectState()")
+    assert "participantData" not in private_state
+    p.evaluate("""() => {
+      localStorage.setItem('valistruct_privacy_v21',JSON.stringify({
+        rawData:'yes',variableNames:'yes',backendMode:'local',clearOnClose:'no'
+      }));
+    }""")
+    consent_state=p.evaluate("projectState()")
+    assert consent_state["participantData"]["source"]=="participantes_fase2.csv"
+    assert "sexo" in consent_state["participantData"]["csv"]
+    p.evaluate("window.ValiStructParticipantData.clear()")
+    assert p.evaluate("window.ValiStructParticipantData.summary") is None
+    p.evaluate("(state)=>restoreProject(state)",consent_state)
+    p.wait_for_function("window.ValiStructParticipantData?.summary?.n===30")
+    restored=p.evaluate("window.ValiStructParticipantData.summary")
+    assert restored["source"]=="participantes_fase2.csv"
+    assert not errors,repr(errors)
