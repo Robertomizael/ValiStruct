@@ -1,9 +1,11 @@
-"""Fase 0 safety net: every registered section opens without pageerror.
+"""Fase 0 safety net: every registered section can be opened without pageerror.
 Run once with backend disconnected and once with backend available.
 
-The sweep must fail fast. After the v5.3 shell simplification some buttons are
-hidden/integrated, so Playwright locator auto-waits can otherwise spend up to
-30 s per missing/detached button and exhaust the whole CI timeout.
+This test exercises the canonical app.js showSection() function directly.
+Button/listener reachability is covered separately by cross-link and v5.3
+navigation tests. Calling the canonical opener here keeps the 83-section
+sweep deterministic and prevents hidden/admin controls from triggering
+Playwright actionability waits.
 """
 import os
 import pytest
@@ -29,27 +31,26 @@ def test_all_registered_sections_open_without_pageerror():
         )
         assert len(ids)>=80
         assert len(ids)==len(set(ids)), "Duplicate data-section buttons found"
+        assert page.evaluate("typeof showSection === 'function'")
+
+        missing=page.evaluate(
+            "(ids)=>ids.filter(id=>!document.getElementById(id))",
+            ids,
+        )
+        assert not missing, f"Registered sections missing from DOM: {missing}"
 
         failures=[]
         for section in ids:
             try:
-                clicked=page.evaluate(
+                opened=page.evaluate(
                     """(id)=>{
-                      const el=document.querySelector('.nav button[data-section="'+id+'"]');
-                      if(!el) return false;
-                      el.click();
-                      return true;
+                      showSection(id);
+                      return !!document.getElementById(id)?.classList.contains('visible');
                     }""",
                     section,
                 )
-                if not clicked:
-                    failures.append((section,"navigation button missing/detached"))
-                    continue
-                page.wait_for_function(
-                    "(id)=>document.getElementById(id)?.classList.contains('visible')",
-                    arg=section,
-                    timeout=3000,
-                )
+                if not opened:
+                    failures.append((section,"canonical showSection() did not make panel visible"))
             except Exception as exc:
                 failures.append((section,str(exc)))
 
