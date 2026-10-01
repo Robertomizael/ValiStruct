@@ -154,6 +154,7 @@ def test_legacy_sav_conversion_becomes_canonical_without_second_import(page):
     summary=p.evaluate("window.ValiStructParticipantData.summary")
     assert summary["format"]=="SPSS SAV"
     assert summary["n"]==3
+    assert summary["labels"]["i01"]=="Item 1"
     p.locator("#legacyToDiagnostics").click()
     assert p.evaluate("diagData.n")==3
     assert p.evaluate("diagData.names.join(',')")=="i01,i02"
