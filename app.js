@@ -5064,7 +5064,10 @@ function useCentralDataForLatencia(){
     const observed=semNodes.filter(n=>n.type==='observed').map(n=>n.label).filter(Boolean);
     const manager=window.ValiStructParticipantData;
     if(!manager?.hasData)throw new Error('Primero importe la base de participantes en el Centro de datos.');
-    const preferred=observed.length?observed:selectedParticipantItems();
+    const available=new Set(manager.summary?.variables||[]);
+    const observedMatch=observed.length>0 && observed.every(name=>available.has(name));
+    const selected=selectedParticipantItems();
+    const preferred=observedMatch?observed:selected;
     const data=manager.numericMatrix({
       firstColumn:document.getElementById('importFirstColumn')?.value||'auto',
       items:preferred
@@ -5072,8 +5075,13 @@ function useCentralDataForLatencia(){
     semData={names:[...data.itemNames],matrix:data.matrix.map(r=>[...r]),n:data.n,k:data.k};
     semStructuralResults=null;semMediationResults=null;renderSemDataset();
     const note=document.getElementById('semDatasetSummary');
-    if(note)note.insertAdjacentHTML('beforeend',
-      `<div class="sem-engine-note" style="grid-column:1/-1"><strong>Centro de datos:</strong> ${data.n} casos completos; ${data.nExcluded} excluidos por faltantes en las variables usadas. Fuente: ${escapeHtml(data.source||'Centro de datos')}.</div>`);
+    if(note){
+      const mappingWarning=!observedMatch && observed.length
+        ? ` <strong>Atención:</strong> las variables observadas del diagrama (${observed.map(escapeHtml).join(', ')}) no coinciden todavía con las columnas cargadas; renombre los nodos antes de estimar.`
+        : '';
+      note.insertAdjacentHTML('beforeend',
+        `<div class="sem-engine-note" style="grid-column:1/-1"><strong>Centro de datos:</strong> ${data.n} casos completos; ${data.nExcluded} excluidos por faltantes en las variables usadas. Fuente: ${escapeHtml(data.source||'Centro de datos')}.${mappingWarning}</div>`);
+    }
     return true;
   }catch(e){alert(e.message);return false;}
 }
