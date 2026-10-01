@@ -5141,12 +5141,16 @@ document.getElementById('unifiedDataFile')?.addEventListener('change',async e=>{
 document.getElementById('xlsxSheetSelect')?.addEventListener('change',()=>convertSelectedXlsxSheet().catch(e=>alert(e.message)));
 
 document.getElementById('importToDiagnostics')?.addEventListener('click',()=>{
-  if(!unifiedCsvText)return alert('Cargue primero un archivo.');
-  try{
-    diagData=parseDiagnosticCSV(unifiedCsvText);
-    document.querySelector('[data-section="diagnostics"]')?.click();
-    document.getElementById('diagSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${diagData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${diagData.k}</strong></div>`;
-  }catch(e){alert(e.message);}
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForDiagnostics())document.querySelector('[data-section="diagnostics"]')?.click();
+});
+document.getElementById('importToMulti')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForMulti())document.querySelector('[data-section="multidiag"]')?.click();
+});
+document.getElementById('importToMissing')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForMissing())document.querySelector('[data-section="missingpro"]')?.click();
 });
 
 document.getElementById('importToReliability')?.addEventListener('click',()=>{
@@ -5175,6 +5179,12 @@ document.getElementById('importToCfa')?.addEventListener('click',()=>{
     document.querySelector('.nav button[data-section="cfa"]')?.click();
     validateCfaModel();
   } catch(e){alert(e.message);}
+});
+
+document.getElementById('importToLatencia')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  document.querySelector('[data-section="latencia"]')?.click();
+  useCentralDataForLatencia();
 });
 
 document.getElementById('importToMotorPro')?.addEventListener('click',()=>{
