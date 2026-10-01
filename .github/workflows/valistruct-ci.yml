@@ -106,6 +106,7 @@ jobs:
           pytest -q tests/test_fase0_core_numeric.py
           pytest -q tests/test_fase0_historical_projects.py
           pytest -q tests/test_fase1_navigation.py
+          pytest -q tests/test_fase2_central_data.py
 
       - name: Capture Fase-0 reference screens
         run: python tools/capture_reference_screens.py --out tests/reference-screens
