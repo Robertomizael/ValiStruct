@@ -194,3 +194,23 @@ def test_central_item_selection_controls_diagnostics_and_multivariate(page):
     assert p.evaluate("multiData.k")==2
     assert p.evaluate("multiData.names.join(',')")=="i01,i02"
     assert not errors,repr(errors)
+
+
+def test_data_center_routes_directly_to_new_shared_destinations(page):
+    p,errors=page
+    load_central(p)
+    p.evaluate("showSection('dataimport')")
+    p.locator("#importToMulti").click()
+    assert p.locator("#multidiag").is_visible()
+    assert p.evaluate("multiData.n")==30
+
+    p.evaluate("showSection('dataimport')")
+    p.locator("#importToMissing").click()
+    assert p.locator("#missingpro").is_visible()
+    assert "30" in p.locator("#missingSummary").inner_text()
+
+    p.evaluate("showSection('dataimport')")
+    p.locator("#importToLatencia").click()
+    assert p.locator("#latencia").is_visible()
+    assert p.evaluate("semData.n")==29
+    assert not errors,repr(errors)
