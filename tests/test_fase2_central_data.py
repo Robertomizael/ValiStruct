@@ -178,3 +178,19 @@ def test_standard_missing_tokens_are_consistent_in_shared_missingness(page):
     p.locator("#runMissingPattern").click()
     assert "Patrones de ausencia" in p.locator("#missingResults").inner_text()
     assert not errors,repr(errors)
+
+
+def test_central_item_selection_controls_diagnostics_and_multivariate(page):
+    p,errors=page
+    load_central(p)
+    p.evaluate("showSection('dataimport')")
+    p.locator("#participantItemNames").fill("i01, i02")
+    p.evaluate("showSection('diagnostics')")
+    p.locator("#useCentralDataForDiagnostics").click()
+    assert p.evaluate("diagData.k")==2
+    assert p.evaluate("diagData.names.join(',')")=="i01,i02"
+    p.evaluate("showSection('multidiag')")
+    p.locator("#useCentralDataForMulti").click()
+    assert p.evaluate("multiData.k")==2
+    assert p.evaluate("multiData.names.join(',')")=="i01,i02"
+    assert not errors,repr(errors)
