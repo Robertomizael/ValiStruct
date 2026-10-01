@@ -4982,14 +4982,86 @@ function getUnifiedParticipantMatrix(){
 }
 
 
+function registerParticipantCsv(text,sourceName='Centro de datos',format='csv'){
+  const normalized=normalizeCsvText(String(text||''));
+  if(!normalized.trim())throw new Error('La base de participantes está vacía.');
+  unifiedCsvText=normalized;
+  unifiedSourceName=sourceName||'Centro de datos';
+  const summary=window.ValiStructParticipantData.setCsv(normalized,{source:unifiedSourceName,format});
+  const status=document.getElementById('participantImportStatus');
+  if(status)status.textContent=
+    `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
+  return summary;
+}
+function canonicalParticipantCsv(){
+  const manager=window.ValiStructParticipantData;
+  if(manager?.hasData)return manager.toCsv();
+  if(unifiedCsvText)return unifiedCsvText;
+  if(typeof legacyCsvText!=='undefined' && legacyCsvText)return legacyCsvText;
+  return null;
+}
+function canonicalParticipantFrame(options={}){
+  const manager=window.ValiStructParticipantData;
+  if(!manager?.hasData)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+  return manager.numericFrame({
+    firstColumn:document.getElementById('importFirstColumn')?.value||'auto',
+    items:options.items||[]
+  });
+}
+function summarizeCanonicalUse(target,frame){
+  const html=`<div class="metric-card"><span>Casos cargados</span><strong>${frame.n}</strong></div>
+    <div class="metric-card"><span>Variables numéricas</span><strong>${frame.k}</strong></div>
+    <div class="metric-card"><span>Casos completos</span><strong>${frame.nComplete}</strong></div>
+    <div class="metric-card"><span>Fuente</span><strong>${escapeHtml(frame.source||'Centro de datos')}</strong></div>`;
+  const box=document.getElementById(target);if(box)box.innerHTML=html;
+}
+function useCentralDataForDiagnostics(){
+  try{
+    const frame=canonicalParticipantFrame();
+    diagData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
+    diagLast=null;summarizeCanonicalUse('diagSummary',frame);return true;
+  }catch(e){alert(e.message);return false;}
+}
+function useCentralDataForMulti(){
+  try{
+    const frame=canonicalParticipantFrame();
+    multiData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
+    multiLast=null;summarizeCanonicalUse('multiSummary',frame);multiStatus('Base del Centro de datos lista para Mahalanobis y Mardia.');return true;
+  }catch(e){multiStatus(e.message,true);return false;}
+}
+function useCentralDataForMissing(){
+  try{
+    const csv=canonicalParticipantCsv();
+    if(!csv)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+    missingDataText=csv;missingLastResponse=null;summarizeMissingText(csv);return true;
+  }catch(e){alert(e.message);return false;}
+}
+function useCentralDataForLatencia(){
+  try{
+    const observed=semNodes.filter(n=>n.type==='observed').map(n=>n.label).filter(Boolean);
+    const manager=window.ValiStructParticipantData;
+    if(!manager?.hasData)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+    const preferred=observed.length?observed:selectedParticipantItems();
+    const data=manager.numericMatrix({
+      firstColumn:document.getElementById('importFirstColumn')?.value||'auto',
+      items:preferred
+    });
+    semData={names:[...data.itemNames],matrix:data.matrix.map(r=>[...r]),n:data.n,k:data.k};
+    semStructuralResults=null;semMediationResults=null;renderSemDataset();
+    const note=document.getElementById('semDatasetSummary');
+    if(note)note.insertAdjacentHTML('beforeend',
+      `<div class="sem-engine-note" style="grid-column:1/-1"><strong>Centro de datos:</strong> ${data.n} casos completos; ${data.nExcluded} excluidos por faltantes en las variables usadas. Fuente: ${escapeHtml(data.source||'Centro de datos')}.</div>`);
+    return true;
+  }catch(e){alert(e.message);return false;}
+}
+
+
 function normalizeCsvText(text){
   return text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
 }
 function previewUnifiedCsv(text){
   const source=unifiedSourceName||'Centro de datos';
-  const summary=window.ValiStructParticipantData.setCsv(text,{source,format:source.split('.').pop()||'csv'});
-  document.getElementById('participantImportStatus').textContent=
-    `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
+  const summary=registerParticipantCsv(text,source,source.split('.').pop()||'csv');
   const rows=parseCSV(normalizeCsvText(text));
   if(!rows.length) return;
   const headers=rows[0];
