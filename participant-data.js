@@ -19,6 +19,7 @@
       if (!current) return null;
       return Object.freeze({source:current.source,format:current.format,
         n:current.rows.length,variables:[...current.columns],revision:generation,
+        labels:Object.freeze({...current.labels}),
         sessionId:current.sessionId});
     },
     setCsv(csvText, metadata = {}) {
@@ -36,6 +37,7 @@
         return this.summary;
       current = {source:metadata.source || 'CSV',format:metadata.format || 'csv',
         columns,rows,fingerprint:newFingerprint,
+        labels:metadata.labels && typeof metadata.labels==='object' ? {...metadata.labels} : {},
         sessionId:'participant-'+Date.now().toString(36)+'-'+newFingerprint};
       generation++;
       if (typeof invalidateParticipantAnalyses === 'function') invalidateParticipantAnalyses();
