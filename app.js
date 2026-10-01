@@ -1710,9 +1710,10 @@ function importSemCSV(file){
   const reader = new FileReader();
   reader.onload = ()=>{
     try{
+      registerParticipantCsv(reader.result,file?.name||'Latencia.csv','csv');
       semData = parseSemCSV(reader.result);
       renderSemDataset();
-      alert('Base importada correctamente.');
+      alert('Base importada y registrada en el Centro de datos.');
     }catch(e){ alert('No fue posible importar la base: '+e.message); }
   };
   reader.readAsText(file,'utf-8');
@@ -2034,6 +2035,7 @@ function semReportHtml(){
 }
 
 document.getElementById('downloadSemTemplate').addEventListener('click',downloadSemTemplate);
+document.getElementById('useCentralDataForLatencia')?.addEventListener('click',useCentralDataForLatencia);
 document.getElementById('semCsvFile').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)importSemCSV(f);e.target.value='';});
 document.getElementById('loadSemExample').addEventListener('click',loadSemExample);
 document.getElementById('estimateSem').addEventListener('click',estimateSemFromDiagram);
@@ -3274,9 +3276,10 @@ function downloadDiagnosticsReport(){
 document.getElementById('diagCsvFile')?.addEventListener('change',e=>{
   const f=e.target.files?.[0];if(!f)return;
   const reader=new FileReader();
-  reader.onload=()=>{try{diagData=parseDiagnosticCSV(reader.result);document.getElementById('diagSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${diagData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${diagData.k}</strong></div>`;}catch(err){alert(err.message);}};
+  reader.onload=()=>{try{registerParticipantCsv(reader.result,f.name,'csv');useCentralDataForDiagnostics();}catch(err){alert(err.message);}};
   reader.readAsText(f,'utf-8');e.target.value='';
 });
+document.getElementById('useCentralDataForDiagnostics')?.addEventListener('click',useCentralDataForDiagnostics);
 document.getElementById('loadDiagExample')?.addEventListener('click',loadDiagExample);
 document.getElementById('runDiagnostics')?.addEventListener('click',runDataDiagnostics);
 document.getElementById('downloadDiagnostics')?.addEventListener('click',downloadDiagnostics);
@@ -3540,10 +3543,11 @@ function downloadMultiReport(){
 document.getElementById('multiCsvFile')?.addEventListener('change',e=>{
   const f=e.target.files?.[0];if(!f)return;
   const reader=new FileReader();
-  reader.onload=()=>{try{multiData=parseMultiCSV(reader.result);document.getElementById('multiSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${multiData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${multiData.k}</strong></div>`;}catch(err){alert(err.message);}};
+  reader.onload=()=>{try{registerParticipantCsv(reader.result,f.name,'csv');useCentralDataForMulti();}catch(err){multiStatus(err.message,true);}};
   reader.readAsText(f,'utf-8');e.target.value='';
 });
-document.getElementById('reuseDiagData')?.addEventListener('click',()=>{if(!diagData)return alert('No hay una base previa en Diagnóstico de datos.');multiData=diagData;document.getElementById('multiSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${multiData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${multiData.k}</strong></div>`;});
+document.getElementById('useCentralDataForMulti')?.addEventListener('click',useCentralDataForMulti);
+document.getElementById('reuseDiagData')?.addEventListener('click',()=>{if(!diagData)return alert('No hay una base previa en Diagnóstico de datos.');multiData=diagData;multiLast=null;document.getElementById('multiSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${multiData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${multiData.k}</strong></div>`;});
 document.getElementById('loadMultiExample')?.addEventListener('click',loadMultiExample);
 document.getElementById('runMultiDiagnostics')?.addEventListener('click',runMultiDiagnostics);
 document.getElementById('downloadMultiResults')?.addEventListener('click',downloadMultiResults);
@@ -3729,9 +3733,10 @@ document.getElementById('runMissingPattern')?.addEventListener('click',()=>{
 document.getElementById('missingCsvFile')?.addEventListener('change',e=>{
   const f=e.target.files?.[0];if(!f)return;
   const reader=new FileReader();
-  reader.onload=()=>{missingDataText=reader.result;summarizeMissingText(missingDataText);};
+  reader.onload=()=>{try{registerParticipantCsv(reader.result,f.name,'csv');useCentralDataForMissing();}catch(err){alert(err.message);}};
   reader.readAsText(f,'utf-8');e.target.value='';
 });
+document.getElementById('useCentralDataForMissing')?.addEventListener('click',useCentralDataForMissing);
 document.getElementById('reuseMissingDiag')?.addEventListener('click',()=>{
   if(!diagData)return alert('No hay base disponible en Diagnóstico de datos.');
   const rows=[['ID',...diagData.names]];
