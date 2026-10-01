@@ -5039,7 +5039,7 @@ function useCentralDataForDiagnostics(){
 }
 function useCentralDataForMulti(){
   try{
-    const frame=canonicalParticipantFrame();
+    const frame=canonicalParticipantFrame({items:selectedParticipantItems()});
     multiData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
     multiLast=null;summarizeCanonicalUse('multiSummary',frame);multiStatus('Base del Centro de datos lista para Mahalanobis y Mardia.');return true;
   }catch(e){multiStatus(e.message,true);return false;}
