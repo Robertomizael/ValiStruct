@@ -526,6 +526,19 @@
         </div>
       </div>
 
+      <div class="import-box">
+        <div>
+          <h3>Datos del modelo</h3>
+          <p>Puede reutilizar la base de participantes del Centro de datos. Se tomarán las variables observadas del diagrama cuando estén disponibles.</p>
+        </div>
+        <div class="button-row compact">
+          <button id="useCentralDataForLatencia" type="button">Usar base del Centro de datos</button>
+          <label class="file-button">Importar CSV para Latencia
+            <input id="semCsvFile" type="file" accept=".csv,text/csv" hidden>
+          </label>
+        </div>
+      </div>
+
       <div id="latenciaSyntaxBox" class="model-builder hidden">
         <h3>Sintaxis del modelo</h3>
         <textarea id="latenciaSyntax" rows="10" readonly></textarea>
@@ -919,6 +932,7 @@
           <label class="file-button">Importar CSV
             <input id="diagCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useCentralDataForDiagnostics" type="button">Usar base del Centro de datos</button>
           <button id="loadDiagExample">Cargar ejemplo</button>
         </div>
       </div>
@@ -1000,6 +1014,7 @@
           <label class="file-button">Importar CSV
             <input id="multiCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useCentralDataForMulti" type="button">Usar base del Centro de datos</button>
           <button id="reuseDiagData">Reutilizar diagnóstico previo</button>
           <button id="loadMultiExample">Cargar ejemplo</button>
         </div>
@@ -1090,6 +1105,7 @@
           <label class="file-button">Importar CSV
             <input id="missingCsvFile" type="file" accept=".csv,text/csv" hidden>
           </label>
+          <button id="useCentralDataForMissing" type="button">Usar base del Centro de datos</button>
           <button id="reuseMissingDiag">Reutilizar base diagnóstica</button>
         </div>
       </div>
