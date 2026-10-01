@@ -2697,6 +2697,14 @@ function saveProjectLocal(){
 }
 function restoreProject(state){
   try{
+    if(state?.participantData?.csv){
+      registerParticipantCsv(
+        state.participantData.csv,
+        state.participantData.source||'Proyecto ValiStruct',
+        state.participantData.format||'csv',
+        {labels:state.participantData.labels||{}}
+      );
+    }
     document.getElementById('projectName').value=state.name||'';
     document.getElementById('projectAuthor').value=state.author||'';
     semNodes=state.semNodes||[];
@@ -7144,6 +7152,17 @@ projectState = function(){
     accessibility: typeof loadA11y === 'function' ? (loadA11y() || null) : null,
     telemetry: typeof loadTelemetrySettings === 'function' ? (loadTelemetrySettings() || null) : null
   };
+  if(rawProjectDataConsent() && window.ValiStructParticipantData?.hasData){
+    const summary=window.ValiStructParticipantData.summary;
+    state.participantData={
+      csv:window.ValiStructParticipantData.toCsv(),
+      source:summary.source,
+      format:summary.format,
+      labels:{...(summary.labels||{})}
+    };
+  }else{
+    delete state.participantData;
+  }
   return state;
 };
 
