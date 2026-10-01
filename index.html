@@ -1709,7 +1709,7 @@
       <div class="section-heading">
         <div>
           <h2>Centro de datos · participantes</h2>
-          <p>Importe una vez y reutilice la base en Diagnóstico, Fiabilidad, ACP/AFE, AFC y Motor Pro. La matriz independiente de jueces para V de Aiken no se modifica.</p>
+          <p>Importe una vez y reutilice la base en Diagnóstico, Mahalanobis/Mardia, Datos faltantes, Fiabilidad, ACP/AFE, AFC, Latencia y Motor Pro. La matriz independiente de jueces para V de Aiken no se modifica.</p>
         </div>
         
       </div>
@@ -1746,9 +1746,12 @@
       <p id="participantImportStatus" class="sem-engine-note" role="status" aria-live="polite">Los datos de participantes permanecen en memoria; el proyecto no guardará registros crudos sin autorización expresa.</p>
       <div class="button-row">
         <button id="importToDiagnostics" class="primary">Enviar a Diagnóstico</button>
+        <button id="importToMulti">Enviar a Mahalanobis / Mardia</button>
+        <button id="importToMissing">Enviar a Datos faltantes</button>
         <button id="importToReliability">Enviar a Fiabilidad</button>
         <button id="importToEfa">Enviar a ACP / AFE</button>
         <button id="importToCfa">Enviar a AFC</button>
+        <button id="importToLatencia">Enviar a Latencia</button>
         <button id="importToMotorPro">Enviar a Motor Pro</button>
         <button id="downloadNormalizedCsv">Descargar CSV normalizado</button>
       </div>
