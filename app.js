@@ -2363,11 +2363,8 @@ document.getElementById('proCsvFile').addEventListener('change',e=>{
 function reuseCentralDataForMotorPro(){
   let csv=null,source='';
   try{
-    if(typeof unifiedCsvText!=='undefined' && unifiedCsvText){
-      csv=unifiedCsvText;source=unifiedSourceName||'Centro de datos';
-    }else if(typeof legacyCsvText!=='undefined' && legacyCsvText){
-      csv=legacyCsvText;source='Importación SAV/DTA';
-    }
+    csv=canonicalParticipantCsv();
+    source=window.ValiStructParticipantData?.summary?.source||unifiedSourceName||'Centro de datos';
   }catch(_){}
   if(!csv){
     const status=document.getElementById('proRunStatus');
@@ -5400,25 +5397,26 @@ document.getElementById('convertLegacyFile')?.addEventListener('click',async()=>
     if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible convertir.');
     legacyCsvText=data.csv_text;
     legacyMeta=data.meta||{};
+    unifiedSourceName=legacyFile?.name||('datos.'+(legacyMeta.format||'sav'));
+    registerParticipantCsv(legacyCsvText,unifiedSourceName,legacyMeta.format||'sav');
     previewLegacyCsv(legacyCsvText);
-    logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns});
+    previewUnifiedCsv(legacyCsvText);
+    logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns,central:true});
   }catch(e){alert(e.message);}
 });
 
 document.getElementById('legacyToDiagnostics')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  diagData=parseDiagnosticCSV(legacyCsvText);
+  useCentralDataForDiagnostics();
   document.querySelector('[data-section="diagnostics"]')?.click();
-  document.getElementById('diagSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${diagData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${diagData.k}</strong></div>`;
 });
 document.getElementById('legacyToEfa')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  unifiedCsvText=legacyCsvText;
   document.getElementById('importToEfa')?.click();
 });
 document.getElementById('legacyToMotorPro')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  proCsvText=legacyCsvText;summarizeProCsv(proCsvText);
+  reuseCentralDataForMotorPro();
   document.querySelector('[data-section="motorpro"]')?.click();
 });
 document.getElementById('downloadLegacyCsv')?.addEventListener('click',()=>{
