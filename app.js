@@ -3682,6 +3682,9 @@ document.getElementById('exportCorrPng')?.addEventListener('click',exportCorrela
 // -----------------------------
 let missingDataText=null;
 let missingLastResponse=null;
+function isMissingParticipantCell(value){
+  return ['', 'NA', 'N/A', 'NULL', '.'].includes(String(value??'').trim().toUpperCase());
+}
 
 function summarizeMissingText(text){
   try{
@@ -3691,7 +3694,7 @@ function summarizeMissingText(text){
     let missing=0,total=0;
     body.forEach(r=>r.forEach((v,i)=>{
       if(i===0 && /^(id|folio|participante|sujeto|caso)$/i.test(headers[0]||''))return;
-      total++;if(String(v??'').trim()==='')missing++;
+      total++;if(isMissingParticipantCell(v))missing++;
     }));
     document.getElementById('missingSummary').innerHTML=`
       <div class="metric-card"><span>Casos</span><strong>${body.length}</strong></div>
@@ -3709,7 +3712,7 @@ function localMissingPatterns(text){
   const names=headers.slice(start);
   const map=new Map();
   body.forEach(r=>{
-    const pattern=r.slice(start,start+names.length).map(v=>String(v??'').trim()===''?'0':'1').join('');
+    const pattern=r.slice(start,start+names.length).map(v=>isMissingParticipantCell(v)?'0':'1').join('');
     map.set(pattern,(map.get(pattern)||0)+1);
   });
   return {names,patterns:[...map.entries()].sort((a,b)=>b[1]-a[1]).map(([pattern,count])=>({pattern,count}))};
