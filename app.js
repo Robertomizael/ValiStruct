@@ -4987,6 +4987,13 @@ function invalidateParticipantAnalyses(){
     const target=document.getElementById(id);
     if(target)target.innerHTML='<div class="notice">Base de participantes actualizada: reutilice la base del Centro de datos y ejecute nuevamente este análisis.</div>';
   });
+  ['relDatasetSummary','efaDatasetSummary','cfaDatasetSummary','diagSummary','multiSummary','missingSummary','proDatasetSummary','semDatasetSummary'].forEach(id=>{
+    const target=document.getElementById(id);
+    if(target)target.innerHTML='<div class="notice">La base central cambió. Cargue esta versión desde el Centro de datos antes de continuar.</div>';
+  });
+  ['relDataPreview','efaDataPreview','cfaDataPreview'].forEach(id=>{
+    const target=document.getElementById(id);if(target)target.innerHTML='';
+  });
 }
 function selectedParticipantItems(){
   return (document.getElementById('participantItemNames')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
