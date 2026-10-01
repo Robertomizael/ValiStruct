@@ -159,3 +159,22 @@ def test_legacy_sav_conversion_becomes_canonical_without_second_import(page):
     assert p.evaluate("diagData.n")==3
     assert p.evaluate("diagData.names.join(',')")=="i01,i02"
     assert not errors,repr(errors)
+
+
+def test_standard_missing_tokens_are_consistent_in_shared_missingness(page):
+    p,errors=page
+    raw=b"ID,i01,i02\nP001,1,NA\nP002,2,N/A\nP003,3,NULL\nP004,4,.\nP005,5,6\n"
+    p.evaluate("showSection('dataimport')")
+    p.locator("#unifiedDataFile").set_input_files({
+        "name":"missing_tokens.csv","mimeType":"text/csv","buffer":raw
+    })
+    p.wait_for_function("window.ValiStructParticipantData?.summary?.n===5")
+    frame=p.evaluate("window.ValiStructParticipantData.numericFrame({firstColumn:'auto'})")
+    assert frame["nExcluded"]==4
+    p.evaluate("showSection('missingpro')")
+    p.locator("#useCentralDataForMissing").click()
+    summary=p.locator("#missingSummary").inner_text()
+    assert "4" in summary
+    p.locator("#runMissingPattern").click()
+    assert "Patrones de ausencia" in p.locator("#missingResults").inner_text()
+    assert not errors,repr(errors)
