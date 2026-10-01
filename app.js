@@ -5032,7 +5032,7 @@ function summarizeCanonicalUse(target,frame){
 }
 function useCentralDataForDiagnostics(){
   try{
-    const frame=canonicalParticipantFrame();
+    const frame=canonicalParticipantFrame({items:selectedParticipantItems()});
     diagData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
     diagLast=null;summarizeCanonicalUse('diagSummary',frame);return true;
   }catch(e){alert(e.message);return false;}
