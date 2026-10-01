@@ -137,3 +137,24 @@ def test_replacing_canonical_dataset_invalidates_local_module_copies(page):
     })""")
     assert all(value is None for value in stale.values()),stale
     assert not errors,repr(errors)
+
+
+def test_legacy_sav_conversion_becomes_canonical_without_second_import(page):
+    p,errors=page
+    p.route("**/legacy-to-csv",lambda route:route.fulfill(
+        status=200,content_type="application/json",
+        body='{"ok":true,"csv_text":"ID,i01,i02\\nP001,1,2\\nP002,2,3\\nP003,3,4\\n","rows":3,"columns":3,"meta":{"format":"SPSS SAV","labels":{"i01":"Item 1"}}}'
+    ))
+    p.evaluate("showSection('legacyimport')")
+    p.locator("#legacyDataFile").set_input_files({
+        "name":"ensayo.sav","mimeType":"application/octet-stream","buffer":b"fake-sav-for-mocked-ui"
+    })
+    p.locator("#convertLegacyFile").click()
+    p.wait_for_function("window.ValiStructParticipantData?.summary?.source==='ensayo.sav'")
+    summary=p.evaluate("window.ValiStructParticipantData.summary")
+    assert summary["format"]=="SPSS SAV"
+    assert summary["n"]==3
+    p.locator("#legacyToDiagnostics").click()
+    assert p.evaluate("diagData.n")==3
+    assert p.evaluate("diagData.names.join(',')")=="i01,i02"
+    assert not errors,repr(errors)
