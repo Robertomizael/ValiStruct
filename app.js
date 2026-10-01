@@ -4992,12 +4992,14 @@ function getUnifiedParticipantMatrix(){
 }
 
 
-function registerParticipantCsv(text,sourceName='Centro de datos',format='csv'){
+function registerParticipantCsv(text,sourceName='Centro de datos',format='csv',metadata={}){
   const normalized=normalizeCsvText(String(text||''));
   if(!normalized.trim())throw new Error('La base de participantes está vacía.');
   unifiedCsvText=normalized;
   unifiedSourceName=sourceName||'Centro de datos';
-  const summary=window.ValiStructParticipantData.setCsv(normalized,{source:unifiedSourceName,format});
+  const summary=window.ValiStructParticipantData.setCsv(normalized,{
+    source:unifiedSourceName,format,labels:metadata.labels||{}
+  });
   const status=document.getElementById('participantImportStatus');
   if(status)status.textContent=
     `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
@@ -5406,7 +5408,7 @@ document.getElementById('convertLegacyFile')?.addEventListener('click',async()=>
     legacyCsvText=data.csv_text;
     legacyMeta=data.meta||{};
     unifiedSourceName=legacyFile?.name||('datos.'+(legacyMeta.format||'sav'));
-    registerParticipantCsv(legacyCsvText,unifiedSourceName,legacyMeta.format||'sav');
+    registerParticipantCsv(legacyCsvText,unifiedSourceName,legacyMeta.format||'sav',{labels:legacyMeta.labels||{}});
     previewLegacyCsv(legacyCsvText);
     previewUnifiedCsv(legacyCsvText);
     logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns,central:true});
