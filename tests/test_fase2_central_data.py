@@ -21,6 +21,7 @@ def page():
         page=browser.new_page(viewport={"width":1440,"height":900})
         errors=[]
         page.on("pageerror",lambda e:errors.append(str(e)))
+        page.on("dialog",lambda d:d.accept())
         page.goto(URL,wait_until="load")
         yield page,errors
         browser.close()
@@ -93,4 +94,46 @@ def test_importing_from_diagnostics_updates_canonical_store(page):
     p.evaluate("showSection('missingpro')")
     p.locator("#useCentralDataForMissing").click()
     assert "30" in p.locator("#missingSummary").inner_text()
+    assert not errors,repr(errors)
+
+
+def test_imports_from_core_modules_update_same_canonical_store(page):
+    p,errors=page
+    complete=("ID,i01,i02,i03\n"+
+              "\n".join(f"P{i:03d},{1+i%5},{2+(i*2)%5},{1+(i*3)%5}" for i in range(1,21))+"\n").encode()
+    checks=[
+        ("reliability","#relCsvFile","reliability.csv"),
+        ("efa","#efaCsvFile","efa.csv"),
+        ("cfa","#cfaCsvFile","cfa.csv"),
+        ("motorpro","#proCsvFile","motor.csv"),
+    ]
+    for section,selector,name in checks:
+        p.evaluate(f"showSection('{section}')")
+        p.locator(selector).set_input_files({"name":name,"mimeType":"text/csv","buffer":complete})
+        p.wait_for_function(
+            "(name)=>window.ValiStructParticipantData?.summary?.source===name",
+            arg=name
+        )
+        assert p.evaluate("window.ValiStructParticipantData.summary.n")==20
+    assert not errors,repr(errors)
+
+def test_replacing_canonical_dataset_invalidates_local_module_copies(page):
+    p,errors=page
+    load_central(p)
+    p.evaluate("showSection('diagnostics')")
+    p.locator("#useCentralDataForDiagnostics").click()
+    p.evaluate("showSection('multidiag')")
+    p.locator("#useCentralDataForMulti").click()
+    assert p.evaluate("diagData!==null && multiData!==null")
+    replacement=b"ID,i01,i02,i03\nP001,1,2,3\nP002,2,3,4\nP003,3,4,5\n"
+    p.evaluate("showSection('dataimport')")
+    p.locator("#unifiedDataFile").set_input_files({
+        "name":"replacement.csv","mimeType":"text/csv","buffer":replacement
+    })
+    p.wait_for_function("window.ValiStructParticipantData?.summary?.source==='replacement.csv'")
+    stale=p.evaluate("""() => ({
+      rel:relData,efa:efaData,cfa:cfaData,diag:diagData,multi:multiData,
+      missing:missingDataText,pro:proCsvText,sem:semData
+    })""")
+    assert all(value is None for value in stale.values()),stale
     assert not errors,repr(errors)
