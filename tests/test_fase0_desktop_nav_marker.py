@@ -1,4 +1,4 @@
-"""Fase 0: desktop must recognize the same navigation marker emitted by v52-shell."""
+"""Fase 2 hardening: desktop must evaluate the exact navigation guard used by Electron."""
 from pathlib import Path
 import os
 import re
@@ -12,17 +12,23 @@ URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
 def test_desktop_and_frontend_share_stable_nav_marker():
     main=(ROOT/"desktop"/"main.js").read_text(encoding="utf-8")
     shell=(ROOT/"v52-shell.js").read_text(encoding="utf-8")
+
     assert re.search(r"dataset\.valistructNav\s*=\s*['\"]v5['\"]", shell)
-    assert re.search(r"dataset\.valistructNav\s*===\s*['\"]v5['\"]", main)
-    assert re.search(r"dataset\.v51Grouped\s*===\s*['\"]yes['\"]", main)
+
+    # Extract the exact JavaScript guard from desktop/main.js instead of
+    # reconstructing it in the test. This catches accidental changes such as
+    # replacing || with &&.
+    match=re.search(
+        r'"([^"\n]*dataset\.valistructNav\s*===\s*\'v5\'[^"\n]*dataset\.v51Grouped\s*===\s*\'yes\'[^"\n]*)"',
+        main,
+    )
+    assert match, "Desktop navigation guard not found in desktop/main.js"
+    desktop_guard=match.group(1)
+
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
         page=browser.new_page()
         page.goto(URL,wait_until="load")
         assert page.evaluate("document.querySelector('nav.nav')?.dataset.valistructNav")=="v5"
-        should_skip=page.evaluate(
-            "document.querySelector('nav.nav')?.dataset.valistructNav === 'v5' || "
-            "document.querySelector('nav.nav')?.dataset.v51Grouped === 'yes'"
-        )
-        assert should_skip is True
+        assert page.evaluate(f"Boolean({desktop_guard})") is True
         browser.close()
