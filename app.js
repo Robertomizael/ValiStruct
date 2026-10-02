@@ -81,12 +81,13 @@ function zValue(conf) {
   return 1.959963984540054;
 }
 
-function scoreCI(v, n, conf) {
+function scoreCI(v, n, k, conf) {
   const z = zValue(conf);
   const z2 = z*z;
-  const denom = 2*(n + z2);
-  const core = 2*n*v + z2;
-  const rad = z * Math.sqrt(4*n*v*(1-v) + z2);
+  const nk = n*k;
+  const denom = 2*(nk + z2);
+  const core = 2*nk*v + z2;
+  const rad = z * Math.sqrt(4*nk*v*(1-v) + z2);
   return {
     lower: Math.max(0, (core-rad)/denom),
     upper: Math.min(1, (core+rad)/denom)
@@ -133,7 +134,7 @@ function calculate() {
       }
       const sumS = ratings.reduce((acc, r) => acc + (r - c.min), 0);
       const v = sumS / (c.judges * (c.max - c.min));
-      const ci = scoreCI(v, c.judges, c.confidence);
+      const ci = scoreCI(v, c.judges, c.max-c.min, c.confidence);
       const st = statusFor(v, c.good, c.warn);
       const comment = document.querySelector(`.comment-input[data-item="${i}"][data-criterion="${CSS.escape(criterion)}"]`)?.value?.trim() || '';
       results.push({
