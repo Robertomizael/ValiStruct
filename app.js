@@ -5950,10 +5950,16 @@ document.getElementById('convertLegacyFile')?.addEventListener('click',async()=>
       legacyCsvText,
       sourceName,
       legacyMeta.format||'SAV/DTA',
-      {labels:legacyMeta.labels||{}}
+      {labels:legacyMeta.labels||{},valueLabels:legacyMeta.value_labels||{}}
     );
     previewLegacyCsv(legacyCsvText);
-    logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns,labels:Object.keys(legacyMeta.labels||{}).length});
+    logHistory('Importación','Convertir SAV/DTA',{
+      format:legacyMeta.format||'',
+      rows:data.rows,
+      columns:data.columns,
+      labels:Object.keys(legacyMeta.labels||{}).length,
+      valueLabels:Object.keys(legacyMeta.value_labels||{}).length
+    });
   }catch(e){alert(e.message);}
 });
 
