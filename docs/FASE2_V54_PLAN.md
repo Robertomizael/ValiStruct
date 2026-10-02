@@ -60,4 +60,19 @@ Destinos previstos para reutilización:
 - Revisión independiente antes de crear `backup/v5-4-fase2-cierre`.
 
 ## Estado
-Subfase 2A iniciada. No fusionar a `main`.
+- Subfase 2A — Endurecimiento previo: cerrada.
+- Subfase 2B — Base central de participantes: cerrada.
+- Subfase 2C — Validez de contenido: cerrada.
+- Subfase 2D — Privacidad, SAV/DTA, proyectos históricos y builds desktop: cerrada.
+
+### Criterios de salida de Fase 2
+- [x] CI y RC verdes.
+- [x] Ninguna regresión científica detectada por la suite vigente.
+- [x] Una importación alimenta de forma reproducible los destinos compatibles.
+- [x] Proyectos históricos siguen abriendo.
+- [x] Privacidad por defecto conservada.
+- [x] Desktop macOS y Windows compilan.
+- [ ] Revisión independiente final del diff completo de Fase 2.
+- [ ] Crear `backup/v5-4-fase2-cierre`.
+
+No fusionar a `main` todavía.
