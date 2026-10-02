@@ -1,4 +1,4 @@
-/* ValiStruct v5.3 · navegación científica declarativa.
+/* ValiStruct v5.4 · navegación científica declarativa.
  * Fase 1: simplificación reversible. Ningún módulo se elimina del DOM.
  * Debe cargar después de navigation-v51.js y antes de app.js, porque app.js
  * registra los botones que existen dentro de .nav una sola vez.
