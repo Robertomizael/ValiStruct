@@ -26,7 +26,7 @@
 
   <nav aria-label="Navegación principal" class="nav">
     <button data-section="inicio" class="active">Inicio</button>
-    <button data-section="aiken">V de Aiken</button>
+    <button data-section="aiken">Validez de contenido</button>
     <button data-section="reliability">Confiabilidad</button>
     <button data-section="efa">AFE</button>
     <button data-section="cfa">AFC</button>
@@ -127,7 +127,7 @@
 
       <div class="cards">
         <article class="card action-card" data-go="aiken">
-          <h3>V de Aiken</h3>
+          <h3>Validez de contenido</h3>
           <p>Captura evaluaciones de jueces, calcula V por ítem y criterio, e interpreta los resultados.</p>
           <button>Iniciar módulo</button>
         </article>
@@ -207,10 +207,59 @@
     <section id="aiken" class="panel">
       <div class="section-heading">
         <div>
-          <h2>Validez de contenido · V de Aiken</h2>
-          <p>Capture o importe evaluaciones de jueces, calcule la V de Aiken con intervalo de confianza y documente observaciones cualitativas.</p>
+          <h2>Validez de contenido</h2>
+          <p>Seleccione el método de evaluación de expertos según el propósito del estudio. La base de jueces permanece independiente de la base de participantes.</p>
         </div>
         
+      </div>
+
+      <div class="notice">
+        <strong>Selección metodológica.</strong> Los métodos responden a propósitos distintos; ValiStruct no los trata como equivalentes ni recomienda un punto de corte universal.
+      </div>
+
+      <div class="method-grid" id="contentValidityMethods" aria-label="Métodos de validez de contenido">
+        <article class="card method-card planned" data-content-method="delphi">
+          <h3>Delphi</h3>
+          <p>Consenso iterativo de expertos mediante rondas sucesivas y retroalimentación controlada.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+        <article class="card method-card planned" data-content-method="modified-delphi">
+          <h3>Delphi modificado</h3>
+          <p>Consenso estructurado partiendo de criterios, evidencia o reactivos previamente definidos.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+        <article class="card method-card planned" data-content-method="icvi">
+          <h3>I-CVI (ítem)</h3>
+          <p>Proporción de expertos que califican cada ítem como relevante según el criterio definido.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+        <article class="card method-card planned" data-content-method="scvi">
+          <h3>S-CVI/Ave (escala)</h3>
+          <p>Promedio de los I-CVI para resumir la evidencia de validez de contenido a nivel escala.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+        <article class="card method-card planned" data-content-method="modified-kappa">
+          <h3>Kappa modificado</h3>
+          <p>Ajusta el acuerdo de relevancia entre expertos considerando la probabilidad de acuerdo por azar.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+        <article class="card method-card active-method" data-content-method="aiken">
+          <h3>V de Aiken</h3>
+          <p>Coeficiente para puntuaciones ordinales de jueces, con intervalo de confianza y análisis por criterio.</p>
+          <span class="status-chip good-bg">Disponible</span>
+        </article>
+        <article class="card method-card planned" data-content-method="lawshe">
+          <h3>CVR de Lawshe</h3>
+          <p>Evalúa la esencialidad de cada ítem a partir del juicio de un panel de expertos.</p>
+          <span class="status-chip">Planificado</span>
+        </article>
+      </div>
+
+      <div class="section-heading content-method-heading">
+        <div>
+          <h3>V de Aiken · módulo disponible</h3>
+          <p>Capture o importe evaluaciones de jueces, calcule la V de Aiken con intervalo de confianza y documente observaciones cualitativas.</p>
+        </div>
       </div>
 
       <div class="notice">
@@ -392,7 +441,7 @@
       <div class="flow">
         <div class="flow-step">1. Definición del constructo</div>
         <div class="flow-step">2. Construcción de ítems</div>
-        <div class="flow-step active-flow">3. Validez de contenido · V de Aiken</div>
+        <div class="flow-step active-flow">3. Validez de contenido</div>
         <div class="flow-step">4. Pilotaje y análisis de ítems</div>
         <div class="flow-step active-flow">5. Confiabilidad</div>
         <div class="flow-step active-flow">6. AFE</div>
@@ -1705,7 +1754,7 @@
       <div class="section-heading">
         <div>
           <h2>Centro de datos · participantes</h2>
-          <p>Importe una vez y reutilice la base en Diagnóstico, Fiabilidad, ACP/AFE, AFC y Motor Pro. La matriz independiente de jueces para V de Aiken no se modifica.</p>
+          <p>Importe una vez y reutilice la base en Diagnóstico, Fiabilidad, ACP/AFE, AFC y Motor Pro. La matriz independiente de jueces para Validez de contenido no se modifica.</p>
         </div>
         
       </div>
