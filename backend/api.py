@@ -651,12 +651,30 @@ def legacy_to_csv():
         except Exception:
             pass
 
+        value_labels = {}
+        try:
+            raw_value_labels = getattr(meta, "variable_value_labels", {}) or {}
+            for col, mapping in raw_value_labels.items():
+                if not isinstance(mapping, dict) or not mapping:
+                    continue
+                value_labels[str(col)] = {
+                    str(key): str(label)
+                    for key, label in mapping.items()
+                    if label is not None
+                }
+        except Exception:
+            pass
+
         return jsonify({
             "ok": True,
             "csv_text": out.getvalue(),
             "rows": int(df.shape[0]),
             "columns": int(df.shape[1]),
-            "meta": {"format": fmt, "labels": labels}
+            "meta": {
+                "format": fmt,
+                "labels": labels,
+                "value_labels": value_labels
+            }
         })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 400
