@@ -12,6 +12,7 @@ on:
       - hotfix/v5-2-motorpro-recovery
       - hotfix/v5-2-4-motorpro-numerics-contextmenu
       - feature/v5-3-simplificacion
+      - feature/v5-4-fase2d-privacidad-importacion
     paths:
       - "desktop/**"
       - "navigation-v51.js"
