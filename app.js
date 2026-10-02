@@ -3132,6 +3132,8 @@ function rawProjectDataConsent(){
 function projectState(){
   return {
     version:'1.1',
+    appVersion:'5.4.0-beta.1',
+    projectFormat:'3.0',
     savedAt:new Date().toISOString(),
     name:(document.getElementById('projectName')?.value||'Proyecto ValiStruct').trim(),
     author:(document.getElementById('projectAuthor')?.value||'').trim(),
