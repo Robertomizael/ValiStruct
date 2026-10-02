@@ -437,6 +437,7 @@ function calculateCvi(){
   }
   const scviAve=rows.reduce((s,r)=>s+r.icvi,0)/rows.length;
   cviLastResults={rows,scviAve,config:c};
+  document.getElementById('modifiedKappaResults').innerHTML='';
   renderCviResults(cviLastResults);
 }
 
@@ -483,8 +484,51 @@ function loadCviExample(){
 function clearCvi(){
   document.getElementById('cviMatrix').innerHTML='';
   document.getElementById('cviResults').innerHTML='';
+  document.getElementById('modifiedKappaResults').innerHTML='';
   document.getElementById('cviActions').classList.add('hidden');
   cviLastResults=null;
+}
+
+function factorial(n){
+  let out=1;
+  for(let i=2;i<=n;i++)out*=i;
+  return out;
+}
+
+function combination(n,k){
+  if(k<0||k>n)return 0;
+  k=Math.min(k,n-k);
+  let out=1;
+  for(let i=1;i<=k;i++)out=out*(n-k+i)/i;
+  return out;
+}
+
+function calculateModifiedKappa(){
+  if(!cviLastResults)return alert('Primero calcule I-CVI / S-CVI/Ave.');
+  const rows=cviLastResults.rows.map(r=>{
+    const pc=combination(r.n,r.agreement)*Math.pow(0.5,r.n);
+    const kappa=(r.icvi-pc)/(1-pc);
+    return {...r,pc,kappa};
+  });
+  const meanKappa=rows.reduce((s,r)=>s+r.kappa,0)/rows.length;
+  cviLastResults={...cviLastResults,kappaRows:rows,meanKappa};
+  let html=`<div class="results-summary">
+    <div class="report-header"><h3>ValiStruct · Kappa modificado</h3>
+    <p>Ajuste del acuerdo de relevancia por la probabilidad de acuerdo al azar.</p></div>
+    <div class="result-cards">
+      <div class="result-card"><span>Kappa modificado promedio</span><strong>${meanKappa.toFixed(3)}</strong></div>
+      <div class="result-card"><span>Ítems</span><strong>${rows.length}</strong></div>
+    </div>
+    <p><strong>Nota:</strong> ValiStruct reporta el valor numérico y Pc. No aplica categorías interpretativas universales automáticamente.</p>
+  </div>
+  <div class="workspace"><table class="results-table"><thead><tr>
+    <th>Ítem</th><th>A</th><th>N</th><th>I-CVI</th><th>Pc</th><th>Kappa modificado</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html+=`<tr><td>${escapeHtml(r.item)}</td><td>${r.agreement}</td><td>${r.n}</td><td>${r.icvi.toFixed(3)}</td><td>${r.pc.toFixed(5)}</td><td><strong>${r.kappa.toFixed(3)}</strong></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('modifiedKappaResults').innerHTML=html;
 }
 
 function downloadCviCsv(){
@@ -499,6 +543,7 @@ document.getElementById('buildCvi')?.addEventListener('click',buildCviMatrix);
 document.getElementById('loadCviExample')?.addEventListener('click',loadCviExample);
 document.getElementById('clearCvi')?.addEventListener('click',clearCvi);
 document.getElementById('calculateCvi')?.addEventListener('click',calculateCvi);
+document.getElementById('calculateModifiedKappa')?.addEventListener('click',calculateModifiedKappa);
 document.getElementById('downloadCviCsv')?.addEventListener('click',downloadCviCsv);
 
 document.getElementById('buildAiken').addEventListener('click', buildMatrix);
