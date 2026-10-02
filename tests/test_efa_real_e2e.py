@@ -5,6 +5,11 @@ pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import sync_playwright
 URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
 
+def open_efa(page):
+    """Open AFE independently of the current accordion state."""
+    page.locator(".nav button[data-section='efa']").evaluate("(el)=>el.click()")
+    page.wait_for_function("document.getElementById('efa')?.classList.contains('visible')")
+
 def test_real_r_paf_through_browser_and_exports():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
@@ -12,7 +17,7 @@ def test_real_r_paf_through_browser_and_exports():
         errors=[]
         page.on("pageerror",lambda e: errors.append(str(e)))
         page.goto(URL,wait_until="load")
-        page.locator('.nav button[data-section="efa"]').click()
+        open_efa(page)
         page.locator("#loadEfaExample").click()
         page.locator("#efaExtraction").select_option("pa")
         page.locator("#efaRotation").select_option("varimax")

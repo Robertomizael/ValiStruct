@@ -32,6 +32,29 @@ else:
 HERE = os.path.dirname(os.path.abspath(__file__))
 R_ENGINE = os.path.join(HERE, "lavaan_engine.R")
 
+# Fase 0: scientific-only backend by default.
+# Institutional/admin/collaboration routes are unavailable unless explicitly
+# enabled. This is a capability gate, not merely a hidden frontend menu.
+SCIENTIFIC_ROUTE_WHITELIST = frozenset({
+    "/health", "/version", "/efa", "/estimate", "/advanced",
+    "/report-docx", "/missingness", "/article-docx", "/export-xlsx",
+    "/sem-montecarlo", "/model-check", "/xlsx-info", "/xlsx-to-csv",
+    "/legacy-to-csv",
+})
+
+def institutional_mode_enabled():
+    return os.environ.get("VALISTRUCT_INSTITUTIONAL_MODE", "false").strip().lower() == "true"
+
+@app.before_request
+def _valistruct_capability_gate():
+    if institutional_mode_enabled():
+        return None
+    # Preflight is allowed only for scientific endpoints; all other backend
+    # capabilities look nonexistent when institutional mode is off.
+    if request.path in SCIENTIFIC_ROUTE_WHITELIST:
+        return None
+    return jsonify({"ok": False, "error": "Ruta no disponible en modo científico"}), 404
+
 def find_rscript():
     return shutil.which("Rscript")
 

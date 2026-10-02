@@ -1,0 +1,153 @@
+name: ValiStruct unified CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - "feature/**"
+      - "hotfix/**"
+  workflow_dispatch:
+
+concurrency:
+  group: valistruct-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VALISTRUCT_REQUIRE_R: "1"
+  VALISTRUCT_FRONTEND_URL: "http://127.0.0.1:8000"
+  VALISTRUCT_API_BASE: "http://127.0.0.1:8765"
+
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::lavaan
+            any::jsonlite
+            any::psych
+            any::naniar
+            any::semTools
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest playwright Flask flask-cors openpyxl pyreadstat pandas scipy numpy python-docx
+          python -m playwright install --with-deps chromium
+
+      - name: Require working R and scientific packages
+        run: |
+          command -v Rscript
+          Rscript -e "stopifnot(requireNamespace('lavaan',quietly=TRUE),requireNamespace('psych',quietly=TRUE),requireNamespace('jsonlite',quietly=TRUE))"
+
+      - name: JavaScript and static audits
+        run: |
+          node --check app.js
+          node --check navigation-v51.js
+          node --check v52-shell.js
+          node --check participant-data.js
+          node --check jasp-import.js
+          node --check efa-v52.js
+          node --test tests/test_jasp_import.cjs
+          node --test tests/test_desktop_context_menu.cjs
+          python tests/static_frontend_audit.py
+          python tests/static_backend_audit.py
+          pytest -q tests/test_fase0_crosslinks.py
+
+      - name: Numerical R and backend regression
+        env:
+          VALISTRUCT_AUTH_ENABLED: "false"
+          VALISTRUCT_ENV: "development"
+          VALISTRUCT_INSTITUTIONAL_MODE: "true"
+        run: |
+          pytest -q tests/test_efa_engine_r.py
+          pytest -q tests/test_motorpro_numerical_regression.py
+          pytest -q backend/tests
+
+      - name: Start frontend without backend
+        run: |
+          python -m http.server 8000 >/tmp/valistruct-front.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8000/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/valistruct-front.log
+          exit 1
+
+      - name: Browser regressions without backend
+        run: |
+          set -euo pipefail
+          run_browser_test() {
+            test_file="$1"
+            echo "::group::Browser regression: $test_file"
+            set +e
+            timeout --signal=TERM 90s pytest -q "$test_file"
+            code=$?
+            set -e
+            if [ "$code" -ne 0 ]; then
+              echo "::error title=Browser regression failed::$test_file failed or exceeded 90 seconds (exit $code)"
+              echo "::endgroup::"
+              exit "$code"
+            fi
+            echo "::endgroup::"
+          }
+          run_browser_test tests/test_hotfix_startup_privacy.py
+          run_browser_test tests/test_v51_stage1.py
+          run_browser_test tests/test_v52_ux.py
+          run_browser_test tests/test_multidiag_recovery.py
+          run_browser_test tests/test_efa_v52_browser.py
+          run_browser_test tests/test_fase0_sections_sweep.py
+          run_browser_test tests/test_fase0_projects_roundtrip.py
+          run_browser_test tests/test_fase0_desktop_nav_marker.py
+          run_browser_test tests/test_fase0_core_numeric.py
+          run_browser_test tests/test_fase0_historical_projects.py
+          run_browser_test tests/test_fase1_navigation.py
+
+      - name: Capture Fase-0 reference screens
+        run: python tools/capture_reference_screens.py --out tests/reference-screens
+
+      - name: Upload reference screens
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-fase0-reference-screens
+          path: tests/reference-screens/*.png
+          if-no-files-found: error
+
+      - name: Start scientific backend
+        env:
+          VALISTRUCT_AUTH_ENABLED: "false"
+          VALISTRUCT_ENV: "development"
+          VALISTRUCT_INSTITUTIONAL_MODE: "false"
+        run: |
+          python -m flask --app backend.api run --host 127.0.0.1 --port 8765 >/tmp/valistruct-backend.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8765/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/valistruct-backend.log
+          exit 1
+
+      - name: Browser-to-R end-to-end regressions
+        run: |
+          pytest -q tests/test_efa_real_e2e.py
+          pytest -q tests/test_motorpro_recovery.py
+          pytest -q tests/test_fase0_sections_sweep.py

@@ -113,3 +113,43 @@ body.vs-v52 #multidiag .multi-outlier-list{border:1px solid #dce5ef;background:#
 body.vs-v52 #multidiag .multi-outlier-list summary{cursor:pointer;font-weight:700;color:#225475}
 body.vs-v52 #multidiag #runMultiDiagnostics:disabled{opacity:.55;cursor:wait}
 body.vs-v52 #multidiag .heatmap-wrap{max-width:100%;overflow-x:auto}
+
+
+/* ValiStruct v5.3 · simplificación reversible de navegación. */
+body.vs-v53 .nav-v53 .vs-v53-direct{display:flex;gap:11px;align-items:center;font-weight:700;margin:2px 0}
+body.vs-v53 .nav-v53 .vs-v53-direct>span:first-child{font-size:17px;color:#d0b773;width:22px;text-align:center;flex-shrink:0}
+body.vs-v53 .nav-v53 .vs-v53-direct.vs-v52-motor{background:#203d5b!important;border:1px solid #b89b58!important;margin-top:7px}
+body.vs-v53 .nav-v53 .vs-parent-active{background:#234f74!important;color:#fff!important;box-shadow:inset 3px 0 #d8b461!important}
+body.vs-v53 .nav-v53 .vs-v53-nav-status{display:block;margin-top:3px;color:#e9c976;font-size:9px;line-height:1.2;font-weight:700}
+body.vs-v53 .nav-v53 .vs-v53-admin{border:1px solid rgba(220,184,103,.34)!important;background:rgba(255,255,255,.025)}
+body.vs-v53 .nav-v53 .vs-v53-hidden-nav,
+body.vs-v53 .nav-v53 .vs-v53-qa-nav{display:none!important}
+
+.vs-v53-tools{margin:18px 0 23px;background:#fff;border:1px solid var(--v52-line);border-radius:15px;padding:18px 20px;box-shadow:0 4px 18px rgba(19,56,89,.035)}
+.vs-v53-tools-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:13px}
+.vs-v53-tools-title strong{display:block;color:#173c5d;font-size:14px}
+.vs-v53-tools-title span{display:block;color:#74879a;font-size:11px;margin-top:4px;line-height:1.45}
+.vs-v53-tools-grid{display:flex;flex-wrap:wrap;gap:9px}
+.vs-v53-tools-grid button{position:relative;flex:1 1 185px;max-width:280px;min-height:76px;border:1px solid #d6e2ed;background:#f8fbfe;border-radius:11px;padding:12px 34px 12px 13px;text-align:left;cursor:pointer;transition:transform .14s,border-color .14s,box-shadow .14s}
+.vs-v53-tools-grid button:hover{transform:translateY(-2px);border-color:#8eb3d0;box-shadow:0 7px 15px rgba(26,69,107,.08)}
+.vs-v53-tools-grid button strong{display:block;font-size:12px;color:#194a70;line-height:1.35}
+.vs-v53-tools-grid button span{display:block;font-size:10px;color:#76899c;margin-top:5px}
+.vs-v53-tools-grid button b{position:absolute;right:12px;top:12px;color:#547e9e;font-size:15px}
+
+.vs-v53-preparing{border:1px solid #e2bd69;background:#fff6df;color:#7d5b17;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap;padding:8px 11px}
+.vs-v53-preparing-note{margin:0 0 20px;border:1px solid #ead9ad;background:#fffaf0;border-left:4px solid #c79d43;border-radius:8px;padding:12px 15px;color:#725b31;font-size:12px;line-height:1.55}
+.vs-v53-preparing-note strong{color:#5c451b}
+
+.vs-v53-institutional-card{display:grid;gap:12px;margin:18px 0 24px;border:1px solid #dfd1a8;background:#fffaf0;border-radius:14px;padding:18px}
+.vs-v53-institutional-card strong{color:#163c5e}
+.vs-v53-institutional-card p{margin:5px 0 0;color:#657b90;font-size:12px;line-height:1.55}
+.vs-v53-institutional-card label{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:#294e6b}
+.vs-v53-institutional-card input{width:auto!important}
+.vs-v53-institutional-card small{font-size:10px;color:#8a6c31;line-height:1.5}
+body.vs-v53 #inicio.vs-v52-home>.vs-v53-tools{display:block!important;max-width:1260px;margin-left:auto;margin-right:auto}
+
+@media(max-width:810px){
+  .vs-v53-tools-grid{display:grid;grid-template-columns:1fr}
+  .vs-v53-tools-grid button{max-width:none;width:100%}
+  body.vs-v53 .nav-v53 .vs-v53-direct{width:100%}
+}

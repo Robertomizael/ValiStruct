@@ -63,12 +63,21 @@ for script in ["static_backend_audit.py","static_frontend_audit.py"]:
         errors.append(f"{script}: {rr.stdout.strip()} {rr.stderr.strip()}")
 
 v=json.loads((ROOT/"version.json").read_text(encoding="utf-8"))
-if v.get("version")!="3.0.0-rc.6":
-    errors.append("version.json mismatch")
+expected_version="5.3.0-beta.1"
+if v.get("version")!=expected_version:
+    errors.append(f"version.json mismatch: expected {expected_version}, got {v.get('version')}")
+if v.get("projectFormat")!="3.0":
+    errors.append("projectFormat must remain 3.0 during v5.3 simplification")
+app=(ROOT/"app.js").read_text(encoding="utf-8")
+if expected_version not in app:
+    errors.append("app.js release metadata is not aligned with version.json")
+desktop=json.loads((ROOT/"desktop"/"package.json").read_text(encoding="utf-8"))
+if desktop.get("version")!=expected_version:
+    errors.append("desktop/package.json version mismatch")
 
 if warnings:
     print("\n".join("WARN: "+x for x in warnings))
 if errors:
     print("\n".join("FAIL: "+x for x in errors))
     sys.exit(1)
-print("PASS: ValiStruct 3.0 RC6 static release checks")
+print(f"PASS: ValiStruct {v.get('displayVersion',expected_version)} static release checks")

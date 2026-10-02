@@ -4348,7 +4348,7 @@ function projectEvidenceSnapshot(){
 function buildAssistantPlan(){
   const e=projectEvidenceSnapshot();
   const steps=[
-    {key:'content',name:'Validez de contenido',section:'validation',done:e.content,review:e.contentReview,action:'Complete o revise V de Aiken y comentarios de jueces.'},
+    {key:'content',name:'Validez de contenido',section:'aiken',done:e.content,review:e.contentReview,action:'Complete o revise V de Aiken y comentarios de jueces.'},
     {key:'diag',name:'Diagnóstico de datos',section:'diagnostics',done:e.diag,review:e.diagReview,action:'Revise faltantes, distribución y posibles problemas de captura.'},
     {key:'multidiag',name:'Diagnóstico multivariado',section:'multidiag',done:e.multidiag,review:e.multidiagReview,action:'Evalúe no normalidad y casos multivariados antes de AFC/SEM.'},
     {key:'reliability',name:'Confiabilidad',section:'reliability',done:e.reliability,review:e.reliabilityReview,action:'Estime alfa/omega y revise correlaciones ítem-total.'},
@@ -4713,7 +4713,7 @@ let guidedProjectLast=null;
 function guidedProjectPhases(type){
   const common=[
     {id:'concept',name:'1. Definición conceptual',section:'methodguide',desc:'Constructo, dimensiones, población y fundamento teórico.'},
-    {id:'content',name:'2. Validez de contenido',section:'validation',desc:'Juicio de expertos, V de Aiken y revisión cualitativa.'},
+    {id:'content',name:'2. Validez de contenido',section:'aiken',desc:'Juicio de expertos, V de Aiken y revisión cualitativa.'},
     {id:'pilot',name:'3. Pilotaje y diagnóstico',section:'diagnostics',desc:'Datos faltantes, distribución, calidad de captura y atípicos.'},
     {id:'reliability',name:'4. Confiabilidad',section:'reliability',desc:'Alfa, omega e ítem-total.'},
     {id:'efa',name:'5. AFE',section:'efa',desc:'KMO, Bartlett, análisis paralelo, cargas y comunalidades.'},
@@ -5241,7 +5241,7 @@ document.getElementById('clearLocalResearchData')?.addEventListener('click',()=>
 });
 document.getElementById('downloadPrivacyPolicy')?.addEventListener('click',()=>{
   const p=loadPrivacySettings();
-  const txt=`ValiStruct 2.1 · Política local de privacidad
+  const txt=`ValiStruct · Política local de privacidad
 
 Autor: Dr. Roberto Joel Tirado Reyes
 Universidad Autónoma de Sinaloa
@@ -5267,11 +5267,11 @@ renderPrivacySettings();
 const originalProjectStateV21 = projectState;
 projectState = function(){
   const state=originalProjectStateV21();
-  const privacy=loadPrivacySettings();
+  const privacy=typeof loadPrivacySettings === 'function' ? (loadPrivacySettings() || {}) : {};
   state.version='2.1';
   state.privacy=privacy;
-  state.settings=loadSettings();
-  state.profile=loadProfile();
+  state.settings=typeof loadSettings === 'function' ? (loadSettings() || null) : null;
+  state.profile=typeof loadProfile === 'function' ? (loadProfile() || null) : null;
   if(privacy.rawData!=='yes'){
     delete state.semData;
     delete state.proCsvText;
@@ -5454,7 +5454,7 @@ document.getElementById('resetA11ySettings')?.addEventListener('click',()=>{
 });
 document.addEventListener('keydown',e=>{
   if(!e.altKey)return;
-  const map={'1':'home','2':'guidedproject','3':'motorpro','4':'resultcenter'};
+  const map={'1':'inicio','2':'guidedproject','3':'motorpro','4':'resultcenter'};
   if(map[e.key]){
     e.preventDefault();
     document.querySelector(`[data-section="${map[e.key]}"]`)?.click();
@@ -5478,12 +5478,12 @@ document.querySelectorAll('input,select,textarea').forEach(el=>{
 });
 
 // -----------------------------
-// ValiStruct 2.2 Versioning / compatibility
+// ValiStruct 5.3 Versioning / compatibility
 // -----------------------------
 const VERSION_INFO={
   app:'ValiStruct',
-  version:'2.2',
-  projectFormat:'2.2',
+  version:'5.3.0-beta.1',
+  projectFormat:'3.0',
   minimumReadableProject:'0.7',
   author:'Dr. Roberto Joel Tirado Reyes',
   institution:'Universidad Autónoma de Sinaloa'
@@ -7015,14 +7015,14 @@ document.getElementById('downloadBetaMetrics')?.addEventListener('click',()=>{
 
 
 // ============================================================
-// ValiStruct 3.0 RC6 · Consolidation layer
+// ValiStruct 5.3 Beta · compatibility/release layer
 // ============================================================
 const VALISTRUCT_RELEASE = Object.freeze({
   app: 'ValiStruct',
-  version: '3.0.0-rc.6',
-  displayVersion: '3.0 RC6',
+  version: '5.3.0-beta.1',
+  displayVersion: '5.3 Beta',
   projectFormat: '3.0',
-  releaseChannel: 'release-candidate',
+  releaseChannel: 'beta',
   featureFreeze: true,
   author: 'Dr. Roberto Joel Tirado Reyes',
   institution: 'Universidad Autónoma de Sinaloa'
@@ -7040,11 +7040,11 @@ projectState = function(){
     appVersion: VALISTRUCT_RELEASE.version
   };
   state.preferences = {
-    profile: loadProfile?.() || null,
-    settings: loadSettings?.() || null,
-    privacy: loadPrivacySettings?.() || null,
-    accessibility: loadA11y?.() || null,
-    telemetry: loadTelemetrySettings?.() || null
+    profile: typeof loadProfile === 'function' ? (loadProfile() || null) : null,
+    settings: typeof loadSettings === 'function' ? (loadSettings() || null) : null,
+    privacy: typeof loadPrivacySettings === 'function' ? (loadPrivacySettings() || null) : null,
+    accessibility: typeof loadA11y === 'function' ? (loadA11y() || null) : null,
+    telemetry: typeof loadTelemetrySettings === 'function' ? (loadTelemetrySettings() || null) : null
   };
   return state;
 };
@@ -7182,9 +7182,9 @@ async function runSecurityReviewV30(){
   add('Frontend HTTPS',location.protocol==='https:'||location.hostname==='localhost'?'pass':'warn',location.protocol);
   add('API HTTPS',apiBase.startsWith('https://')||apiBase.includes('127.0.0.1')||apiBase.includes('localhost')?'pass':'warn',apiBase);
   add('Project encryption',window.crypto?.subtle?'pass':'warn','Web Crypto AES-GCM disponible.');
-  const privacy=loadPrivacySettings?.()||{};
+  const privacy=typeof loadPrivacySettings === 'function' ? (loadPrivacySettings()||{}) : {};
   add('Raw data minimization',privacy.rawData!=='yes'?'pass':'warn',`rawData=${privacy.rawData||'no'}`);
-  const tel=loadTelemetrySettings?.()||{};
+  const tel=typeof loadTelemetrySettings === 'function' ? (loadTelemetrySettings()||{}) : {};
   add('Telemetry opt-in',tel.enabled!=='yes'?'pass':'warn',`telemetry=${tel.enabled||'no'}`);
   try{
     const r=await fetch(`${apiBase}/security-status`,{headers:authHeaders()});

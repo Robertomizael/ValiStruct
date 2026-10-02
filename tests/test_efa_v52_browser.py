@@ -6,6 +6,11 @@ from playwright.sync_api import sync_playwright
 
 URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
 
+def open_efa(page):
+    """Open AFE independently of the current accordion state."""
+    page.locator(".nav button[data-section=\'efa\']").evaluate("(el)=>el.click()")
+    page.wait_for_function("document.getElementById(\'efa\')?.classList.contains(\'visible\')")
+
 def test_efa_toolbar_diagnostics_and_local_export():
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
@@ -13,7 +18,7 @@ def test_efa_toolbar_diagnostics_and_local_export():
         errors=[]
         page.on("pageerror",lambda e: errors.append(str(e)))
         page.goto(URL,wait_until="load")
-        page.locator(".nav button[data-section='efa']").click()
+        open_efa(page)
         assert page.locator("#efaActions").is_visible()
         assert page.locator("#efaDiagnostics").is_visible()
         assert page.locator("#calculateEfa").is_visible()
@@ -52,7 +57,7 @@ def test_r_factor_methods_do_not_fall_back_silently():
         browser=p.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1440,"height":900})
         page.goto(URL,wait_until="load")
-        page.locator(".nav button[data-section='efa']").click()
+        open_efa(page)
         page.locator("#loadEfaExample").click()
         page.locator("#efaExtraction").select_option("pa")
         # Intercept the request; no R backend here. The app must explain failure

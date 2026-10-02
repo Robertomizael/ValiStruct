@@ -19,8 +19,12 @@ def page():
         yield page,errors
         browser.close()
 
+def open_section(page, section):
+    page.locator(f'.nav button[data-section="{section}"]').evaluate("(el)=>el.click()")
+    page.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')", arg=section)
+
 def upload(page):
-    page.locator('.nav button[data-section="dataimport"]').click()
+    open_section(page,"dataimport")
     page.locator("#unifiedDataFile").set_input_files({
         "name":"participantes.csv","mimeType":"text/csv","buffer":CSV
     })
@@ -29,11 +33,12 @@ def upload(page):
 
 def test_scientific_navigation_is_grouped_and_legacy_tools_survive(page):
     p,errors=page
-    assert p.locator(".nav-v51-group").count() == 3
-    assert p.locator('.nav button[data-section]').count() >= 75
+    assert p.locator(".nav-v52").count() == 1
+    assert p.locator('.nav button[data-section]').count() >= 80
     assert p.locator('.nav button[data-section="aiken"]').count() == 1
     assert p.locator('.nav button[data-section="motorpro"]').count() == 1
-    assert "Autor conceptual y director científico" in p.locator(".nav-v51-credit").inner_text()
+    assert p.locator('.nav button[data-section="stability"]').count() == 1
+    assert "Autor conceptual y director científico" in p.locator(".vs-v52-sidebar-credit").inner_text()
     assert not errors,repr(errors)
 
 def test_one_import_reuses_participant_data_and_preserves_judges(page):
@@ -46,11 +51,11 @@ def test_one_import_reuses_participant_data_and_preserves_judges(page):
     assert p.evaluate("relData.n") == 3
     assert p.evaluate("relData.k") == 3
     assert p.evaluate("lastResults[0].item") == "JUECES"
-    p.locator('.nav button[data-section="dataimport"]').click()
+    open_section(p,"dataimport")
     p.locator("#importToEfa").click()
     assert p.evaluate("efaData.n") == 3
     assert p.locator("#efaDatasetSummary").inner_text().count("3") >= 1
-    p.locator('.nav button[data-section="dataimport"]').click()
+    open_section(p,"dataimport")
     p.locator("#importToCfa").click()
     assert p.evaluate("cfaData.n") == 3
     assert p.evaluate("cfaData.itemNames.join(',')") == "i1,i2,i3"
