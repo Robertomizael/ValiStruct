@@ -1,13 +1,13 @@
 {
   "name": "ValiStruct",
-  "version": "5.3.0-beta.1",
-  "displayVersion": "5.3 Beta",
+  "version": "5.4.0-beta.1",
+  "displayVersion": "5.4 Beta",
   "projectFormat": "3.0",
   "minimumReadableProject": "0.7",
   "author": "Dr. Roberto Joel Tirado Reyes",
   "institution": "Universidad Autónoma de Sinaloa",
   "releaseChannel": "beta",
-  "featureFreeze": true,
-  "focus": "scientific navigation simplification with regression protection",
+  "featureFreeze": false,
+  "focus": "post-Fase2 hardening, project persistence and metadata coherence",
   "betaGate": "tests/beta_gate.py"
 }
