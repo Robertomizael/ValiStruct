@@ -4959,12 +4959,25 @@ let unifiedXlsxFile=null;
 function invalidateParticipantAnalyses(){
   relLast=null;relLastResults=null;efaLastResults=null;cfaLastResults=null;
   proLastResponse=null;advancedLastResponse=null;
-  if(typeof diagLast!=='undefined')diagLast=null;
-  if(typeof multiLast!=='undefined')multiLast=null;
+  if(typeof relData!=='undefined')relData=null;
+  if(typeof efaData!=='undefined')efaData=null;
+  if(typeof cfaData!=='undefined')cfaData=null;
+  if(typeof diagData!=='undefined'){diagData=null;diagLast=null;}
+  if(typeof multiData!=='undefined'){multiData=null;multiLast=null;}
+  if(typeof missingDataText!=='undefined'){missingDataText=null;missingLastResponse=null;}
+  if(typeof proCsvText!=='undefined')proCsvText=null;
+  if(typeof semData!=='undefined'){semData=null;semStructuralResults=null;semMediationResults=null;}
   if(typeof qualityLast!=='undefined')qualityLast=null;
-  ['relResults','efaResults','cfaResults','proResults'].forEach(id=>{
+  ['relResults','efaResults','cfaResults','proResults','diagResults','multiResults','missingResults'].forEach(id=>{
     const target=document.getElementById(id);
-    if(target)target.innerHTML='<div class="notice">Base de participantes actualizada: ejecute de nuevo este análisis.</div>';
+    if(target)target.innerHTML='<div class="notice">Base de participantes actualizada: reutilice la base del Centro de datos y ejecute nuevamente este análisis.</div>';
+  });
+  ['relDatasetSummary','efaDatasetSummary','cfaDatasetSummary','diagSummary','multiSummary','missingSummary','proDatasetSummary','semDatasetSummary'].forEach(id=>{
+    const target=document.getElementById(id);
+    if(target)target.innerHTML='<div class="notice">La base central cambió. Cargue esta versión desde el Centro de datos antes de continuar.</div>';
+  });
+  ['relDataPreview','efaDataPreview','cfaDataPreview'].forEach(id=>{
+    const target=document.getElementById(id);if(target)target.innerHTML='';
   });
 }
 function selectedParticipantItems(){
@@ -4982,14 +4995,68 @@ function getUnifiedParticipantMatrix(){
 }
 
 
+function registerParticipantCsv(text,sourceName='Centro de datos',format='csv',metadata={}){
+  const normalized=normalizeCsvText(String(text||''));
+  if(!normalized.trim())throw new Error('La base de participantes está vacía.');
+  unifiedCsvText=normalized;
+  unifiedSourceName=sourceName||'Centro de datos';
+  const summary=window.ValiStructParticipantData.setCsv(normalized,{
+    source:unifiedSourceName,format,labels:metadata.labels||{}
+  });
+  const status=document.getElementById('participantImportStatus');
+  if(status)status.textContent=
+    `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
+  return summary;
+}
+function canonicalParticipantCsv(){
+  const manager=window.ValiStructParticipantData;
+  if(manager?.hasData)return manager.toCsv();
+  if(unifiedCsvText)return unifiedCsvText;
+  return null;
+}
+function canonicalParticipantFrame(options={}){
+  const manager=window.ValiStructParticipantData;
+  if(!manager?.hasData)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+  return manager.numericFrame({
+    firstColumn:document.getElementById('importFirstColumn')?.value||'auto',
+    items:options.items||[]
+  });
+}
+function summarizeCanonicalUse(target,frame){
+  const html=`<div class="metric-card"><span>Casos cargados</span><strong>${frame.n}</strong></div>
+    <div class="metric-card"><span>Variables numéricas</span><strong>${frame.k}</strong></div>
+    <div class="metric-card"><span>Casos completos</span><strong>${frame.nComplete}</strong></div>
+    <div class="metric-card"><span>Fuente</span><strong>${escapeHtml(frame.source||'Centro de datos')}</strong></div>`;
+  const box=document.getElementById(target);if(box)box.innerHTML=html;
+}
+function useCentralDataForDiagnostics(){
+  try{
+    const frame=canonicalParticipantFrame({items:selectedParticipantItems()});
+    diagData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
+    diagLast=null;summarizeCanonicalUse('diagSummary',frame);return true;
+  }catch(e){alert(e.message);return false;}
+}
+function useCentralDataForMulti(){
+  try{
+    const frame=canonicalParticipantFrame({items:selectedParticipantItems()});
+    multiData={names:[...frame.names],matrix:frame.matrix.map(r=>[...r]),n:frame.n,k:frame.k};
+    multiLast=null;summarizeCanonicalUse('multiSummary',frame);multiStatus('Base del Centro de datos lista para Mahalanobis y Mardia.');return true;
+  }catch(e){multiStatus(e.message,true);return false;}
+}
+function useCentralDataForMissing(){
+  try{
+    const csv=canonicalParticipantCsv();
+    if(!csv)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+    missingDataText=csv;missingLastResponse=null;summarizeMissingText(csv);return true;
+  }catch(e){alert(e.message);return false;}
+}
+
 function normalizeCsvText(text){
   return text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
 }
 function previewUnifiedCsv(text){
   const source=unifiedSourceName||'Centro de datos';
-  const summary=window.ValiStructParticipantData.setCsv(text,{source,format:source.split('.').pop()||'csv'});
-  document.getElementById('participantImportStatus').textContent=
-    `Datos de participantes disponibles en memoria: ${summary.n} registros y ${summary.variables.length} variables. La base de jueces es independiente.`;
+  const summary=registerParticipantCsv(text,source,source.split('.').pop()||'csv');
   const rows=parseCSV(normalizeCsvText(text));
   if(!rows.length) return;
   const headers=rows[0];
@@ -5054,12 +5121,16 @@ document.getElementById('unifiedDataFile')?.addEventListener('change',async e=>{
 document.getElementById('xlsxSheetSelect')?.addEventListener('change',()=>convertSelectedXlsxSheet().catch(e=>alert(e.message)));
 
 document.getElementById('importToDiagnostics')?.addEventListener('click',()=>{
-  if(!unifiedCsvText)return alert('Cargue primero un archivo.');
-  try{
-    diagData=parseDiagnosticCSV(unifiedCsvText);
-    document.querySelector('[data-section="diagnostics"]')?.click();
-    document.getElementById('diagSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${diagData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${diagData.k}</strong></div>`;
-  }catch(e){alert(e.message);}
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForDiagnostics())document.querySelector('[data-section="diagnostics"]')?.click();
+});
+document.getElementById('importToMulti')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForMulti())document.querySelector('[data-section="multidiag"]')?.click();
+});
+document.getElementById('importToMissing')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForMissing())document.querySelector('[data-section="missingpro"]')?.click();
 });
 
 document.getElementById('importToReliability')?.addEventListener('click',()=>{
