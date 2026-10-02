@@ -657,6 +657,173 @@ document.getElementById('clearLawshe')?.addEventListener('click',clearLawshe);
 document.getElementById('calculateLawshe')?.addEventListener('click',calculateLawshe);
 document.getElementById('downloadLawsheCsv')?.addEventListener('click',downloadLawsheCsv);
 
+// -----------------------------
+// Delphi / Modified Delphi
+// -----------------------------
+let delphiRoundCount=0;
+let delphiLastResults=null;
+
+function delphiConfig(){
+  return {
+    mode:document.getElementById('delphiMode')?.value||'classic',
+    judges:Number(document.getElementById('delphiJudgeCount')?.value),
+    items:Number(document.getElementById('delphiItemCount')?.value),
+    min:Number(document.getElementById('delphiScaleMin')?.value),
+    max:Number(document.getElementById('delphiScaleMax')?.value),
+    favorableFrom:Number(document.getElementById('delphiFavorableFrom')?.value),
+    agreement:Number(document.getElementById('delphiAgreementThreshold')?.value),
+    iqrMax:Number(document.getElementById('delphiIqrThreshold')?.value)
+  };
+}
+
+function validateDelphiConfig(c){
+  if(!Number.isInteger(c.judges)||c.judges<3)return 'El número de expertos debe ser 3 o mayor.';
+  if(!Number.isInteger(c.items)||c.items<1)return 'El número de ítems debe ser 1 o mayor.';
+  if(!(c.max>c.min))return 'La escala máxima debe ser mayor que la mínima.';
+  if(!(c.favorableFrom>=c.min&&c.favorableFrom<=c.max))return 'El valor favorable debe estar dentro de la escala.';
+  if(!(c.agreement>=0&&c.agreement<=100))return 'El porcentaje de acuerdo requerido debe estar entre 0 y 100.';
+  if(!(c.iqrMax>=0))return 'El IQR máximo debe ser 0 o mayor.';
+  return null;
+}
+
+function delphiQuantile(values,p){
+  const x=[...values].sort((a,b)=>a-b);
+  if(!x.length)return NaN;
+  if(x.length===1)return x[0];
+  const pos=(x.length-1)*p,lo=Math.floor(pos),hi=Math.ceil(pos);
+  if(lo===hi)return x[lo];
+  return x[lo]+(x[hi]-x[lo])*(pos-lo);
+}
+
+function createDelphiRound(roundNumber,itemNames=null){
+  const c=delphiConfig(),err=validateDelphiConfig(c);
+  if(err){alert(err);return false;}
+  const names=itemNames&&itemNames.length===c.items?itemNames:Array.from({length:c.items},(_,i)=>'Ítem '+(i+1));
+  const wrapper=document.createElement('section');
+  wrapper.className='delphi-round';
+  wrapper.dataset.round=String(roundNumber);
+  let html='<div class="section-heading"><div><h4>Ronda '+roundNumber+'</h4><p>'+
+    (c.mode==='modified'?'Delphi modificado · ítems estructurados':'Delphi · ronda iterativa de expertos')+
+    '</p></div></div>';
+  html+='<table class="aiken-table"><thead><tr><th>Ítem</th>';
+  for(let j=1;j<=c.judges;j++)html+='<th>Experto '+j+'</th>';
+  html+='<th>Retroalimentación / decisión</th></tr></thead><tbody>';
+  for(let i=1;i<=c.items;i++){
+    html+='<tr><td><input class="delphi-item-name" data-round="'+roundNumber+'" data-item="'+i+'" value="'+escapeHtml(names[i-1])+'"></td>';
+    for(let j=1;j<=c.judges;j++){
+      html+='<td><input class="delphi-rating" type="number" step="1" min="'+c.min+'" max="'+c.max+'" data-round="'+roundNumber+'" data-item="'+i+'" data-judge="'+j+'" placeholder="'+c.min+'-'+c.max+'"></td>';
+    }
+    html+='<td><textarea class="delphi-comment" data-round="'+roundNumber+'" data-item="'+i+'" placeholder="Síntesis de retroalimentación o cambio entre rondas"></textarea></td></tr>';
+  }
+  html+='</tbody></table>';
+  wrapper.innerHTML=html;
+  document.getElementById('delphiRounds').appendChild(wrapper);
+  delphiRoundCount=Math.max(delphiRoundCount,roundNumber);
+  document.getElementById('delphiActions').classList.remove('hidden');
+  return true;
+}
+
+function buildDelphi(){
+  const c=delphiConfig(),err=validateDelphiConfig(c);
+  if(err)return alert(err);
+  document.getElementById('delphiRounds').innerHTML='';
+  document.getElementById('delphiResults').innerHTML='';
+  delphiRoundCount=0;delphiLastResults=null;
+  createDelphiRound(1);
+}
+
+function currentDelphiItemNames(){
+  if(!delphiRoundCount)return [];
+  return [...document.querySelectorAll('.delphi-item-name[data-round="'+delphiRoundCount+'"]')].map(x=>x.value.trim()||('Ítem '+x.dataset.item));
+}
+
+function addDelphiRound(){
+  if(!delphiRoundCount)return buildDelphi();
+  createDelphiRound(delphiRoundCount+1,currentDelphiItemNames());
+}
+
+function evaluateDelphi(){
+  const c=delphiConfig(),err=validateDelphiConfig(c);
+  if(err)return alert(err);
+  if(!delphiRoundCount)return alert('Primero cree al menos una ronda.');
+  const rows=[];const previousByItem=new Map();
+  for(let round=1;round<=delphiRoundCount;round++){
+    for(let i=1;i<=c.items;i++){
+      const nameEl=document.querySelector('.delphi-item-name[data-round="'+round+'"][data-item="'+i+'"]');
+      const name=(nameEl?.value||('Ítem '+i)).trim()||('Ítem '+i);
+      const ratings=[...document.querySelectorAll('.delphi-rating[data-round="'+round+'"][data-item="'+i+'"]')].map(x=>Number(x.value));
+      if(ratings.length!==c.judges||ratings.some(v=>!Number.isFinite(v)||v<c.min||v>c.max)){alert('Complete todas las puntuaciones de '+name+' en la ronda '+round+'.');return;}
+      const median=delphiQuantile(ratings,0.5);
+      const q1=delphiQuantile(ratings,0.25),q3=delphiQuantile(ratings,0.75),iqr=q3-q1;
+      const favorable=ratings.filter(v=>v>=c.favorableFrom).length;
+      const agreementPct=favorable/c.judges*100;
+      const consensus=agreementPct>=c.agreement&&iqr<=c.iqrMax;
+      const key=String(i);const prior=previousByItem.get(key);
+      const deltaAgreement=prior==null?null:agreementPct-prior;
+      previousByItem.set(key,agreementPct);
+      const comment=document.querySelector('.delphi-comment[data-round="'+round+'"][data-item="'+i+'"]')?.value?.trim()||'';
+      rows.push({round,itemIndex:i,item:name,median,q1,q3,iqr,favorable,n:c.judges,agreementPct,deltaAgreement,consensus,comment});
+    }
+  }
+  const latest=rows.filter(r=>r.round===delphiRoundCount);
+  const consensusN=latest.filter(r=>r.consensus).length;
+  delphiLastResults={mode:c.mode,rounds:delphiRoundCount,rows,latest,consensusN,config:c};
+  renderDelphiResults(delphiLastResults);
+}
+
+function renderDelphiResults(result){
+  const c=result.config;
+  let html='<div class="results-summary"><div class="report-header"><h3>ValiStruct · '+(result.mode==='modified'?'Delphi modificado':'Delphi')+'</h3>'+
+    '<p>Rondas registradas: <strong>'+result.rounds+'</strong> · Ítems con consenso en la última ronda: <strong>'+result.consensusN+'/'+result.latest.length+'</strong></p></div>'+
+    '<p><strong>Criterios configurados:</strong> acuerdo ≥ '+c.agreement.toFixed(0)+'%, IQR ≤ '+c.iqrMax.toFixed(2)+', valoración favorable desde '+c.favorableFrom+'. Estos criterios deben justificarse metodológicamente.</p></div>';
+  html+='<div class="workspace"><table class="results-table"><thead><tr><th>Ronda</th><th>Ítem</th><th>Mediana</th><th>IQR</th><th>Acuerdo favorable</th><th>Δ acuerdo</th><th>Consenso</th><th>Retroalimentación</th></tr></thead><tbody>';
+  result.rows.forEach(r=>{
+    html+='<tr><td>'+r.round+'</td><td>'+escapeHtml(r.item)+'</td><td>'+r.median.toFixed(2)+'</td><td>'+r.iqr.toFixed(2)+'</td><td>'+r.agreementPct.toFixed(1)+'%</td><td>'+(r.deltaAgreement==null?'—':((r.deltaAgreement>=0?'+':'')+r.deltaAgreement.toFixed(1)+' pp'))+'</td><td>'+(r.consensus?'Sí':'No')+'</td><td>'+escapeHtml(r.comment||'—')+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('delphiResults').innerHTML=html;
+}
+
+function loadDelphiExample(){
+  document.getElementById('delphiMode').value='classic';
+  document.getElementById('delphiJudgeCount').value=8;
+  document.getElementById('delphiItemCount').value=3;
+  document.getElementById('delphiScaleMin').value=1;
+  document.getElementById('delphiScaleMax').value=5;
+  document.getElementById('delphiFavorableFrom').value=4;
+  document.getElementById('delphiAgreementThreshold').value=75;
+  document.getElementById('delphiIqrThreshold').value=1;
+  buildDelphi();
+  const r1={1:[5,4,4,4,3,4,5,4],2:[4,3,4,3,4,4,3,4],3:[3,3,4,3,2,3,3,4]};
+  document.querySelectorAll('.delphi-rating[data-round="1"]').forEach(el=>{el.value=r1[Number(el.dataset.item)][Number(el.dataset.judge)-1];});
+  document.querySelector('.delphi-comment[data-round="1"][data-item="2"]').value='Ajustar redacción antes de la siguiente ronda.';
+  addDelphiRound();
+  const r2={1:[5,4,4,4,4,4,5,4],2:[4,4,4,4,4,5,4,4],3:[4,4,4,3,4,4,4,4]};
+  document.querySelectorAll('.delphi-rating[data-round="2"]').forEach(el=>{el.value=r2[Number(el.dataset.item)][Number(el.dataset.judge)-1];});
+  document.querySelector('.delphi-comment[data-round="2"][data-item="2"]').value='Redacción refinada tras retroalimentación anónima.';
+}
+
+function clearDelphi(){
+  document.getElementById('delphiRounds').innerHTML='';
+  document.getElementById('delphiResults').innerHTML='';
+  document.getElementById('delphiActions').classList.add('hidden');
+  delphiRoundCount=0;delphiLastResults=null;
+}
+
+function downloadDelphiCsv(){
+  if(!delphiLastResults)return alert('Primero evalúe el consenso.');
+  const rows=[['Modalidad','Ronda','Item','Mediana','Q1','Q3','IQR','Acuerdo_pct','Delta_acuerdo_pp','Consenso','Retroalimentacion']];
+  delphiLastResults.rows.forEach(r=>rows.push([delphiLastResults.mode,r.round,r.item,r.median.toFixed(3),r.q1.toFixed(3),r.q3.toFixed(3),r.iqr.toFixed(3),r.agreementPct.toFixed(1),r.deltaAgreement==null?'':r.deltaAgreement.toFixed(1),r.consensus?'Sí':'No',r.comment]));
+  saveBlob('\ufeff'+rows.map(row=>row.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_Delphi_trazabilidad.csv');
+}
+
+document.getElementById('buildDelphi')?.addEventListener('click',buildDelphi);
+document.getElementById('loadDelphiExample')?.addEventListener('click',loadDelphiExample);
+document.getElementById('addDelphiRound')?.addEventListener('click',addDelphiRound);
+document.getElementById('clearDelphi')?.addEventListener('click',clearDelphi);
+document.getElementById('calculateDelphi')?.addEventListener('click',evaluateDelphi);
+document.getElementById('downloadDelphiCsv')?.addEventListener('click',downloadDelphiCsv);
+
 document.getElementById('buildAiken').addEventListener('click', buildMatrix);
 document.getElementById('loadExample').addEventListener('click', loadExample);
 document.getElementById('clearAiken').addEventListener('click', clearAll);
