@@ -15,9 +15,14 @@ def test_content_validity_selector_preserves_aiken_controls_and_engine():
         page.on("pageerror",lambda e:errors.append(str(e)))
         page.goto(URL,wait_until="load")
 
-        nav=page.locator('.nav button[data-section="aiken"]')
-        assert "Validez de contenido" in nav.inner_text()
+        label=page.evaluate("""() => {
+          const cfg=(window.VALISTRUCT_NAV_MODULES||[]).find(x=>x.id==='aiken');
+          return cfg?.label||'';
+        }""")
+        assert label=="Validez de contenido"
 
+        nav=page.locator('.nav button[data-section="aiken"]')
+        assert nav.count()==1
         nav.evaluate("(el)=>el.click()")
         page.wait_for_function("document.getElementById('aiken')?.classList.contains('visible')")
 
