@@ -30,7 +30,7 @@ def test_core_javascript_numeric_golden_master():
           const md=mahalanobisDistances(matrix);
           const mardia=mardiaStats(matrix);
           const alpha=cronAlpha(matrix);
-          const ci=scoreCI(.9,5,.95);
+          const ci=scoreCI(.9,5,4,.95);
           return {R,kmo,bart,eig,md,mardia,alpha,ci};
         }""",MATRIX)
         close(got["alpha"],EXPECTED["reliability"]["alpha"])
@@ -50,6 +50,6 @@ def test_core_javascript_numeric_golden_master():
             close(got["mardia"][key],EXPECTED["mardia"][expkey],1e-9)
         browser.close()
 
-def test_aiken_fixture_documents_pending_interval_change():
+def test_aiken_fixture_documents_approved_interval_change():
     note=EXPECTED["note"].lower()
-    assert "aiken" in note and "current" in note and "new-project" in note
+    assert "aiken" in note and "penfield" in note and "n*k" in note
