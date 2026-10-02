@@ -824,6 +824,41 @@ document.getElementById('clearDelphi')?.addEventListener('click',clearDelphi);
 document.getElementById('calculateDelphi')?.addEventListener('click',evaluateDelphi);
 document.getElementById('downloadDelphiCsv')?.addEventListener('click',downloadDelphiCsv);
 
+// -----------------------------
+// Integrated Content Validity report
+// -----------------------------
+let contentValidityIntegratedHtml='';
+
+function contentValiditySnapshot(){
+  const methods=[];
+  if(delphiLastResults){methods.push({key:'delphi',label:delphiLastResults.mode==='modified'?'Delphi modificado':'Delphi',summary:'Rondas: '+delphiLastResults.rounds+'; consenso en última ronda: '+delphiLastResults.consensusN+'/'+delphiLastResults.latest.length+'.'});}
+  if(cviLastResults){methods.push({key:'cvi',label:'I-CVI / S-CVI/Ave',summary:'S-CVI/Ave: '+cviLastResults.scviAve.toFixed(3)+'; ítems: '+cviLastResults.rows.length+'.'});}
+  if(cviLastResults?.kappaRows){methods.push({key:'kappa',label:'Kappa modificado',summary:'Kappa modificado promedio: '+cviLastResults.meanKappa.toFixed(3)+'.'});}
+  if(lawsheLastResults){methods.push({key:'lawshe',label:'CVR de Lawshe',summary:'CVR promedio: '+lawsheLastResults.meanCvr.toFixed(3)+'; ítems: '+lawsheLastResults.rows.length+'.'});}
+  if(lastResults?.length){const avg=lastResults.reduce((s,r)=>s+r.v,0)/lastResults.length;methods.push({key:'aiken',label:'V de Aiken',summary:'V promedio global: '+avg.toFixed(3)+'; estimaciones ítem-criterio: '+lastResults.length+'.'});}
+  return methods;
+}
+
+function buildContentValidityIntegratedReport(){
+  const methods=contentValiditySnapshot();
+  if(!methods.length)return alert('Primero calcule al menos un método de Validez de contenido.');
+  let cards=methods.map(m=>'<article class="card"><h4>'+escapeHtml(m.label)+'</h4><p>'+escapeHtml(m.summary)+'</p></article>').join('');
+  const html='<div class="results-summary"><div class="report-header"><h3>ValiStruct · Informe integrado de Validez de contenido</h3><p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div>'+
+    '<div class="notice"><strong>Interpretación:</strong> los métodos se presentan de forma complementaria y separada. ValiStruct no calcula un puntaje global combinando Delphi, CVI, Kappa, Aiken o Lawshe.</div>'+
+    '<div class="method-grid">'+cards+'</div></div>';
+  document.getElementById('contentValidityReportResults').innerHTML=html;
+  contentValidityIntegratedHtml='<!doctype html><html lang="es"><meta charset="utf-8"><title>ValiStruct · Validez de contenido</title><body><h1>ValiStruct · Informe integrado de Validez de contenido</h1><p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p><p>Los métodos se reportan de forma complementaria y separada; no se construye un puntaje global combinando coeficientes heterogéneos.</p><ul>'+methods.map(m=>'<li><strong>'+escapeHtml(m.label)+':</strong> '+escapeHtml(m.summary)+'</li>').join('')+'</ul></body></html>';
+  return methods;
+}
+
+function downloadContentValidityIntegratedReport(){
+  if(!contentValidityIntegratedHtml){const methods=buildContentValidityIntegratedReport();if(!methods)return;}
+  saveBlob(contentValidityIntegratedHtml,'text/html;charset=utf-8;','ValiStruct_Validez_Contenido_Informe_Integrado.html');
+}
+
+document.getElementById('buildContentValidityReport')?.addEventListener('click',buildContentValidityIntegratedReport);
+document.getElementById('downloadContentValidityReport')?.addEventListener('click',downloadContentValidityIntegratedReport);
+
 document.getElementById('buildAiken').addEventListener('click', buildMatrix);
 document.getElementById('loadExample').addEventListener('click', loadExample);
 document.getElementById('clearAiken').addEventListener('click', clearAll);
