@@ -372,6 +372,135 @@ function saveBlob(content,type,filename) {
   a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+
+// -----------------------------
+// Content Validity Index (I-CVI / S-CVI/Ave)
+// -----------------------------
+let cviLastResults=null;
+
+function cviConfig(){
+  return {
+    judges:Number(document.getElementById('cviJudgeCount')?.value),
+    items:Number(document.getElementById('cviItemCount')?.value),
+    min:Number(document.getElementById('cviScaleMin')?.value),
+    max:Number(document.getElementById('cviScaleMax')?.value),
+    relevantFrom:Number(document.getElementById('cviRelevantFrom')?.value),
+    good:Number(document.getElementById('cviGoodThreshold')?.value)
+  };
+}
+
+function validateCviConfig(c){
+  if(!Number.isInteger(c.judges)||c.judges<2)return 'El número de jueces debe ser 2 o mayor.';
+  if(!Number.isInteger(c.items)||c.items<1)return 'El número de ítems debe ser 1 o mayor.';
+  if(!(c.max>c.min))return 'El valor máximo debe ser mayor que el mínimo.';
+  if(!(c.relevantFrom>=c.min&&c.relevantFrom<=c.max))return 'El umbral de relevancia debe estar dentro de la escala.';
+  if(!(c.good>=0&&c.good<=1))return 'El criterio I-CVI favorable debe estar entre 0 y 1.';
+  return null;
+}
+
+function buildCviMatrix(){
+  const c=cviConfig(),err=validateCviConfig(c);
+  if(err)return alert(err);
+  let html='<table class="aiken-table"><thead><tr><th>Ítem</th>';
+  for(let j=1;j<=c.judges;j++)html+=`<th>Juez ${j}</th>`;
+  html+='</tr></thead><tbody>';
+  for(let i=1;i<=c.items;i++){
+    html+=`<tr><td><input class="cvi-item-name" data-item="${i}" value="Ítem ${i}"></td>`;
+    for(let j=1;j<=c.judges;j++){
+      html+=`<td><input class="cvi-rating" type="number" step="1" min="${c.min}" max="${c.max}" data-item="${i}" data-judge="${j}" placeholder="${c.min}-${c.max}"></td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  document.getElementById('cviMatrix').innerHTML=html;
+  document.getElementById('cviActions').classList.remove('hidden');
+  document.getElementById('cviResults').innerHTML='';
+  cviLastResults=null;
+}
+
+function calculateCvi(){
+  const c=cviConfig(),err=validateCviConfig(c);
+  if(err)return alert(err);
+  if(!document.querySelector('.cvi-rating'))return alert('Primero cree la matriz I-CVI.');
+  const rows=[];
+  for(let i=1;i<=c.items;i++){
+    const name=(document.querySelector(`.cvi-item-name[data-item="${i}"]`)?.value||`Ítem ${i}`).trim()||`Ítem ${i}`;
+    const inputs=[...document.querySelectorAll(`.cvi-rating[data-item="${i}"]`)];
+    const ratings=inputs.map(x=>Number(x.value));
+    if(ratings.length!==c.judges||ratings.some(v=>!Number.isFinite(v)||v<c.min||v>c.max)){
+      alert(`Complete todas las puntuaciones de ${name} dentro del rango ${c.min}-${c.max}.`);
+      return;
+    }
+    const agreement=ratings.filter(v=>v>=c.relevantFrom).length;
+    const icvi=agreement/c.judges;
+    rows.push({item:name,agreement,n:c.judges,icvi,status:icvi>=c.good?'Favorable':'Revisar'});
+  }
+  const scviAve=rows.reduce((s,r)=>s+r.icvi,0)/rows.length;
+  cviLastResults={rows,scviAve,config:c};
+  renderCviResults(cviLastResults);
+}
+
+function renderCviResults(result){
+  const {rows,scviAve,config:c}=result;
+  let html=`<div class="results-summary">
+    <div class="report-header"><h3>ValiStruct · I-CVI / S-CVI/Ave</h3>
+    <p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div>
+    <div class="result-cards">
+      <div class="result-card"><span>S-CVI/Ave</span><strong>${scviAve.toFixed(3)}</strong></div>
+      <div class="result-card"><span>Jueces</span><strong>${c.judges}</strong></div>
+      <div class="result-card"><span>Relevante desde</span><strong>${c.relevantFrom}</strong></div>
+      <div class="result-card"><span>Criterio I-CVI</span><strong>${c.good.toFixed(2)}</strong></div>
+    </div>
+    <p><strong>Nota:</strong> el criterio interpretativo mostrado fue configurado por el usuario y no constituye un punto de corte universal.</p>
+  </div>`;
+  html+='<div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>Acuerdo relevante</th><th>N jueces</th><th>I-CVI</th><th>Orientación</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    html+=`<tr><td>${escapeHtml(r.item)}</td><td>${r.agreement}</td><td>${r.n}</td><td><strong>${r.icvi.toFixed(3)}</strong></td><td>${r.status}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('cviResults').innerHTML=html;
+}
+
+function loadCviExample(){
+  document.getElementById('cviJudgeCount').value=6;
+  document.getElementById('cviItemCount').value=4;
+  document.getElementById('cviScaleMin').value=1;
+  document.getElementById('cviScaleMax').value=4;
+  document.getElementById('cviRelevantFrom').value=3;
+  document.getElementById('cviGoodThreshold').value=0.78;
+  buildCviMatrix();
+  const values={
+    1:[4,4,3,4,3,4],
+    2:[3,3,3,4,2,3],
+    3:[4,4,4,4,4,4],
+    4:[2,3,2,3,2,3]
+  };
+  document.querySelectorAll('.cvi-rating').forEach(el=>{
+    el.value=values[Number(el.dataset.item)][Number(el.dataset.judge)-1];
+  });
+}
+
+function clearCvi(){
+  document.getElementById('cviMatrix').innerHTML='';
+  document.getElementById('cviResults').innerHTML='';
+  document.getElementById('cviActions').classList.add('hidden');
+  cviLastResults=null;
+}
+
+function downloadCviCsv(){
+  if(!cviLastResults)return alert('Primero calcule I-CVI / S-CVI/Ave.');
+  const rows=[['Item','Acuerdo_relevante','N_jueces','I_CVI','Orientacion']];
+  cviLastResults.rows.forEach(r=>rows.push([r.item,r.agreement,r.n,r.icvi.toFixed(3),r.status]));
+  rows.push([],['S_CVI_Ave',cviLastResults.scviAve.toFixed(3)]);
+  saveBlob("\ufeff"+rows.map(row=>row.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_CVI_resultados.csv');
+}
+
+document.getElementById('buildCvi')?.addEventListener('click',buildCviMatrix);
+document.getElementById('loadCviExample')?.addEventListener('click',loadCviExample);
+document.getElementById('clearCvi')?.addEventListener('click',clearCvi);
+document.getElementById('calculateCvi')?.addEventListener('click',calculateCvi);
+document.getElementById('downloadCviCsv')?.addEventListener('click',downloadCviCsv);
+
 document.getElementById('buildAiken').addEventListener('click', buildMatrix);
 document.getElementById('loadExample').addEventListener('click', loadExample);
 document.getElementById('clearAiken').addEventListener('click', clearAll);
