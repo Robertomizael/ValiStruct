@@ -248,10 +248,10 @@
           <p>Coeficiente para puntuaciones ordinales de jueces, con intervalo de confianza y análisis por criterio.</p>
           <span class="status-chip good-bg">Disponible</span>
         </article>
-        <article class="card method-card planned" data-content-method="lawshe">
+        <article class="card method-card active-method" data-content-method="lawshe" data-content-target="lawsheWorkspace">
           <h3>CVR de Lawshe</h3>
           <p>Evalúa la esencialidad de cada ítem a partir del juicio de un panel de expertos.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
       </div>
 
@@ -306,6 +306,47 @@
 
         <div id="cviResults"></div>
         <div id="modifiedKappaResults"></div>
+      </section>
+
+      <section id="lawsheWorkspace" class="content-validity-method">
+        <div class="section-heading content-method-heading">
+          <div>
+            <h3>CVR de Lawshe · módulo disponible</h3>
+            <p>Clasifique cada ítem como esencial, útil pero no esencial o no necesario. ValiStruct calcula el CVR por ítem y deja el criterio de aceptación bajo control del investigador.</p>
+          </div>
+        </div>
+
+        <div class="notice">
+          <strong>Fórmula:</strong> CVR = (N<sub>e</sub> − N/2) / (N/2), donde N<sub>e</sub> es el número de jueces que consideran el ítem esencial.
+          <br>ValiStruct reporta el coeficiente y el conteo de jueces; no aplica automáticamente una tabla crítica como regla universal.
+        </div>
+
+        <div class="config-grid">
+          <label>Número de jueces
+            <input id="lawsheJudgeCount" type="number" min="2" max="100" value="10">
+          </label>
+          <label>Número de ítems
+            <input id="lawsheItemCount" type="number" min="1" max="200" value="5">
+          </label>
+          <label>Criterio CVR favorable desde
+            <input id="lawsheGoodThreshold" type="number" min="-1" max="1" step="0.01" value="0.62">
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="buildLawshe" class="primary">Crear matriz CVR</button>
+          <button id="loadLawsheExample">Cargar ejemplo</button>
+          <button id="clearLawshe">Limpiar</button>
+        </div>
+
+        <div id="lawsheMatrix" class="workspace"></div>
+
+        <div id="lawsheActions" class="button-row hidden">
+          <button id="calculateLawshe" class="primary">Calcular CVR</button>
+          <button id="downloadLawsheCsv">Descargar resultados CSV</button>
+        </div>
+
+        <div id="lawsheResults"></div>
       </section>
 
       <div class="section-heading content-method-heading">
