@@ -15,12 +15,15 @@ def test_canonical_store_exposes_full_csv_labels_and_missing_aware_frame():
         page.on("pageerror",lambda e:errors.append(str(e)))
         page.goto(URL,wait_until="load")
 
-        page.evaluate("""() => {
-          window.ValiStructParticipantData.setCsv(
-            'ID,i01,i02,i03,sexo\nP001,1,2,3,F\nP002,2,NA,4,M\nP003,3,4,5,F\n',
-            {source:'fase2.csv',format:'csv',labels:{i01:'Ítem 1',i02:'Ítem 2'}}
-          );
-        }""")
+        page.evaluate(
+            """(csv) => {
+              window.ValiStructParticipantData.setCsv(
+                csv,
+                {source:'fase2.csv',format:'csv',labels:{i01:'Ítem 1',i02:'Ítem 2'}}
+              );
+            }""",
+            CSV.decode(),
+        )
 
         assert page.evaluate("window.ValiStructParticipantData.hasData") is True
         summary=page.evaluate("window.ValiStructParticipantData.summary")
