@@ -1,11 +1,9 @@
 """Fase 0 safety net: every registered section can be opened without pageerror.
 Run once with backend disconnected and once with backend available.
 
-The sweep executes the canonical app.js showSection() function in one browser
-evaluation while temporarily disabling smooth scrolling. This preserves the
-navigation semantics under test but avoids queuing dozens of headless Chromium
-scroll animations, which can keep the browser process alive until the CI job
-timeout.
+This sweep yields to the browser event loop after every section so MutationObserver
+callbacks run for each intermediate navigation state. That makes observer loops
+detectable instead of hiding them inside one synchronous evaluation.
 """
 import os
 import pytest
@@ -34,7 +32,7 @@ def test_all_registered_sections_open_without_pageerror():
         assert page.evaluate("typeof showSection === 'function'")
 
         result=page.evaluate(
-            """(ids)=>{
+            """async (ids)=>{
               const missing=ids.filter(id=>!document.getElementById(id));
               const failures=[];
               const originalScrollTo=window.scrollTo;
@@ -43,6 +41,7 @@ def test_all_registered_sections_open_without_pageerror():
                 for(const id of ids){
                   try{
                     showSection(id);
+                    await new Promise(resolve=>setTimeout(resolve,0));
                     if(!document.getElementById(id)?.classList.contains('visible')){
                       failures.push([id,'canonical showSection() did not make panel visible']);
                     }
