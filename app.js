@@ -729,6 +729,7 @@ function buildDelphi(){
   document.getElementById('delphiRounds').innerHTML='';
   document.getElementById('delphiResults').innerHTML='';
   delphiRoundCount=0;delphiLastResults=null;
+  window.delphiLockedConfig=JSON.stringify(c);
   createDelphiRound(1);
 }
 
@@ -739,7 +740,12 @@ function currentDelphiItemNames(){
 
 function addDelphiRound(){
   if(!delphiRoundCount)return buildDelphi();
-  createDelphiRound(delphiRoundCount+1,currentDelphiItemNames());
+  const current=JSON.stringify(delphiConfig());
+  if(window.delphiLockedConfig && current!==window.delphiLockedConfig){
+    alert('La configuración Delphi cambió después de iniciar las rondas. Reinicie el flujo para mantener comparabilidad entre rondas.');
+    return false;
+  }
+  return createDelphiRound(delphiRoundCount+1,currentDelphiItemNames());
 }
 
 function evaluateDelphi(){
@@ -808,6 +814,7 @@ function clearDelphi(){
   document.getElementById('delphiResults').innerHTML='';
   document.getElementById('delphiActions').classList.add('hidden');
   delphiRoundCount=0;delphiLastResults=null;
+  window.delphiLockedConfig=null;
 }
 
 function downloadDelphiCsv(){
