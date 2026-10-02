@@ -15,15 +15,17 @@ def test_desktop_and_frontend_share_stable_nav_marker():
 
     assert re.search(r"dataset\.valistructNav\s*=\s*['\"]v5['\"]", shell)
 
-    # Extract the exact JavaScript guard from desktop/main.js instead of
-    # reconstructing it in the test. This catches accidental changes such as
-    # replacing || with &&.
+    # Extract the exact JavaScript guard from desktop/main.js and verify its
+    # compatibility operator explicitly. While both markers coexist, evaluating
+    # the guard alone cannot distinguish || from &&.
     match=re.search(
         r'"([^"\n]*dataset\.valistructNav\s*===\s*\'v5\'[^"\n]*dataset\.v51Grouped\s*===\s*\'yes\'[^"\n]*)"',
         main,
     )
     assert match, "Desktop navigation guard not found in desktop/main.js"
     desktop_guard=match.group(1)
+    assert "||" in desktop_guard, "Desktop navigation guard must accept either stable marker"
+    assert "&&" not in desktop_guard, "Desktop navigation guard must not require both markers"
 
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True)
