@@ -23,7 +23,8 @@ def test_legacy_import_preserves_labels_and_reuses_canonical_store_privately():
             "columns":3,
             "meta":{
                 "format":"SPSS SAV",
-                "labels":{"i01":"Competencia clínica","i02":"Seguridad del paciente"}
+                "labels":{"i01":"Competencia clínica","i02":"Seguridad del paciente"},
+                "value_labels":{"i01":{"1":"Bajo","2":"Alto"}}
             }
         }
         page.route("**/legacy-to-csv",lambda route:route.fulfill(
@@ -47,6 +48,8 @@ def test_legacy_import_preserves_labels_and_reuses_canonical_store_privately():
         assert summary["n"]==3
         assert summary["labels"]["i01"]=="Competencia clínica"
         assert summary["labels"]["i02"]=="Seguridad del paciente"
+        assert summary["valueLabels"]["i01"]["1"]=="Bajo"
+        assert summary["valueLabels"]["i01"]["2"]=="Alto"
 
         assert "2 etiqueta(s) de variable detectadas" in page.locator("#legacyPreview").inner_text()
 
@@ -65,6 +68,8 @@ def test_legacy_import_preserves_labels_and_reuses_canonical_store_privately():
         serialized=json.dumps(state,ensure_ascii=False)
         assert "P001" not in serialized
         assert "Competencia clínica" not in serialized
+        assert '"Bajo"' not in serialized
+        assert '"Alto"' not in serialized
         assert state.get("semData") is None or "semData" not in state
         assert state.get("proCsvText") is None or "proCsvText" not in state
 
