@@ -32,12 +32,13 @@ def test_content_validity_selector_preserves_aiken_controls_and_engine():
         assert "Disponible" in page.locator('[data-content-method="aiken"]').inner_text()
 
         planned=page.locator("#contentValidityMethods .planned")
-        assert planned.count()==3
+        assert planned.count()==2
         available=page.locator("#contentValidityMethods .active-method")
-        assert available.count()==4
+        assert available.count()==5
         assert "Disponible" in page.locator('[data-content-method="icvi"]').inner_text()
         assert "Disponible" in page.locator('[data-content-method="scvi"]').inner_text()
         assert "Disponible" in page.locator('[data-content-method="modified-kappa"]').inner_text()
+        assert "Disponible" in page.locator('[data-content-method="lawshe"]').inner_text()
 
         # Existing Aiken engine contract must remain intact.
         for control in [
