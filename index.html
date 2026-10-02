@@ -228,15 +228,15 @@
           <p>Consenso estructurado partiendo de criterios, evidencia o reactivos previamente definidos.</p>
           <span class="status-chip">Planificado</span>
         </article>
-        <article class="card method-card planned" data-content-method="icvi">
+        <article class="card method-card active-method" data-content-method="icvi" data-content-target="cviWorkspace">
           <h3>I-CVI (ítem)</h3>
           <p>Proporción de expertos que califican cada ítem como relevante según el criterio definido.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
-        <article class="card method-card planned" data-content-method="scvi">
+        <article class="card method-card active-method" data-content-method="scvi" data-content-target="cviWorkspace">
           <h3>S-CVI/Ave (escala)</h3>
           <p>Promedio de los I-CVI para resumir la evidencia de validez de contenido a nivel escala.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
         <article class="card method-card planned" data-content-method="modified-kappa">
           <h3>Kappa modificado</h3>
@@ -254,6 +254,57 @@
           <span class="status-chip">Planificado</span>
         </article>
       </div>
+
+      <section id="cviWorkspace" class="content-validity-method">
+        <div class="section-heading content-method-heading">
+          <div>
+            <h3>I-CVI y S-CVI/Ave · módulo disponible</h3>
+            <p>Valore la relevancia de cada ítem con jueces expertos. ValiStruct dicotomiza las respuestas con el umbral configurado y calcula I-CVI por ítem y S-CVI/Ave para la escala.</p>
+          </div>
+        </div>
+
+        <div class="notice">
+          <strong>Cálculo:</strong> I-CVI = A / N, donde A es el número de jueces que califican el ítem como relevante y N es el número total de jueces.
+          <br><strong>S-CVI/Ave:</strong> promedio de los I-CVI de todos los ítems.
+          <br>El umbral de relevancia y el criterio interpretativo son <strong>configurables</strong>; ValiStruct no los presenta como universales.
+        </div>
+
+        <div class="config-grid">
+          <label>Número de jueces
+            <input id="cviJudgeCount" type="number" min="2" max="50" value="6">
+          </label>
+          <label>Número de ítems
+            <input id="cviItemCount" type="number" min="1" max="200" value="5">
+          </label>
+          <label>Valor mínimo de escala
+            <input id="cviScaleMin" type="number" value="1">
+          </label>
+          <label>Valor máximo de escala
+            <input id="cviScaleMax" type="number" value="4">
+          </label>
+          <label>Considerar relevante desde
+            <input id="cviRelevantFrom" type="number" value="3" step="1">
+          </label>
+          <label>Criterio I-CVI favorable desde
+            <input id="cviGoodThreshold" type="number" min="0" max="1" step="0.01" value="0.78">
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="buildCvi" class="primary">Crear matriz I-CVI</button>
+          <button id="loadCviExample">Cargar ejemplo</button>
+          <button id="clearCvi">Limpiar</button>
+        </div>
+
+        <div id="cviMatrix" class="workspace"></div>
+
+        <div id="cviActions" class="button-row hidden">
+          <button id="calculateCvi" class="primary">Calcular I-CVI / S-CVI/Ave</button>
+          <button id="downloadCviCsv">Descargar resultados CSV</button>
+        </div>
+
+        <div id="cviResults"></div>
+      </section>
 
       <div class="section-heading content-method-heading">
         <div>
