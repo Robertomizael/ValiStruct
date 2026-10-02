@@ -238,10 +238,10 @@
           <p>Promedio de los I-CVI para resumir la evidencia de validez de contenido a nivel escala.</p>
           <span class="status-chip good-bg">Disponible</span>
         </article>
-        <article class="card method-card planned" data-content-method="modified-kappa">
+        <article class="card method-card active-method" data-content-method="modified-kappa" data-content-target="cviWorkspace">
           <h3>Kappa modificado</h3>
           <p>Ajusta el acuerdo de relevancia entre expertos considerando la probabilidad de acuerdo por azar.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
         <article class="card method-card active-method" data-content-method="aiken">
           <h3>V de Aiken</h3>
@@ -300,10 +300,12 @@
 
         <div id="cviActions" class="button-row hidden">
           <button id="calculateCvi" class="primary">Calcular I-CVI / S-CVI/Ave</button>
+          <button id="calculateModifiedKappa">Calcular Kappa modificado</button>
           <button id="downloadCviCsv">Descargar resultados CSV</button>
         </div>
 
         <div id="cviResults"></div>
+        <div id="modifiedKappaResults"></div>
       </section>
 
       <div class="section-heading content-method-heading">
