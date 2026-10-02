@@ -27,7 +27,7 @@ def test_aiken_score_interval_uses_scale_range():
         page.locator(".criterion-check").evaluate_all(
             """els=>els.forEach((el,i)=>el.checked=i===0)"""
         )
-        page.locator("#buildMatrix").click()
+        page.locator("#buildAiken").click()
 
         values=["5","5","4","5","4"]
         ratings=page.locator(".rating")
