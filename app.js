@@ -5505,7 +5505,10 @@ function registerParticipantCsv(text,sourceName='Centro de datos',format='csv',m
   unifiedCsvText=normalized;
   unifiedSourceName=sourceName||'Centro de datos';
   const summary=window.ValiStructParticipantData.setCsv(normalized,{
-    source:unifiedSourceName,format,labels:metadata.labels||{}
+    source:unifiedSourceName,
+    format,
+    labels:metadata.labels||{},
+    valueLabels:metadata.valueLabels||{}
   });
   const status=document.getElementById('participantImportStatus');
   if(status)status.textContent=
