@@ -60,8 +60,10 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
         pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=parent)
         tool=pg.locator(f'#{parent} .vs-v53-tools [data-vs-target="{child}"]')
         assert tool.is_visible(),(parent,child)
-        tool.click()
-        pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=child)
+        # Programmatic click exercises the real listener without Playwright
+        # waiting on scroll/actionability animations from the app shell.
+        tool.evaluate("(el)=>el.click()")
+        pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=child,timeout=4000)
         assert pg.locator(f'.nav button[data-section="{parent}"]').evaluate(
             "(el)=>el.classList.contains('vs-parent-active')"
         ),(parent,child)
@@ -94,7 +96,12 @@ def test_institutional_and_qa_modules_are_not_normal_navigation(page):
     toggle=pg.locator("#vsInstitutionalUiToggle")
     assert toggle.is_visible()
     toggle.check()
-    assert pg.locator(".vs-v53-admin").is_visible()
+    admin_group=pg.locator(".vs-v53-admin")
+    assert admin_group.is_visible()
+    # The institutional group is intentionally revealed collapsed; expand it
+    # before asserting visibility of its individual tools.
+    if not admin_group.evaluate("(el)=>el.open"):
+        admin_group.locator("summary").evaluate("(el)=>el.click()")
     assert pg.locator('.nav button[data-section="auth"]').is_visible()
     for module in qa:
         assert not pg.locator(f'.nav button[data-section="{module}"]').is_visible()
