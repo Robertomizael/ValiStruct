@@ -78,19 +78,22 @@ Nota: después de `dfc9272` solo se añadieron rotación de caché y ajustes de 
 Realizar en macOS y Windows, desde los instaladores generados:
 
 1. Abrir ValiStruct.
-2. Centro de datos → Importar SAV/DTA.
+3. Centro de datos → Importar SAV/DTA.
    - debe abrir el módulo sin congelamiento;
    - volver al padre debe responder normalmente.
-3. Motor Pro → Latencia.
+4. Motor Pro → Latencia.
    - debe abrir Latencia;
    - Motor Pro debe conservar resaltado de padre;
    - la app debe seguir respondiendo.
-4. Resultados → Reporte APA 7.
+5. Resultados → Reporte APA 7.
    - debe abrir el módulo;
    - Resultados debe conservar resaltado de padre;
    - la app debe seguir respondiendo.
-5. Cerrar y volver a abrir la aplicación.
-6. Confirmar que no reaparece el shell antiguo.
+6. Motor Pro: estimar un modelo de ejemplo y confirmar que el R empaquetado arranca.
+7. Guardar un proyecto, reiniciar la app y volver a abrirlo.
+8. Cerrar y volver a abrir la aplicación.
+9. Confirmar que no reaparece el shell antiguo.
+10. En Windows, si existía una versión anterior, confirmar tras actualizar que aparece el menú nuevo.
 
 Registrar por plataforma:
 - PASS / FAIL;
@@ -98,12 +101,25 @@ Registrar por plataforma:
 - captura si aparece una anomalía.
 
 ## Revisión final independiente
-Pendiente revisión final de Claude sobre:
-- diff `backup/v5-3-fase0-cierre...2039676`;
-- confirmación de que no se eliminó código científico;
-- confirmación de reversibilidad;
-- confirmación de que la corrección del observador es mínima e idempotente;
-- revisión de gates CI/RC/Desktop.
+**PASS — Claude, 01/10/2026**
+
+Dictamen:
+- hallazgos bloqueantes: ninguno;
+- diff completo revisado: 17 archivos, 805 líneas añadidas y 255 retiradas;
+- 83 módulos preservados: 18 visibles, 32 integrados, 24 institucionales y 9 QA;
+- sin cambios funcionales en backend científico, scripts R, Aiken, AFE/AFC, fiabilidad, Mahalanobis/Mardia, Motor Pro/lavaan, JASP ni esquema real de proyectos;
+- corrección de `MutationObserver/updateParentHighlight()`: válida, idempotente y sin efectos secundarios detectados;
+- suite de navegador contra HEAD: 30/30;
+- JASP: 6/6;
+- `release_check.py`: PASS;
+- simplificación reversible;
+- instaladores sobre `dfc9272` válidos para smoke test.
+
+Hallazgos no bloqueantes para Fase 2:
+1. endurecer test del marcador desktop para comprobar la condición real;
+2. añadir timeout interno legible al barrido Fase 0;
+3. añadir prueba corta de navegación por acordeones con clic real;
+4. mantener fuera de esta fase los pendientes científicos ya congelados.
 
 ## Criterio de cierre definitivo
 Fase 1 se declara cerrada cuando:
@@ -114,7 +130,7 @@ Fase 1 se declara cerrada cuando:
 - [x] E2E real AFE/R verde;
 - [ ] smoke test manual macOS PASS;
 - [ ] smoke test manual Windows PASS;
-- [ ] revisión final de Claude sin hallazgos bloqueantes.
+- [x] revisión final de Claude sin hallazgos bloqueantes.
 
 ## Después del cierre
 Solo cuando los tres pendientes estén resueltos:
