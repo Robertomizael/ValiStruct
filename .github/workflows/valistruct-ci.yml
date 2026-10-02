@@ -121,6 +121,7 @@ jobs:
           run_browser_test tests/test_fase0_core_numeric.py
           run_browser_test tests/test_fase0_historical_projects.py
           run_browser_test tests/test_fase1_navigation.py
+          run_browser_test tests/test_fase2_navigation_hardening.py
 
       - name: Capture Fase-0 reference screens
         run: python tools/capture_reference_screens.py --out tests/reference-screens
