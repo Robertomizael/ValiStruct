@@ -3144,6 +3144,11 @@ function projectState(){
     proLastResponse,
     advancedLastResponse,
     aiken:lastResults,
+    contentValidity:{
+      cvi:cviLastResults||null,
+      lawshe:lawsheLastResults||null,
+      delphi:delphiLastResults||null
+    },
     reliability:relLastResults,
     efa:efaLastResults,
     cfa:cfaLastResults,
@@ -3181,6 +3186,9 @@ function restoreProject(state){
     proLastResponse=state.proLastResponse||null;
     advancedLastResponse=state.advancedLastResponse||null;
     if(Array.isArray(state.aiken))lastResults=state.aiken;
+    cviLastResults=state.contentValidity?.cvi||null;
+    lawsheLastResults=state.contentValidity?.lawshe||null;
+    delphiLastResults=state.contentValidity?.delphi||null;
     relLastResults=state.reliability||null;
     relLast=relLastResults?{A:relLastResults.alpha,AS:relLastResults.alphaStandardized,rows:relLastResults.itemRows||[]}:null;
     efaLastResults=state.efa||null;
@@ -3192,6 +3200,19 @@ function restoreProject(state){
     renderSemDataset();
     if(typeof buildQualityDashboard==='function')buildQualityDashboard();
     if(proCsvText)summarizeProCsv(proCsvText);
+    if(cviLastResults){
+      renderCviResults(cviLastResults);
+      if(cviLastResults.kappaRows)calculateModifiedKappa();
+    }else{
+      document.getElementById('cviResults').innerHTML='';
+      document.getElementById('modifiedKappaResults').innerHTML='';
+    }
+    if(lawsheLastResults)renderLawsheResults(lawsheLastResults);
+    else document.getElementById('lawsheResults').innerHTML='';
+    if(delphiLastResults)renderDelphiResults(delphiLastResults);
+    else document.getElementById('delphiResults').innerHTML='';
+    contentValidityIntegratedHtml='';
+    document.getElementById('contentValidityReportResults').innerHTML='';
     alert('Proyecto cargado.');
   }catch(e){alert('No fue posible cargar el proyecto: '+e.message);}
 }
