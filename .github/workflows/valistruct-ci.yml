@@ -125,6 +125,7 @@ jobs:
           run_browser_test tests/test_fase2_participant_store.py
           run_browser_test tests/test_fase2_central_reuse.py
           run_browser_test tests/test_fase2_motor_latencia_reuse.py
+          run_browser_test tests/test_fase2_core_imports_canonical.py
 
       - name: Capture Fase-0 reference screens
         run: python tools/capture_reference_screens.py --out tests/reference-screens
