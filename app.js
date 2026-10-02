@@ -407,7 +407,7 @@ function relTemplate(){let rows=[['ID','Item1','Item2','Item3','Item4','Item5'],
 function relExample(){let names=['Item1','Item2','Item3','Item4','Item5','Item6'],M=[[5,5,4,5,4,5],[4,4,4,5,4,4],[5,4,5,5,5,5],[4,5,4,4,4,4],[3,4,3,4,3,3],[5,5,5,4,5,5],[4,4,5,4,4,4],[3,3,4,3,3,2],[5,4,5,5,4,5],[4,5,4,5,4,4],[2,3,2,3,2,2],[4,4,4,4,5,4],[5,5,4,5,5,5],[3,4,3,3,4,3],[4,4,5,4,4,5],[5,4,5,4,5,5],[3,3,3,4,3,3],[4,5,4,4,5,4],[5,5,5,5,4,5],[2,3,3,2,3,2]];relData={itemNames:names,matrix:M,n:M.length,k:names.length};renderRelData(relData)}
 function relResultsCSV(){if(!relLast)return alert('Primero calcule la confiabilidad.');let r=relLast,rows=[['Indicador','Valor'],['Alfa_Cronbach',r.A],['Alfa_estandarizada',r.AS],['Omega_preliminar',r.O],[],['Item','Media','DE','Item_total_corregida','Alfa_si_elimina','Orientacion']];r.rows.forEach(x=>rows.push([x.name,x.mean,x.sd,x.rit,x.aDel,x.flag]));saveBlob('\ufeff'+rows.map(z=>z.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_confiabilidad_resultados.csv')}
 function relReport(){if(!relLast)return alert('Primero calcule la confiabilidad.');let r=relLast,fmt=x=>Number.isFinite(x)?x.toFixed(3):'—',html=`<!doctype html><meta charset="utf-8"><title>ValiStruct Confiabilidad</title><style>body{font-family:Arial;max-width:1000px;margin:40px auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px}</style><h1>ValiStruct · Informe de confiabilidad</h1><p><strong>Dr. Roberto Joel Tirado Reyes</strong><br>Profesor-investigador · Universidad Autónoma de Sinaloa</p><p>Alfa: <strong>${fmt(r.A)}</strong> · Alfa estandarizada: <strong>${fmt(r.AS)}</strong> · Omega preliminar: <strong>${fmt(r.O)}</strong></p><table><tr><th>Ítem</th><th>Media</th><th>DE</th><th>Ítem-total</th><th>Alfa si se elimina</th><th>Orientación</th></tr>${r.rows.map(x=>`<tr><td>${x.name}</td><td>${x.mean.toFixed(2)}</td><td>${x.sd.toFixed(2)}</td><td>${fmt(x.rit)}</td><td>${fmt(x.aDel)}</td><td>${x.flag}</td></tr>`).join('')}</table><h3>Referencias</h3><p>Cronbach (1951); McDonald (1999); Dunn et al. (2014).</p>`;saveBlob(html,'text/html;charset=utf-8;','ValiStruct_informe_confiabilidad.html')}
-q('downloadRelTemplate').addEventListener('click',relTemplate);q('loadRelExample').addEventListener('click',relExample);q('relCsvFile').addEventListener('change',e=>{let f=e.target.files?.[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{relData=parseRelCSV(rd.result);renderRelData(relData)}catch(err){alert(err.message)}};rd.readAsText(f,'utf-8');e.target.value=''});q('calculateReliability').addEventListener('click',calcRel);q('downloadRelResults').addEventListener('click',relResultsCSV);q('downloadRelReport').addEventListener('click',relReport);
+q('downloadRelTemplate').addEventListener('click',relTemplate);q('loadRelExample').addEventListener('click',relExample);q('relCsvFile').addEventListener('change',e=>{let f=e.target.files?.[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{registerParticipantCsv(rd.result,f.name,'csv');relData=parseRelCSV(rd.result);renderRelData(relData)}catch(err){alert(err.message)}};rd.readAsText(f,'utf-8');e.target.value=''});q('calculateReliability').addEventListener('click',calcRel);q('downloadRelResults').addEventListener('click',relResultsCSV);q('downloadRelReport').addEventListener('click',relReport);
 
 
 // -----------------------------
@@ -962,6 +962,7 @@ function importEfaCSV(file){
   const reader=new FileReader();
   reader.onload=()=>{
     try{
+      registerParticipantCsv(reader.result,file?.name||'AFE.csv','csv');
       efaData=parseEfaCSV(reader.result);
       renderEfaDataset(efaData);
       alert('Matriz importada correctamente.');
@@ -1287,9 +1288,10 @@ function importCfaCSV(file){
   const reader=new FileReader();
   reader.onload=()=>{
     try{
+      registerParticipantCsv(reader.result,file?.name||'AFC.csv','csv');
       cfaData=parseCfaCSV(reader.result);
       renderCfaDataset(cfaData);
-      cfaStatus.innerHTML='<div class="model-ok">Base importada. Especifique y valide el modelo.</div>';
+      cfaStatus.innerHTML='<div class="model-ok">Base importada y registrada en el Centro de datos. Especifique y valide el modelo.</div>';
     }catch(e){ alert('No fue posible importar el archivo: '+e.message); }
   };
   reader.readAsText(file,'utf-8');
