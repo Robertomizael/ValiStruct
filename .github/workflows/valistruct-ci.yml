@@ -128,6 +128,7 @@ jobs:
           run_browser_test tests/test_fase2_core_imports_canonical.py
           run_browser_test tests/test_fase2c_content_validity_shell.py
           run_browser_test tests/test_fase2c_cvi.py
+          run_browser_test tests/test_fase2c_modified_kappa.py
 
       - name: Capture Fase-0 reference screens
         run: python tools/capture_reference_screens.py --out tests/reference-screens
