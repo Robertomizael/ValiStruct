@@ -377,11 +377,16 @@
   }
 
   function updateParentHighlight(){
-    nav.querySelectorAll('.vs-parent-active').forEach(x=>x.classList.remove('vs-parent-active'));
     const active=nav.querySelector('button[data-section].active');
     const config=active?moduleById.get(active.dataset.section):null;
-    if(config?.parent){
-      nav.querySelector('button[data-section="'+config.parent+'"]')?.classList.add('vs-parent-active');
+    const parentButton=config?.parent?nav.querySelector('button[data-section="'+config.parent+'"]'):null;
+    // Idempotente: el MutationObserver vigila class en estos mismos botones.
+    // Solo modificamos vs-parent-active cuando el estado realmente cambia.
+    nav.querySelectorAll('.vs-parent-active').forEach(x=>{
+      if(x!==parentButton)x.classList.remove('vs-parent-active');
+    });
+    if(parentButton && !parentButton.classList.contains('vs-parent-active')){
+      parentButton.classList.add('vs-parent-active');
     }
     const group=active?.closest('details');
     if(group && !group.hidden && !group.open)group.open=true;
