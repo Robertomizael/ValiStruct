@@ -4,7 +4,7 @@
 **Rama:** `feature/v5-3-simplificacion`  
 **Base protegida:** `backup/v5-3-fase0-cierre`  
 **HEAD validado funcionalmente:** `2039676`  
-**Estado:** cierre técnico condicionado a smoke test manual de instaladores y revisión final independiente. No fusionar a `main` todavía.
+**Estado:** Fase 1 cerrada formalmente. Smoke tests macOS y Windows reportados PASS por el usuario; revisión final independiente PASS. No fusionar a `main` sin autorización explícita.
 
 ## Alcance de Fase 1
 Simplificación reversible de navegación sin eliminación física de módulos ni cambios en el núcleo científico.
@@ -74,8 +74,10 @@ Windows:
 
 Nota: después de `dfc9272` solo se añadieron rotación de caché y ajustes de pruebas; no se modificó el núcleo funcional de escritorio.
 
-## Smoke test manual obligatorio
-Realizar en macOS y Windows, desde los instaladores generados:
+## Smoke test manual
+**Estado:** PASS reportado por el usuario en macOS y Windows.
+
+Comprobaciones previstas sobre los instaladores generados:
 
 1. Abrir ValiStruct.
 3. Centro de datos → Importar SAV/DTA.
@@ -128,13 +130,12 @@ Fase 1 se declara cerrada cuando:
 - [x] DMG y EXE compilan;
 - [x] navegación integrada 5/5 en CI;
 - [x] E2E real AFE/R verde;
-- [ ] smoke test manual macOS PASS;
-- [ ] smoke test manual Windows PASS;
+- [x] smoke test manual macOS PASS (reportado por el usuario);
+- [x] smoke test manual Windows PASS (reportado por el usuario);
 - [x] revisión final de Claude sin hallazgos bloqueantes.
 
 ## Después del cierre
-Solo cuando los tres pendientes estén resueltos:
-1. crear `backup/v5-3-fase1-cierre`;
+1. crear `backup/v5-3-fase1-cierre` sobre este cierre documental;
 2. actualizar el PR #17 para reflejar cierre de Fase 1;
 3. mantener `main` intacta hasta autorización explícita;
-4. definir Fase 2 sobre una nueva rama o punto de trabajo claramente identificado.
+4. iniciar Fase 2 desde un punto de trabajo claramente identificado, preservando el backup de cierre.
