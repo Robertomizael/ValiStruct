@@ -218,15 +218,15 @@
       </div>
 
       <div class="method-grid" id="contentValidityMethods" aria-label="Métodos de validez de contenido">
-        <article class="card method-card planned" data-content-method="delphi">
+        <article class="card method-card active-method" data-content-method="delphi" data-content-target="delphiWorkspace">
           <h3>Delphi</h3>
           <p>Consenso iterativo de expertos mediante rondas sucesivas y retroalimentación controlada.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
-        <article class="card method-card planned" data-content-method="modified-delphi">
+        <article class="card method-card active-method" data-content-method="modified-delphi" data-content-target="delphiWorkspace">
           <h3>Delphi modificado</h3>
           <p>Consenso estructurado partiendo de criterios, evidencia o reactivos previamente definidos.</p>
-          <span class="status-chip">Planificado</span>
+          <span class="status-chip good-bg">Disponible</span>
         </article>
         <article class="card method-card active-method" data-content-method="icvi" data-content-target="cviWorkspace">
           <h3>I-CVI (ítem)</h3>
@@ -254,6 +254,67 @@
           <span class="status-chip good-bg">Disponible</span>
         </article>
       </div>
+
+      <section id="delphiWorkspace" class="content-validity-method">
+        <div class="section-heading content-method-heading">
+          <div>
+            <h3>Delphi / Delphi modificado · módulo disponible</h3>
+            <p>Gestione rondas de expertos, registre cambios entre rondas y evalúe el consenso con criterios definidos por el investigador.</p>
+          </div>
+        </div>
+
+        <div class="notice">
+          <strong>Principio:</strong> Delphi es un proceso iterativo de consenso, no un coeficiente único.
+          ValiStruct reporta acuerdo, mediana e IQR por ítem y conserva la trazabilidad entre rondas.
+          Los criterios de consenso son configurables y deben justificarse metodológicamente.
+        </div>
+
+        <div class="config-grid">
+          <label>Modalidad
+            <select id="delphiMode">
+              <option value="classic">Delphi</option>
+              <option value="modified">Delphi modificado</option>
+            </select>
+          </label>
+          <label>Número de expertos
+            <input id="delphiJudgeCount" type="number" min="3" max="100" value="8">
+          </label>
+          <label>Número de ítems
+            <input id="delphiItemCount" type="number" min="1" max="200" value="5">
+          </label>
+          <label>Escala mínima
+            <input id="delphiScaleMin" type="number" value="1">
+          </label>
+          <label>Escala máxima
+            <input id="delphiScaleMax" type="number" value="5">
+          </label>
+          <label>Valor favorable desde
+            <input id="delphiFavorableFrom" type="number" value="4" step="1">
+          </label>
+          <label>Acuerdo requerido (%)
+            <input id="delphiAgreementThreshold" type="number" min="0" max="100" value="80" step="1">
+          </label>
+          <label>IQR máximo para consenso
+            <input id="delphiIqrThreshold" type="number" min="0" step="0.1" value="1">
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="buildDelphi" class="primary">Crear ronda</button>
+          <button id="loadDelphiExample">Cargar ejemplo</button>
+          <button id="addDelphiRound">Añadir ronda</button>
+          <button id="clearDelphi">Limpiar</button>
+        </div>
+
+        <div id="delphiRounds" class="workspace"></div>
+
+        <div id="delphiActions" class="button-row hidden">
+          <button id="calculateDelphi" class="primary">Evaluar consenso</button>
+          <button id="downloadDelphiCsv">Descargar trazabilidad CSV</button>
+        </div>
+
+        <div id="delphiResults"></div>
+      </section>
 
       <section id="cviWorkspace" class="content-validity-method">
         <div class="section-heading content-method-heading">
