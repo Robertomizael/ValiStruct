@@ -27,7 +27,7 @@
     {id:'diagnostics',label:'Diagnóstico de datos',group:'data',order:20,visibility:'visible',status:'ready'},
     {id:'multidiag',label:'Diagnóstico multivariado',group:'data',order:30,visibility:'visible',status:'ready'},
     {id:'missingpro',label:'Datos faltantes',group:'data',order:40,visibility:'visible',status:'ready'},
-    {id:'aiken',label:'Validez de contenido · V de Aiken',group:'internal',order:10,visibility:'visible',status:'ready'},
+    {id:'aiken',label:'Validez de contenido',group:'internal',order:10,visibility:'visible',status:'ready'},
     {id:'efa',label:'Análisis factorial exploratorio',group:'internal',order:20,visibility:'visible',status:'ready'},
     {id:'cfa',label:'Análisis factorial confirmatorio',group:'internal',order:30,visibility:'visible',status:'ready'},
     {id:'reliability',label:'Fiabilidad',group:'internal',order:40,visibility:'visible',status:'ready'},
@@ -352,7 +352,7 @@
           <button type="button" data-vs-target="resultcenter"><span class="vs-v52-quick-icon">▧</span><strong>Resultados</strong><small>Tablas, informes y exportación</small><span class="vs-v52-link-arrow">↗</span></button>
         </div>
       </div>
-      <div class="vs-v52-home-bottom"><span class="vs-v52-live-dot"></span><span>Motor Pro disponible desde el menú lateral. V de Aiken utiliza una base independiente de jueces expertos.</span></div>`;
+      <div class="vs-v52-home-bottom"><span class="vs-v52-live-dot"></span><span>Motor Pro disponible desde el menú lateral. Validez de contenido utiliza una base independiente de jueces expertos.</span></div>`;
     initial.insertBefore(dashboard,initial.firstChild);
     initial.classList.add('vs-v52-home');
     dashboard.querySelectorAll('[data-vs-target]').forEach(button=>button.addEventListener('click',()=>openTarget(button.dataset.vsTarget)));
