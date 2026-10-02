@@ -20,6 +20,9 @@
       return Object.freeze({source:current.source,format:current.format,
         n:current.rows.length,variables:[...current.columns],revision:generation,
         labels:Object.freeze({...current.labels}),
+        valueLabels:Object.freeze(Object.fromEntries(
+          Object.entries(current.valueLabels||{}).map(([key,value])=>[key,Object.freeze({...value})])
+        )),
         sessionId:current.sessionId});
     },
     setCsv(csvText, metadata = {}) {
@@ -38,6 +41,11 @@
       current = {source:metadata.source || 'CSV',format:metadata.format || 'csv',
         columns,rows,fingerprint:newFingerprint,
         labels:metadata.labels && typeof metadata.labels==='object' ? {...metadata.labels} : {},
+        valueLabels:metadata.valueLabels && typeof metadata.valueLabels==='object'
+          ? Object.fromEntries(Object.entries(metadata.valueLabels).map(([key,value])=>[
+              key, value && typeof value==='object' ? {...value} : {}
+            ]))
+          : {},
         sessionId:'participant-'+Date.now().toString(36)+'-'+newFingerprint};
       generation++;
       if (typeof invalidateParticipantAnalyses === 'function') invalidateParticipantAnalyses();
