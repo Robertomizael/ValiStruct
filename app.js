@@ -852,7 +852,8 @@ function buildContentValidityIntegratedReport(){
 }
 
 function downloadContentValidityIntegratedReport(){
-  if(!contentValidityIntegratedHtml){const methods=buildContentValidityIntegratedReport();if(!methods)return;}
+  const methods=buildContentValidityIntegratedReport();
+  if(!methods)return;
   saveBlob(contentValidityIntegratedHtml,'text/html;charset=utf-8;','ValiStruct_Validez_Contenido_Informe_Integrado.html');
 }
 
