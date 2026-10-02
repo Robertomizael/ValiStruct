@@ -95,17 +95,29 @@ jobs:
 
       - name: Browser regressions without backend
         run: |
-          pytest -q tests/test_hotfix_startup_privacy.py
-          pytest -q tests/test_v51_stage1.py
-          pytest -q tests/test_v52_ux.py
-          pytest -q tests/test_multidiag_recovery.py
-          pytest -q tests/test_efa_v52_browser.py
-          pytest -q tests/test_fase0_sections_sweep.py
-          pytest -q tests/test_fase0_projects_roundtrip.py
-          pytest -q tests/test_fase0_desktop_nav_marker.py
-          pytest -q tests/test_fase0_core_numeric.py
-          pytest -q tests/test_fase0_historical_projects.py
-          pytest -q tests/test_fase1_navigation.py
+          set -euo pipefail
+          run_browser_test() {
+            test_file="$1"
+            echo "::group::Browser regression: $test_file"
+            if ! timeout --signal=TERM 90s pytest -q "$test_file"; then
+              code=$?
+              echo "::error title=Browser regression failed::$test_file failed or exceeded 90 seconds"
+              echo "::endgroup::"
+              exit "$code"
+            fi
+            echo "::endgroup::"
+          }
+          run_browser_test tests/test_hotfix_startup_privacy.py
+          run_browser_test tests/test_v51_stage1.py
+          run_browser_test tests/test_v52_ux.py
+          run_browser_test tests/test_multidiag_recovery.py
+          run_browser_test tests/test_efa_v52_browser.py
+          run_browser_test tests/test_fase0_sections_sweep.py
+          run_browser_test tests/test_fase0_projects_roundtrip.py
+          run_browser_test tests/test_fase0_desktop_nav_marker.py
+          run_browser_test tests/test_fase0_core_numeric.py
+          run_browser_test tests/test_fase0_historical_projects.py
+          run_browser_test tests/test_fase1_navigation.py
 
       - name: Capture Fase-0 reference screens
         run: python tools/capture_reference_screens.py --out tests/reference-screens
