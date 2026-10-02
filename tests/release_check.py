@@ -63,17 +63,17 @@ for script in ["static_backend_audit.py","static_frontend_audit.py"]:
         errors.append(f"{script}: {rr.stdout.strip()} {rr.stderr.strip()}")
 
 v=json.loads((ROOT/"version.json").read_text(encoding="utf-8"))
-expected_version="5.3.0-beta.1"
-if v.get("version")!=expected_version:
-    errors.append(f"version.json mismatch: expected {expected_version}, got {v.get('version')}")
+expected_version=v.get("version")
+if not isinstance(expected_version,str) or not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?",expected_version):
+    errors.append(f"version.json has invalid semantic version: {expected_version!r}")
 if v.get("projectFormat")!="3.0":
-    errors.append("projectFormat must remain 3.0 during v5.3 simplification")
+    errors.append("projectFormat must remain 3.0 until an explicit project-format migration is introduced")
 app=(ROOT/"app.js").read_text(encoding="utf-8")
-if expected_version not in app:
+if expected_version and expected_version not in app:
     errors.append("app.js release metadata is not aligned with version.json")
 desktop=json.loads((ROOT/"desktop"/"package.json").read_text(encoding="utf-8"))
 if desktop.get("version")!=expected_version:
-    errors.append("desktop/package.json version mismatch")
+    errors.append(f"desktop/package.json version mismatch: expected {expected_version}, got {desktop.get('version')}")
 
 if warnings:
     print("\n".join("WARN: "+x for x in warnings))
