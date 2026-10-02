@@ -27,3 +27,22 @@ Cambios científicos separados y con auditoría específica:
 
 ## Regla de oro
 Ningún cambio científico se mezcla con refactorización, versión, caché o navegación.
+
+
+## Cierre Subfase 3C — Límites y metadatos
+**Estado:** PASS
+
+- H-F: guard desktop protegido contra cambio accidental de `||` a `&&`.
+- H-G: Delphi documenta panel fijo y bloquea nuevas rondas si cambia la configuración.
+- H-H: SAV/DTA conserva etiquetas de valor como metadatos sin recodificar datos numéricos.
+- Commit técnico de cierre: `1e274ef`.
+- CI: PASS.
+- RC: PASS.
+- Desktop macOS: PASS.
+- Desktop Windows: PASS.
+
+## Inicio Subfase 3D — Ciencia y seguridad
+Orden de trabajo:
+1. IC score de V de Aiken.
+2. OLS preliminar de Latencia y reporte APA.
+3. Token efímero por sesión para backend científico local en Electron.
