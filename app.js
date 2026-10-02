@@ -5930,26 +5930,29 @@ document.getElementById('convertLegacyFile')?.addEventListener('click',async()=>
     if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible convertir.');
     legacyCsvText=data.csv_text;
     legacyMeta=data.meta||{};
+    const sourceName=legacyFile?.name||('Importación '+(legacyMeta.format||'SAV/DTA'));
+    registerParticipantCsv(
+      legacyCsvText,
+      sourceName,
+      legacyMeta.format||'SAV/DTA',
+      {labels:legacyMeta.labels||{}}
+    );
     previewLegacyCsv(legacyCsvText);
-    logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns});
+    logHistory('Importación','Convertir SAV/DTA',{format:legacyMeta.format||'',rows:data.rows,columns:data.columns,labels:Object.keys(legacyMeta.labels||{}).length});
   }catch(e){alert(e.message);}
 });
 
 document.getElementById('legacyToDiagnostics')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  diagData=parseDiagnosticCSV(legacyCsvText);
-  document.querySelector('[data-section="diagnostics"]')?.click();
-  document.getElementById('diagSummary').innerHTML=`<div class="metric-card"><span>Casos cargados</span><strong>${diagData.n}</strong></div><div class="metric-card"><span>Variables</span><strong>${diagData.k}</strong></div>`;
+  if(useCentralDataForDiagnostics())document.querySelector('[data-section="diagnostics"]')?.click();
 });
 document.getElementById('legacyToEfa')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  unifiedCsvText=legacyCsvText;
   document.getElementById('importToEfa')?.click();
 });
 document.getElementById('legacyToMotorPro')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
-  proCsvText=legacyCsvText;summarizeProCsv(proCsvText);
-  document.querySelector('[data-section="motorpro"]')?.click();
+  if(useCentralDataForMotorPro())document.querySelector('[data-section="motorpro"]')?.click();
 });
 document.getElementById('downloadLegacyCsv')?.addEventListener('click',()=>{
   if(!legacyCsvText)return alert('Convierta primero el archivo.');
