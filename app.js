@@ -5051,6 +5051,50 @@ function useCentralDataForMissing(){
   }catch(e){alert(e.message);return false;}
 }
 
+function useCentralDataForLatencia(){
+  try{
+    const observed=semNodes.filter(n=>n.type==='observed').map(n=>n.label).filter(Boolean);
+    const manager=window.ValiStructParticipantData;
+    if(!manager?.hasData)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+    const available=new Set(manager.summary?.variables||[]);
+    const observedMatch=observed.length>0 && observed.every(name=>available.has(name));
+    const selected=selectedParticipantItems();
+    const preferred=observedMatch?observed:selected;
+    const data=manager.numericMatrix({
+      firstColumn:document.getElementById('importFirstColumn')?.value||'auto',
+      items:preferred
+    });
+    semData={names:[...data.itemNames],matrix:data.matrix.map(r=>[...r]),n:data.n,k:data.k};
+    semStructuralResults=null;semMediationResults=null;
+    renderSemDataset();
+    const note=document.getElementById('semDatasetSummary');
+    if(note){
+      const mappingWarning=!observedMatch && observed.length
+        ? ` <strong>Atención:</strong> las variables observadas del diagrama (${observed.map(escapeHtml).join(', ')}) no coinciden todavía con las columnas cargadas; renombre los nodos antes de estimar.`
+        : '';
+      note.insertAdjacentHTML('beforeend',
+        `<div class="sem-engine-note" style="grid-column:1/-1"><strong>Centro de datos:</strong> ${data.n} casos completos; ${data.nExcluded} excluidos por faltantes en las variables usadas. Fuente: ${escapeHtml(data.source||'Centro de datos')}.${mappingWarning}</div>`);
+    }
+    return true;
+  }catch(e){alert(e.message);return false;}
+}
+function useCentralDataForMotorPro(){
+  try{
+    const csv=canonicalParticipantCsv();
+    if(!csv)throw new Error('Primero importe la base de participantes en el Centro de datos.');
+    proCsvText=csv;
+    proLastResponse=null;
+    summarizeProCsv(csv);
+    const status=document.getElementById('proRunStatus');
+    if(status)status.textContent=`Base del Centro de datos lista para Motor Pro: ${window.ValiStructParticipantData.summary?.source||'Centro de datos'}.`;
+    return true;
+  }catch(e){
+    const status=document.getElementById('proRunStatus');
+    if(status)status.textContent=e.message;else alert(e.message);
+    return false;
+  }
+}
+
 function normalizeCsvText(text){
   return text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
 }
@@ -5161,12 +5205,15 @@ document.getElementById('importToCfa')?.addEventListener('click',()=>{
   } catch(e){alert(e.message);}
 });
 
+document.getElementById('importToLatencia')?.addEventListener('click',()=>{
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  document.querySelector('[data-section="latencia"]')?.click();
+  useCentralDataForLatencia();
+});
+
 document.getElementById('importToMotorPro')?.addEventListener('click',()=>{
-  if(!unifiedCsvText)return alert('Cargue primero un archivo.');
-  window.ValiStructParticipantData.setCsv(unifiedCsvText,{source:unifiedSourceName||'Centro de datos'});
-  proCsvText=unifiedCsvText;
-  document.querySelector('[data-section="motorpro"]')?.click();
-  summarizeProCsv(unifiedCsvText);
+  if(!canonicalParticipantCsv())return alert('Cargue primero un archivo.');
+  if(useCentralDataForMotorPro())document.querySelector('[data-section="motorpro"]')?.click();
 });
 
 document.getElementById('downloadNormalizedCsv')?.addEventListener('click',()=>{
