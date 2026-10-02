@@ -8,7 +8,7 @@ URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
 
 def test_integrated_report_download_uses_latest_recalculated_values(tmp_path):
     with sync_playwright() as p:
-        browser=p.chromium.launch(headless=True, accept_downloads=True)
+        browser=p.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1440,"height":900}, accept_downloads=True)
         page.set_default_timeout(5000)
         errors=[]
