@@ -2,7 +2,7 @@
 
 **Rama:** `feature/v5-4-fase2-consolidacion-r2`  
 **Base de referencia:** `ac49128`  
-**Estado:** cierre técnico pendiente únicamente de CI/RC final del informe integrado.
+**Estado:** Subfase 2C cerrada formalmente. CI final y RC del informe integrado en verde. No fusionar a `main` sin autorización explícita.
 
 ## Métodos disponibles
 1. Delphi
@@ -85,9 +85,9 @@ Resultado:
 - [x] Lawshe con prueba numérica controlada.
 - [x] Delphi con prueba E2E de rondas y trazabilidad.
 - [x] Informe integrado sin mezcla de coeficientes.
-- [ ] CI unificado final verde.
-- [ ] RC final verde.
-- [ ] Crear respaldo `backup/v5-4-fase2c-cierre`.
+- [x] CI unificado final verde (`308dc9e`, run 36973338321).
+- [x] RC final verde para informe integrado (`114b116`, run 36973302262).
+- [x] Crear respaldo `backup/v5-4-fase2c-cierre`.
 
 ## Restricción
 No fusionar a `main` todavía.
