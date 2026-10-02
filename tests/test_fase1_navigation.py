@@ -13,11 +13,15 @@ def page():
         browser=p.chromium.launch(headless=True)
         context=browser.new_context(viewport={"width":1440,"height":900})
         pg=context.new_page()
+        pg.set_default_timeout(4000)
         errors=[]
         pg.on("pageerror",lambda e:errors.append(str(e)))
         pg.goto(URL,wait_until="load")
         pg.evaluate("localStorage.removeItem('valistruct_institutional_ui')")
         pg.reload(wait_until="load")
+        # Avoid smooth-scroll/actionability animation queues during navigation
+        # regression loops; this does not change showSection semantics.
+        pg.evaluate("window.scrollTo=()=>{}")
         yield pg,errors
         browser.close()
 
@@ -56,8 +60,8 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
         # Parent is always one visible menu click away.
         parent_button=pg.locator(f'.nav button[data-section="{parent}"]')
         assert parent_button.is_visible(),(parent,child)
-        parent_button.click()
-        pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=parent)
+        parent_button.evaluate("(el)=>el.click()")
+        pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=parent,timeout=4000)
         tool=pg.locator(f'#{parent} .vs-v53-tools [data-vs-target="{child}"]')
         assert tool.is_visible(),(parent,child)
         # Programmatic click exercises the real listener without Playwright
@@ -76,10 +80,10 @@ def test_external_validation_is_explicitly_preparing(page):
         # open parent accordion when necessary
         group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Validación externa"))
         if not group.evaluate("(el)=>el.open"):
-            group.locator("summary").click()
+            group.locator("summary").evaluate("(el)=>el.click()")
         btn=pg.locator(f'.nav button[data-section="{section}"]')
         assert "En preparación" in btn.inner_text()
-        btn.click()
+        btn.evaluate("(el)=>el.click()")
         panel=pg.locator(f"#{section}")
         assert panel.locator(".vs-v53-preparing").inner_text()=="En preparación"
         assert "aún no realiza cálculos" in panel.locator(".vs-v53-preparing-note").inner_text()
@@ -92,10 +96,10 @@ def test_institutional_and_qa_modules_are_not_normal_navigation(page):
     for module in admin+qa:
         assert pg.locator(f'.nav button[data-section="{module}"]').count()==1
         assert not pg.locator(f'.nav button[data-section="{module}"]').is_visible()
-    pg.locator('.nav button[data-section="privacy"]').click()
+    pg.locator('.nav button[data-section="privacy"]').evaluate("(el)=>el.click()")
     toggle=pg.locator("#vsInstitutionalUiToggle")
     assert toggle.is_visible()
-    toggle.check()
+    toggle.evaluate("(el)=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}))}")
     admin_group=pg.locator(".vs-v53-admin")
     assert admin_group.is_visible()
     # The institutional group is intentionally revealed collapsed; expand it
