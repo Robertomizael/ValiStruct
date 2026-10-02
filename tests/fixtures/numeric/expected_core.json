@@ -1,5 +1,5 @@
 {
-  "note": "Golden master for current Fase-0 algorithms. Aiken CI intentionally freezes the current score/Wilson implementation; update deliberately when the approved new-project Aiken CI is implemented.",
+  "note": "Golden master after approved Fase-3 Aiken CI correction. Aiken V is unchanged; the Penfield-Giacobbi score interval uses effective n*k, where k = scaleMax-scaleMin.",
   "aiken": {
     "ratings": [
       5,
@@ -12,8 +12,8 @@
     "scaleMax": 5,
     "v": 0.9,
     "ci95": {
-      "lower": 0.4629439825324768,
-      "upper": 0.9894700456409835
+      "lower": 0.6989663547715128,
+      "upper": 0.9721335187862318
     }
   },
   "reliability": {
