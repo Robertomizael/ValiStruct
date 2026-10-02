@@ -1,11 +1,11 @@
 """Fase 0 safety net: every registered section can be opened without pageerror.
 Run once with backend disconnected and once with backend available.
 
-This test exercises the canonical app.js showSection() function directly.
-Button/listener reachability is covered separately by cross-link and v5.3
-navigation tests. Calling the canonical opener here keeps the 83-section
-sweep deterministic and prevents hidden/admin controls from triggering
-Playwright actionability waits.
+The sweep executes the canonical app.js showSection() function in one browser
+evaluation while temporarily disabling smooth scrolling. This preserves the
+navigation semantics under test but avoids queuing dozens of headless Chromium
+scroll animations, which can keep the browser process alive until the CI job
+timeout.
 """
 import os
 import pytest
@@ -33,27 +33,32 @@ def test_all_registered_sections_open_without_pageerror():
         assert len(ids)==len(set(ids)), "Duplicate data-section buttons found"
         assert page.evaluate("typeof showSection === 'function'")
 
-        missing=page.evaluate(
-            "(ids)=>ids.filter(id=>!document.getElementById(id))",
+        result=page.evaluate(
+            """(ids)=>{
+              const missing=ids.filter(id=>!document.getElementById(id));
+              const failures=[];
+              const originalScrollTo=window.scrollTo;
+              window.scrollTo=()=>{};
+              try{
+                for(const id of ids){
+                  try{
+                    showSection(id);
+                    if(!document.getElementById(id)?.classList.contains('visible')){
+                      failures.push([id,'canonical showSection() did not make panel visible']);
+                    }
+                  }catch(err){
+                    failures.push([id,String(err)]);
+                  }
+                }
+              }finally{
+                window.scrollTo=originalScrollTo;
+              }
+              return {missing,failures};
+            }""",
             ids,
         )
-        assert not missing, f"Registered sections missing from DOM: {missing}"
 
-        failures=[]
-        for section in ids:
-            try:
-                opened=page.evaluate(
-                    """(id)=>{
-                      showSection(id);
-                      return !!document.getElementById(id)?.classList.contains('visible');
-                    }""",
-                    section,
-                )
-                if not opened:
-                    failures.append((section,"canonical showSection() did not make panel visible"))
-            except Exception as exc:
-                failures.append((section,str(exc)))
-
-        assert not failures, failures
+        assert not result["missing"], f"Registered sections missing from DOM: {result['missing']}"
+        assert not result["failures"], result["failures"]
         assert not errors, errors
         browser.close()
