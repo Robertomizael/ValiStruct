@@ -99,9 +99,12 @@ jobs:
           run_browser_test() {
             test_file="$1"
             echo "::group::Browser regression: $test_file"
-            if ! timeout --signal=TERM 90s pytest -q "$test_file"; then
-              code=$?
-              echo "::error title=Browser regression failed::$test_file failed or exceeded 90 seconds"
+            set +e
+            timeout --signal=TERM 90s pytest -q "$test_file"
+            code=$?
+            set -e
+            if [ "$code" -ne 0 ]; then
+              echo "::error title=Browser regression failed::$test_file failed or exceeded 90 seconds (exit $code)"
               echo "::endgroup::"
               exit "$code"
             fi
