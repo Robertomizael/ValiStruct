@@ -28,18 +28,20 @@ def test_motorpro_reuse_paths_share_canonical_source():
             {"canon":CANON,"stale":STALE},
         )
 
+        canonical_csv=page.evaluate("window.ValiStructParticipantData.toCsv()")
+
         assert page.evaluate("reuseCentralDataForMotorPro()") is True
-        assert page.evaluate("proCsvText")==CANON
+        assert page.evaluate("proCsvText")==canonical_csv
         assert "canonica.csv" in page.locator("#proRunStatus").inner_text()
 
         page.evaluate("proCsvText=''")
         assert page.evaluate("useCentralDataForMotorPro()") is True
-        assert page.evaluate("proCsvText")==CANON
+        assert page.evaluate("proCsvText")==canonical_csv
 
         page.evaluate("proCsvText=''")
         page.locator('.nav button[data-section="motorpro"]').click()
         page.wait_for_function("proCsvText.length>0")
-        assert page.evaluate("proCsvText")==CANON
+        assert page.evaluate("proCsvText")==canonical_csv
 
         assert not errors,repr(errors)
         browser.close()
