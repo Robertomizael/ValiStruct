@@ -138,6 +138,7 @@ jobs:
           run_browser_test tests/test_fase3_motorpro_canonical_route.py
           run_browser_test tests/test_fase3_content_validity_project_roundtrip.py
           run_browser_test tests/test_fase3_delphi_config_lock.py
+          run_browser_test tests/test_fase3_aiken_score_interval.py
           pytest -q tests/test_fase3_version_metadata.py
 
       - name: Capture Fase-0 reference screens
