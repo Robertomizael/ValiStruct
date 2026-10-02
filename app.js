@@ -546,6 +546,117 @@ document.getElementById('calculateCvi')?.addEventListener('click',calculateCvi);
 document.getElementById('calculateModifiedKappa')?.addEventListener('click',calculateModifiedKappa);
 document.getElementById('downloadCviCsv')?.addEventListener('click',downloadCviCsv);
 
+// -----------------------------
+// Lawshe Content Validity Ratio (CVR)
+// -----------------------------
+let lawsheLastResults=null;
+
+function lawsheConfig(){
+  return {
+    judges:Number(document.getElementById('lawsheJudgeCount')?.value),
+    items:Number(document.getElementById('lawsheItemCount')?.value),
+    good:Number(document.getElementById('lawsheGoodThreshold')?.value)
+  };
+}
+
+function validateLawsheConfig(c){
+  if(!Number.isInteger(c.judges)||c.judges<2)return 'El número de jueces debe ser 2 o mayor.';
+  if(!Number.isInteger(c.items)||c.items<1)return 'El número de ítems debe ser 1 o mayor.';
+  if(!(c.good>=-1&&c.good<=1))return 'El criterio CVR favorable debe estar entre -1 y 1.';
+  return null;
+}
+
+function buildLawsheMatrix(){
+  const c=lawsheConfig(),err=validateLawsheConfig(c);
+  if(err)return alert(err);
+  let html='<table class="aiken-table"><thead><tr><th>Ítem</th>';
+  for(let j=1;j<=c.judges;j++)html+='<th>Juez '+j+'</th>';
+  html+='</tr></thead><tbody>';
+  for(let i=1;i<=c.items;i++){
+    html+='<tr><td><input class="lawshe-item-name" data-item="'+i+'" value="Ítem '+i+'"></td>';
+    for(let j=1;j<=c.judges;j++){
+      html+='<td><select class="lawshe-rating" data-item="'+i+'" data-judge="'+j+'">'+
+        '<option value="">Seleccione</option>'+
+        '<option value="essential">Esencial</option>'+
+        '<option value="useful">Útil pero no esencial</option>'+
+        '<option value="unnecessary">No necesario</option>'+
+      '</select></td>';
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  document.getElementById('lawsheMatrix').innerHTML=html;
+  document.getElementById('lawsheActions').classList.remove('hidden');
+  document.getElementById('lawsheResults').innerHTML='';
+  lawsheLastResults=null;
+}
+
+function calculateLawshe(){
+  const c=lawsheConfig(),err=validateLawsheConfig(c);
+  if(err)return alert(err);
+  if(!document.querySelector('.lawshe-rating'))return alert('Primero cree la matriz CVR.');
+  const rows=[];
+  for(let i=1;i<=c.items;i++){
+    const input=document.querySelector('.lawshe-item-name[data-item="'+i+'"]');
+    const name=(input?.value||('Ítem '+i)).trim()||('Ítem '+i);
+    const ratings=[...document.querySelectorAll('.lawshe-rating[data-item="'+i+'"]')].map(x=>x.value);
+    if(ratings.length!==c.judges||ratings.some(v=>!v)){alert('Complete todas las clasificaciones de '+name+'.');return;}
+    const ne=ratings.filter(v=>v==='essential').length;
+    const cvr=(ne-c.judges/2)/(c.judges/2);
+    rows.push({item:name,essential:ne,n:c.judges,cvr,status:cvr>=c.good?'Favorable':'Revisar'});
+  }
+  const meanCvr=rows.reduce((s,r)=>s+r.cvr,0)/rows.length;
+  lawsheLastResults={rows,meanCvr,config:c};
+  renderLawsheResults(lawsheLastResults);
+}
+
+function renderLawsheResults(result){
+  const rows=result.rows,meanCvr=result.meanCvr,c=result.config;
+  let html='<div class="results-summary"><div class="report-header"><h3>ValiStruct · CVR de Lawshe</h3>'+
+    '<p><strong>Dr. Roberto Joel Tirado Reyes</strong> · Universidad Autónoma de Sinaloa</p></div>'+
+    '<div class="result-cards"><div class="result-card"><span>CVR promedio</span><strong>'+meanCvr.toFixed(3)+'</strong></div>'+
+    '<div class="result-card"><span>Jueces</span><strong>'+c.judges+'</strong></div>'+
+    '<div class="result-card"><span>Criterio configurado</span><strong>'+c.good.toFixed(2)+'</strong></div></div>'+
+    '<p><strong>Nota:</strong> el criterio interpretativo fue configurado por el usuario. ValiStruct no sustituye la justificación metodológica ni aplica automáticamente una tabla crítica universal.</p></div>';
+  html+='<div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th><th>Esencial (Ne)</th><th>N</th><th>CVR</th><th>Orientación</th></tr></thead><tbody>';
+  rows.forEach(r=>{html+='<tr><td>'+escapeHtml(r.item)+'</td><td>'+r.essential+'</td><td>'+r.n+'</td><td><strong>'+r.cvr.toFixed(3)+'</strong></td><td>'+r.status+'</td></tr>';});
+  html+='</tbody></table></div>';
+  document.getElementById('lawsheResults').innerHTML=html;
+}
+
+function loadLawsheExample(){
+  document.getElementById('lawsheJudgeCount').value=10;
+  document.getElementById('lawsheItemCount').value=4;
+  document.getElementById('lawsheGoodThreshold').value=0.62;
+  buildLawsheMatrix();
+  const essentialCounts={1:10,2:9,3:8,4:6};
+  document.querySelectorAll('.lawshe-rating').forEach(el=>{
+    const item=Number(el.dataset.item),judge=Number(el.dataset.judge);
+    el.value=judge<=essentialCounts[item]?'essential':'useful';
+  });
+}
+
+function clearLawshe(){
+  document.getElementById('lawsheMatrix').innerHTML='';
+  document.getElementById('lawsheResults').innerHTML='';
+  document.getElementById('lawsheActions').classList.add('hidden');
+  lawsheLastResults=null;
+}
+
+function downloadLawsheCsv(){
+  if(!lawsheLastResults)return alert('Primero calcule CVR de Lawshe.');
+  const rows=[['Item','Esencial_Ne','N_jueces','CVR','Orientacion']];
+  lawsheLastResults.rows.forEach(r=>rows.push([r.item,r.essential,r.n,r.cvr.toFixed(3),r.status]));
+  rows.push([],['CVR_promedio',lawsheLastResults.meanCvr.toFixed(3)]);
+  saveBlob('\ufeff'+rows.map(row=>row.map(csvEscape).join(',')).join('\n'),'text/csv;charset=utf-8;','ValiStruct_CVR_Lawshe_resultados.csv');
+}
+
+document.getElementById('buildLawshe')?.addEventListener('click',buildLawsheMatrix);
+document.getElementById('loadLawsheExample')?.addEventListener('click',loadLawsheExample);
+document.getElementById('clearLawshe')?.addEventListener('click',clearLawshe);
+document.getElementById('calculateLawshe')?.addEventListener('click',calculateLawshe);
+document.getElementById('downloadLawsheCsv')?.addEventListener('click',downloadLawsheCsv);
+
 document.getElementById('buildAiken').addEventListener('click', buildMatrix);
 document.getElementById('loadExample').addEventListener('click', loadExample);
 document.getElementById('clearAiken').addEventListener('click', clearAll);
