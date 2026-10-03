@@ -92,6 +92,9 @@ jobs:
           VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
         run: pytest -q tests/test_e2e_playwright.py
 
+      - name: Candidate provenance gate
+        run: pytest -q tests/test_fase5_candidate_manifest.py
+
       - name: Current beta release gate
         env:
           VALISTRUCT_RUN_E2E: "0"
