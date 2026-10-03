@@ -109,7 +109,17 @@ jobs:
           compression-level: 0
 
   build-macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            artifact: valistruct-desktop-macos-arm64-autonomous
+            architecture: arm64
+          - runner: macos-15-intel
+            artifact: valistruct-desktop-macos-intel-autonomous
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -182,7 +192,7 @@ jobs:
       - name: Upload macOS autonomous DMG
         uses: actions/upload-artifact@v4
         with:
-          name: valistruct-desktop-macos-autonomous
+          name: ${{ matrix.artifact }}
           path: desktop/dist/*.dmg
           if-no-files-found: error
           compression-level: 0
