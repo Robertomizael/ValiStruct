@@ -12,6 +12,11 @@ def test_audit_remediation_wiring_and_metadata():
     ci=(ROOT/".github/workflows/valistruct-ci.yml").read_text(encoding="utf-8")
     desktop_ci=(ROOT/".github/workflows/desktop-build.yml").read_text(encoding="utf-8")
     rc=(ROOT/".github/workflows/rc6-validation.yml").read_text(encoding="utf-8")
+    runtime_manifest=(ROOT/"release/runtime-v5.4-beta1.json").read_text(encoding="utf-8")
+    requirements=(ROOT/"backend/requirements.txt").read_text(encoding="utf-8")
+    requirements_dev=(ROOT/"backend/requirements-dev.txt").read_text(encoding="utf-8")
+    mac_runtime=(ROOT/"desktop/scripts/build_runtime_macos.sh").read_text(encoding="utf-8")
+    win_runtime=(ROOT/"desktop/scripts/build_runtime_windows.ps1").read_text(encoding="utf-8")
 
     # Blocking finding: EFA must use the same protected scientific fetch path.
     assert "scientificFetch('/efa'" in efa
@@ -59,3 +64,17 @@ def test_audit_remediation_wiring_and_metadata():
     assert "http://127.0.0.1:8765/version" in desktop_ci
     assert "tests/BETA_VALIDATION_REPORT.json" in rc
     assert "tests/RC6_VALIDATION_REPORT.json" not in rc
+
+    assert '"python": "3.12.14"' in runtime_manifest
+    assert '"r": "4.5.3"' in runtime_manifest
+    assert '"lavaan": "0.7_2"' in runtime_manifest
+    assert "Flask==3.1.3" in requirements
+    assert "pyreadstat==1.3.6" in requirements
+    assert "pandas==3.0.6" in requirements
+    assert "playwright==1.63.0" in requirements_dev
+    assert "python=3.12.14" in mac_runtime
+    assert "r-base=4.5.3" in mac_runtime
+    assert "r-lavaan=0.7_2" in mac_runtime
+    assert "python=3.12.14" in win_runtime
+    assert "r-base=4.5.3" in win_runtime
+    assert "r-lavaan=0.7_2" in win_runtime
