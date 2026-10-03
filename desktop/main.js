@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard, shell } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const crypto = require('crypto');
 const path = require('path');
@@ -450,6 +450,7 @@ function waitForBackend(timeoutMs = 45000) {
 }
 
 function startBackend() {
+  if (backendProcess && backendProcess.exitCode === null && !backendProcess.killed) return backendProcess;
   const runtime = runtimeInfo || findSystemRuntime();
   desktopSessionToken = crypto.randomBytes(32).toString('hex');
   if (!runtime.python) throw new Error('No se encontró el motor Python integrado.');
@@ -468,6 +469,7 @@ function startBackend() {
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
       VALISTRUCT_DESKTOP_SESSION_TOKEN: desktopSessionToken,
+      VALISTRUCT_PROJECT_DIR: path.join(app.getPath('userData'), 'projects'),
       FLASK_RUN_PORT: '8765'
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -508,6 +510,19 @@ async function injectDesktopUX(win) {
 
 // Native right-click actions on editable text fields and selected report text.
 // Electron does not always expose a browser-like context menu by default.
+function installExternalNavigationGuard(win) {
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!/^file:\/\//i.test(url)) {
+      event.preventDefault();
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    }
+  });
+}
+
 function installTextContextMenu(win) {
   win.webContents.on('context-menu', (_event, params) => {
     const editable = Boolean(params.isEditable);
@@ -563,6 +578,7 @@ async function createWindow() {
     : path.resolve(__dirname, '..', 'index.html');
 
   installTextContextMenu(win);
+  installExternalNavigationGuard(win);
   await win.loadFile(frontend);
   await injectDesktopUX(win);
   win.maximize();
