@@ -27,7 +27,7 @@ def test_delphi_blocks_round_after_configuration_change():
 
         page.locator("#delphiJudgeCount").fill("7")
         page.locator("#addDelphiRound").click()
-        page.locator("#evaluateDelphi").click()
+        page.locator("#calculateDelphi").click()
 
         assert page.evaluate("delphiRoundCount")==1
         assert page.locator(".delphi-round").count()==1
