@@ -7,7 +7,7 @@
   "author": "Dr. Roberto Joel Tirado Reyes",
   "institution": "Universidad Autónoma de Sinaloa",
   "releaseChannel": "beta",
-  "featureFreeze": false,
-  "focus": "post-Fase2 hardening, project persistence and metadata coherence",
+  "featureFreeze": true,
+  "focus": "v5.4 beta release readiness, reproducibility and final validation",
   "betaGate": "tests/beta_gate.py"
 }
