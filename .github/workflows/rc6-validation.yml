@@ -113,5 +113,5 @@ jobs:
           name: valistruct-validation-artifacts
           path: |
             tests/*VERIFICATION*.json
-            tests/RC6_VALIDATION_REPORT.json
+            tests/BETA_VALIDATION_REPORT.json
             /tmp/valistruct.log
