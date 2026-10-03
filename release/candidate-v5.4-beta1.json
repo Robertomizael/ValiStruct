@@ -27,5 +27,9 @@
   ],
   "published": false,
   "mergedToMain": false,
-  "notes": "Candidate provenance only. This manifest does not publish a GitHub release."
+  "notes": "Candidate provenance only. This manifest does not publish a GitHub release.",
+  "superseded": true,
+  "doNotDistribute": true,
+  "supersededReason": "Independent audit confirmed the packaged candidate omitted the desktop scientific session token on the /efa route. Fase 6 remediation requires rebuilt artifacts.",
+  "supersededByBranch": "fix/v5-4-fase6-audit-remediation"
 }
