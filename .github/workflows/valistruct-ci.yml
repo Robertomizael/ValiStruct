@@ -145,6 +145,7 @@ jobs:
           run_browser_test tests/test_fase3_delphi_config_lock.py
           run_browser_test tests/test_fase3_aiken_score_interval.py
           run_browser_test tests/test_fase3_latencia_ols.py
+          run_browser_test tests/test_fase6_historical_results_and_delphi.py
           pytest -q tests/test_fase3_desktop_session_token.py
           pytest -q tests/test_fase3_version_metadata.py
 
