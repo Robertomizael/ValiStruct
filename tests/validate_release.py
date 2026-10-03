@@ -2,7 +2,8 @@ from pathlib import Path
 import subprocess, shutil, json, sys, os, time
 
 ROOT=Path(__file__).resolve().parents[1]
-results={"release":"3.0.0-rc.6","started_at":time.time(),"checks":[]}
+VERSION=json.loads((ROOT/"version.json").read_text(encoding="utf-8"))
+results={"release":VERSION["version"],"displayVersion":VERSION.get("displayVersion"),"started_at":time.time(),"checks":[]}
 
 def run(name,cmd,cwd=None,timeout=180,required=True):
     try:
@@ -52,7 +53,7 @@ results["required_skips"]=len(required_skip)
 results["ready_for_beta_gate"]=not required_fail and not required_skip
 results["finished_at"]=time.time()
 
-out=ROOT/"tests/RC6_VALIDATION_REPORT.json"
+out=ROOT/"tests/BETA_VALIDATION_REPORT.json"
 out.write_text(json.dumps(results,indent=2,ensure_ascii=False),encoding="utf-8")
 print(json.dumps(results,indent=2,ensure_ascii=False))
 sys.exit(0 if not required_fail else 1)
