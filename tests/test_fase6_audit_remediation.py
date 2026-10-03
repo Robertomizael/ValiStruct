@@ -45,7 +45,8 @@ def test_audit_remediation_wiring_and_metadata():
     assert "return false;" in evaluate
 
     # Latencia report must tolerate old/missing inferential fields.
-    report=app[app.index("function semReportHtml()"):app.index("function downloadSemReport")]
+    report_start=app.index("function semReportHtml()")
+    report=app[report_start:report_start+8000]
     assert "Number.isFinite(p.df)" in report
     assert "Number.isFinite(e.dfResidual)" in report
     assert "Number.isFinite(e.fP)" in report
