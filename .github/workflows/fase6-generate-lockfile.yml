@@ -20,7 +20,7 @@ jobs:
           ref: fix/v5-4-fase6-auditoria-independiente
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.12.0"
       - name: Refresh lockfile
         working-directory: desktop
         run: npm install --package-lock-only --ignore-scripts
