@@ -7,6 +7,7 @@ def test_desktop_token_bridge_and_scientific_fetch_wiring():
     main=(ROOT/"desktop/main.js").read_text(encoding="utf-8")
     preload=(ROOT/"desktop/preload.js").read_text(encoding="utf-8")
     app=(ROOT/"app.js").read_text(encoding="utf-8")
+    efa=(ROOT/"efa-v52.js").read_text(encoding="utf-8")
 
     assert "crypto.randomBytes(32).toString('hex')" in main
     assert "VALISTRUCT_DESKTOP_SESSION_TOKEN: desktopSessionToken" in main
@@ -23,3 +24,5 @@ def test_desktop_token_bridge_and_scientific_fetch_wiring():
         "/xlsx-to-csv","/legacy-to-csv",
     ]:
         assert f"scientificFetch('{endpoint}'" in app, endpoint
+
+    assert "scientificFetch('/efa'" in efa
