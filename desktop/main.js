@@ -349,14 +349,16 @@ async function ensureBundledRuntime() {
   const marker = path.join(runtimeDir, '.valistruct-runtime-ready');
 
   if (!fs.existsSync(marker)) {
-    await dialog.showMessageBox({
-      type: 'info',
-      title: 'ValiStruct Desktop',
-      message: 'Preparando el motor estadístico integrado',
-      detail: 'Esta preparación ocurre una sola vez y puede tardar algunos minutos. No requiere instalar Python ni R por separado.',
-      buttons: ['Continuar'],
-      defaultId: 0
-    });
+    if (process.env.VALISTRUCT_SMOKE_TEST !== '1') {
+      await dialog.showMessageBox({
+        type: 'info',
+        title: 'ValiStruct Desktop',
+        message: 'Preparando el motor estadístico integrado',
+        detail: 'Esta preparación ocurre una sola vez y puede tardar algunos minutos. No requiere instalar Python ni R por separado.',
+        buttons: ['Continuar'],
+        defaultId: 0
+      });
+    }
 
     fs.rmSync(runtimeDir, { recursive: true, force: true });
     fs.mkdirSync(runtimeDir, { recursive: true });
