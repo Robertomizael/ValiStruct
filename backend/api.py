@@ -11,6 +11,8 @@ import time
 import secrets
 import hashlib
 import threading
+import numbers
+import math
 from contextlib import contextmanager
 
 app = Flask(__name__)
@@ -621,6 +623,14 @@ def security_headers(response):
 
 
 
+def _normalize_value_label_key(key):
+    """Stable metadata key for numeric SAV/DTA value labels; raw data are untouched."""
+    if isinstance(key, numbers.Real) and not isinstance(key, bool):
+        value=float(key)
+        if math.isfinite(value):
+            return str(int(value)) if value.is_integer() else format(value, ".15g")
+    return str(key)
+
 @app.post("/legacy-to-csv")
 def legacy_to_csv():
     _user, _auth_err = _compute_auth_guard()
@@ -671,7 +681,7 @@ def legacy_to_csv():
                 if not isinstance(mapping, dict) or not mapping:
                     continue
                 value_labels[str(col)] = {
-                    str(key): str(label)
+                    _normalize_value_label_key(key): str(label)
                     for key, label in mapping.items()
                     if label is not None
                 }
