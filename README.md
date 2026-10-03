@@ -12,7 +12,7 @@ Esta versión se encuentra en fase Beta para evaluación y pruebas antes de una 
 
 ## Descargar para Windows y macOS
 
-Tras cada cambio de `main` que afecte a la aplicación, el flujo [ValiStruct Desktop Autonomous Build](https://github.com/Robertomizael/ValiStruct/actions/workflows/desktop-build.yml) genera un instalador Windows (`.exe`) y una imagen macOS (`.dmg`). Abra la ejecución más reciente que haya finalizado correctamente y descargue el archivo correspondiente en **Artifacts**, al final de la página. GitHub puede solicitar iniciar sesión para descargar artefactos de Actions. La compilación puede tardar varios minutos después de integrar los cambios.
+Los instaladores Beta no deben seleccionarse por ser «el último build». Cada candidato válido se identifica mediante `release/candidate-v5.4-beta1.json`, que registra commit de origen, ejecución de GitHub Actions, IDs de artefacto, tamaños y SHA-256. Hasta que exista un GitHub Release formal, los artefactos de Actions se consideran únicamente candidatos internos de validación; no se recomienda distribuir un binario cuyo hash no coincida con el manifiesto.
 
 Los paquetes de escritorio son Beta y se generan por separado para cada sistema. El ZIP de código fuente de GitHub no es un instalador.
 
