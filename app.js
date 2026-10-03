@@ -7716,12 +7716,12 @@ document.getElementById('downloadBetaMetrics')?.addEventListener('click',()=>{
 
 
 // ============================================================
-// ValiStruct 5.3 Beta · compatibility/release layer
+// ValiStruct 5.4 Beta · compatibility/release layer
 // ============================================================
 const VALISTRUCT_RELEASE = Object.freeze({
   app: 'ValiStruct',
-  version: '5.3.0-beta.1',
-  displayVersion: '5.3 Beta',
+  version: '5.4.0-beta.1',
+  displayVersion: '5.4 Beta',
   projectFormat: '3.0',
   releaseChannel: 'beta',
   featureFreeze: true,
@@ -7755,7 +7755,7 @@ function migrateToV30(state){
   const from = String(s.schemaVersion || s.version || 'legacy');
   s.version='3.0';
   s.schemaVersion='3.0';
-  s.release={channel:'release-candidate',appVersion:'3.0.0-rc.6',migratedFrom:from};
+  s.release={channel:VALISTRUCT_RELEASE.releaseChannel,appVersion:VALISTRUCT_RELEASE.version,migratedFrom:from};
   if(!s.preferences)s.preferences={};
   if(!s.preferences.profile && typeof loadProfile==='function')s.preferences.profile=loadProfile();
   if(!s.preferences.settings && typeof loadSettings==='function')s.preferences.settings=loadSettings();
@@ -7808,7 +7808,7 @@ async function runRcAuditV30(){
     <div class="metric-card"><span>PASS</span><strong>${pass}</strong></div>
     <div class="metric-card"><span>WARN</span><strong>${warn}</strong></div>
     <div class="metric-card"><span>FAIL</span><strong>${fail}</strong></div>
-    <div class="metric-card"><span>Canal</span><strong>RC1</strong></div>`;
+    <div class="metric-card"><span>Canal</span><strong>${escapeHtml(VALISTRUCT_RELEASE.displayVersion)}</strong></div>`;
   document.getElementById('rcResults').innerHTML=checks.map(c=>`
     <div class="rc-check ${c.status==='pass'?'rc-pass':(c.status==='warn'?'rc-warn':'rc-fail')}">
       <strong>${c.status==='pass'?'🟢':(c.status==='warn'?'🟠':'🔴')} ${escapeHtml(c.name)}</strong>
