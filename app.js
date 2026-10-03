@@ -6183,7 +6183,7 @@ document.querySelectorAll('input,select,textarea').forEach(el=>{
 // -----------------------------
 const VERSION_INFO={
   app:'ValiStruct',
-  version:'5.3.0-beta.1',
+  version:'5.4.0-beta.1',
   projectFormat:'3.0',
   minimumReadableProject:'0.7',
   author:'Dr. Roberto Joel Tirado Reyes',
