@@ -138,6 +138,7 @@ function calculate() {
       const st = statusFor(v, c.good, c.warn);
       const comment = document.querySelector(`.comment-input[data-item="${i}"][data-criterion="${CSS.escape(criterion)}"]`)?.value?.trim() || '';
       results.push({
+        calculationVersion:'aiken-score-nk-v54',
         item: itemName, itemIndex: i, criterion, v, ci,
         mean: ratings.reduce((a,b) => a+b,0) / ratings.length,
         status: st.label, statusClass: st.cls, icon: st.icon,
@@ -2411,7 +2412,7 @@ function estimateStructuralModel(sampleIdx=null){
       });
     });
   }
-  return {paths:allPathResults,equations};
+  return {calculationVersion:'latencia-ols-tf-v54',paths:allPathResults,equations};
 }
 
 function annotateSemDiagram(pathResults){
@@ -3260,19 +3261,22 @@ function restoreProject(state){
     semEdges=state.semEdges||[];
     semData=state.semData||null;
     const sourceAppVersion=String(state.release?.appVersion||'');
-    const legacyScientificResults=sourceAppVersion!==VALISTRUCT_RELEASE.version;
-    semStructuralResults=legacyScientificResults?null:(state.semStructuralResults||null);
-    semMediationResults=legacyScientificResults?null:(state.semMediationResults||null);
+    const staleAiken=Array.isArray(state.aiken) && state.aiken.some(r=>r?.calculationVersion!=='aiken-score-nk-v54');
+    const staleLatencia=Boolean(state.semStructuralResults) && state.semStructuralResults?.calculationVersion!=='latencia-ols-tf-v54';
+    semStructuralResults=staleLatencia?null:(state.semStructuralResults||null);
+    semMediationResults=staleLatencia?null:(state.semMediationResults||null);
     proCsvText=state.proCsvText||null;
     proLastResponse=state.proLastResponse||null;
     advancedLastResponse=state.advancedLastResponse||null;
-    if(legacyScientificResults){
-      lastResults=[];
+    if(staleAiken||staleLatencia){
+      lastResults=staleAiken?[]:(Array.isArray(state.aiken)?state.aiken:[]);
       window.valistructLegacyScientificResults={
         sourceAppVersion:sourceAppVersion||'legacy',
-        aiken:Array.isArray(state.aiken)?state.aiken:null,
-        semStructuralResults:state.semStructuralResults||null,
-        semMediationResults:state.semMediationResults||null
+        staleAiken,
+        staleLatencia,
+        aiken:staleAiken?state.aiken:null,
+        semStructuralResults:staleLatencia?(state.semStructuralResults||null):null,
+        semMediationResults:staleLatencia?(state.semMediationResults||null):null
       };
     }else if(Array.isArray(state.aiken))lastResults=state.aiken;
     cviLastResults=state.contentValidity?.cvi||null;
@@ -3302,9 +3306,9 @@ function restoreProject(state){
     else document.getElementById('delphiResults').innerHTML='';
     contentValidityIntegratedHtml='';
     document.getElementById('contentValidityReportResults').innerHTML='';
-    const sourceVersion=String(state.release?.appVersion||'');
-    if(sourceVersion!==VALISTRUCT_RELEASE.version && (Array.isArray(state.aiken)||state.semStructuralResults||state.semMediationResults)){
-      alert('Proyecto cargado. Los resultados científicos derivados de una versión anterior no se activaron para reporte. Recalcule V de Aiken y/o Latencia con ValiStruct '+VALISTRUCT_RELEASE.displayVersion+' antes de generar informes.');
+    if(staleAiken||staleLatencia){
+      const pending=[staleAiken?'V de Aiken':null,staleLatencia?'Latencia':null].filter(Boolean).join(' y ');
+      alert('Proyecto cargado. Los resultados de '+pending+' fueron calculados con una versión de algoritmo anterior y no se activaron para reporte. Recalcule esos análisis con ValiStruct '+VALISTRUCT_RELEASE.displayVersion+' antes de generar informes.');
     }else{
       alert('Proyecto cargado.');
     }
