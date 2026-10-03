@@ -1,0 +1,41 @@
+name: ValiStruct Fase6 Generate Desktop Lockfile
+
+on:
+  push:
+    branches:
+      - fix/v5-4-fase6-auditoria-independiente
+    paths:
+      - ".github/workflows/fase6-generate-lockfile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/v5-4-fase6-auditoria-independiente
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate deterministic npm lockfile
+        working-directory: desktop
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Verify lockfile
+        run: |
+          test -s desktop/package-lock.json
+          node -e "const p=require('./desktop/package-lock.json'); if(!p.lockfileVersion) process.exit(1)"
+      - name: Commit lockfile to Fase 6 branch
+        run: |
+          git config user.name "ValiStruct CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add desktop/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already current."
+            exit 0
+          fi
+          git commit -m "build(fase6): add npm lockfile for desktop reproducibility"
+          git push origin HEAD:fix/v5-4-fase6-auditoria-independiente
