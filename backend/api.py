@@ -58,6 +58,9 @@ def _valistruct_capability_gate():
         if request.path not in SCIENTIFIC_ROUTE_WHITELIST:
             return jsonify({"ok": False, "error": "Ruta no disponible en modo científico"}), 404
 
+    if request.method == "OPTIONS":
+        return None
+
     token = desktop_session_token()
     if token and request.path in SCIENTIFIC_ROUTE_WHITELIST and request.path not in DESKTOP_TOKEN_EXEMPT:
         supplied = request.headers.get("X-ValiStruct-Session", "")
