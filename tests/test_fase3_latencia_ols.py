@@ -65,7 +65,7 @@ def test_latencia_ols_matches_controlled_reference_and_reports_model_fit():
         assert "R² ajustado" in report
         assert "6498.17" in report
         assert "9" in report
-        assert "no sustituye SEM" in report.lower()
+        assert "no sustituye sem" in report.lower()
 
         page.evaluate("""() => {
           document.getElementById('reportStudyTitle').value='Prueba OLS';
