@@ -1,9 +1,20 @@
-# Known Issues — 3.0 RC3
+# Known Issues — ValiStruct 5.4 Beta 1
 
-- La autenticación integrada sigue siendo apropiada solo para beta controlada; producción debe preferir OIDC/SSO.
-- Las sesiones/token están en memoria y se pierden al reiniciar el backend.
+## Limitaciones conocidas de distribución
+- Los instaladores de Fase 6 continúan siendo Beta de validación interna hasta completar el cierre.
+- macOS usa firma ad-hoc para pruebas internas; no equivale a Developer ID ni notarización.
+- Windows no cuenta todavía con firma comercial de código.
+- El build macOS actual es arm64; la compatibilidad Intel debe tratarse como objetivo separado.
+- Los artefactos de GitHub Actions expiran y no sustituyen un GitHub Release publicado.
+- No se realizará merge a `main` ni publicación sin autorización explícita.
+
+## Limitaciones metodológicas deliberadas
+- Latencia es una regresión lineal OLS preliminar y no sustituye SEM ML/WLSMV.
+- Motor Pro y módulos avanzados no constituyen validación clínica ni certificación metodológica automática.
+- Proyectos previos al formato científico 5.4 pueden conservar resultados históricos incompatibles; ValiStruct los preserva pero exige recalcular/reestimar antes de generar nuevos informes.
+
+## Seguridad y persistencia
+- La autenticación institucional integrada continúa orientada a escenarios controlados; producción institucional debería preferir OIDC/SSO.
+- Las sesiones institucionales en memoria se pierden al reiniciar el backend.
 - El almacenamiento institucional basado en archivos JSON no sustituye una base de datos transaccional multiusuario.
-- La suite completa `pytest` requiere dependencias del backend instaladas.
-- Las pruebas E2E con Playwright requieren navegador Chromium instalado.
-- Deben ejecutarse pruebas reales de R/lavaan en un entorno con R y paquetes configurados.
-- El Motor Pro y módulos avanzados no deben considerarse validados clínicamente ni certificados.
+- El backend desktop usa un token efímero local por sesión y restringe las rutas científicas.
