@@ -1,4 +1,5 @@
 """Fase 6: candidate manifest must track the audited v5.4 beta rebuild."""
+# Metadata validation trigger for audited candidate.
 from pathlib import Path
 import json
 import re
