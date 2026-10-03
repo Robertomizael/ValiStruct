@@ -1,5 +1,8 @@
 name: ValiStruct Desktop Autonomous Build
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -136,6 +139,19 @@ jobs:
           name: valistruct-desktop-package-lock
           path: desktop/package-lock.json
           if-no-files-found: error
+      - name: Commit generated desktop dependency lock
+        if: github.ref == 'refs/heads/fix/v5-4-fase6-audit-remediation'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop/package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json already committed"
+          else
+            git commit -m "chore(fase6): commit generated desktop package lock"
+            git push origin HEAD:fix/v5-4-fase6-audit-remediation
+          fi
       - name: Build unpacked macOS app
         working-directory: desktop
         env:
