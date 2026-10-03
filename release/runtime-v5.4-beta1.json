@@ -35,10 +35,13 @@
     "tar": "7.5.22",
     "xlsx": "SheetJS 0.20.3 (official CDN tarball)",
     "electron": "43.7.7",
-    "electronBuilder": "26.15.3"
+    "electronBuilder": "26.15.3",
+    "electronGet": "5.1.0"
   },
   "security": {
     "npmProductionAudit": "required; high/critical findings block Desktop Build",
-    "sheetjsSource": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
-  }
+    "sheetjsSource": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "fullNpmAudit": "passed after lockfile refresh; high/critical findings block release-readiness"
+  },
+  "buildNode": "22.12.0"
 }
