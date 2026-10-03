@@ -41,7 +41,7 @@ def test_legacy_project_restore_requires_recalculation():
         page.evaluate("""
           restoreProject({
             name:'Legacy',
-            release:{appVersion:'5.3.0-beta.1'},
+            release:{appVersion:'5.4.0-beta.1'},
             aiken:[{V:0.9,lower:0.463,upper:0.989}],
             semStructuralResults:{paths:[{from:'X',to:'Y',beta:.2,se:.1,t:2,p:.05}],equations:[{target:'Y',r2:.1}]},
             semMediationResults:[]
@@ -49,5 +49,5 @@ def test_legacy_project_restore_requires_recalculation():
         """)
         assert page.evaluate("lastResults.length")==0
         assert page.evaluate("semStructuralResults===null")
-        assert any("Recalcule V de Aiken y/o Latencia" in m for m in messages)
+        assert any("fueron calculados con una versión de algoritmo anterior" in m for m in messages)
         browser.close()
