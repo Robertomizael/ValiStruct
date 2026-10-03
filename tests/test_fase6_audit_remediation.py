@@ -53,5 +53,8 @@ def test_audit_remediation_wiring_and_metadata():
     # Corrective branches must actually execute their gates and current report artifact.
     assert '"fix/**"' in ci
     assert "fix/v5-4-fase6-audit-remediation" in desktop_ci
+    assert "Smoke packaged Windows app" in desktop_ci
+    assert "Smoke packaged macOS app" in desktop_ci
+    assert "http://127.0.0.1:8765/version" in desktop_ci
     assert "tests/BETA_VALIDATION_REPORT.json" in rc
     assert "tests/RC6_VALIDATION_REPORT.json" not in rc
