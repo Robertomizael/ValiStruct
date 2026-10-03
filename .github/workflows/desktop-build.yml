@@ -14,6 +14,7 @@ on:
       - feature/v5-3-simplificacion
       - feature/v5-4-fase2d-privacidad-importacion
       - feature/v5-4-fase3-hardening
+      - feature/v5-4-fase4-release-readiness
     paths:
       - "desktop/**"
       - "navigation-v51.js"
