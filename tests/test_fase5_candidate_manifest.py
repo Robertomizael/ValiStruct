@@ -19,6 +19,8 @@ def test_candidate_manifest_matches_v54_beta_and_preserves_nonpublication():
     assert manifest["workflowRunId"]==37145587046
     assert manifest["published"] is False
     assert manifest["mergedToMain"] is False
+    assert manifest["valid"] is False
+    assert manifest["status"]=="invalidated-by-fase6-audit-pending-rebuild"
 
     artifacts=manifest["artifacts"]
     assert {a["platform"] for a in artifacts}=={"macOS","Windows"}
