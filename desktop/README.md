@@ -1,56 +1,43 @@
-# ValiStruct Desktop Beta
+# ValiStruct Desktop 5.4 Beta
 
-Esta carpeta contiene la primera base de empaquetado de escritorio para ValiStruct usando Electron y electron-builder.
+El paquete Desktop es autónomo: los workflows integran un runtime local de Python y R dentro del instalador. El usuario final no debe instalar Python, R ni paquetes estadísticos por separado.
 
-## Objetivo
+## Plataformas del candidato interno
 
-Generar instaladores nativos de prueba para:
-
-- Windows: instalador NSIS `.exe`
-- macOS: imagen `.dmg`
-
-## Estado actual
-
-La envoltura de escritorio ya incluye el frontend y copia el backend al paquete. En esta primera fase, el equipo donde se ejecute la aplicación todavía debe tener instalados:
-
-- Python 3
-- R con `Rscript` disponible en PATH
-- dependencias Python de `backend/requirements.txt`
-- paquetes R requeridos por ValiStruct
-
-La siguiente fase del proyecto Desktop integrará runtimes portables de Python y R para lograr una instalación de un solo paso.
+- Windows: instalador NSIS `.exe`.
+- macOS Apple Silicon: imagen `.dmg` arm64.
 
 ## Desarrollo local
 
 ```bash
 cd desktop
-npm install
+npm ci
 npm start
 ```
 
-## Construcción
+## Construcción reproducible
 
-Windows:
+Las dependencias directas de Electron están fijadas y Fase 6 incorpora `package-lock.json`. Los workflows usan `npm ci`.
 
-```bash
-npm run dist:win
-```
+El runtime científico también se fija en Fase 6 a versiones concretas de Python, R, lavaan, psych, naniar y dependencias Python. Los instaladores deben reconstruirse después de cualquier cambio de estas versiones.
 
-macOS:
+## Seguridad desktop
 
-```bash
-npm run dist:mac
-```
+- `contextIsolation: true`.
+- `nodeIntegration: false`.
+- sandbox del renderer activo.
+- token científico efímero por sesión.
+- backend local reutilizado durante toda la sesión de Electron.
+- datos locales de proyectos en `app.getPath('userData')`.
+- navegación HTTP/HTTPS fuera de Electron; se abre en el navegador del sistema.
 
-Los artefactos se generan en `desktop/dist/`.
+## Firma y distribución
 
-## Seguridad
+El DMG de validación interna usa firma ad-hoc. Windows aún no usa certificado comercial. Antes de una distribución pública se requieren, como mínimo:
 
-Electron se ejecuta con `contextIsolation`, sin `nodeIntegration` en el renderer y con un preload mínimo. El backend se inicia en modo local con autenticación institucional desactivada para esta fase de pruebas.
+- Developer ID + hardened runtime + notarización Apple;
+- firma Authenticode para Windows;
+- prueba manual en equipos limpios;
+- publicación de los binarios validados como assets de un Release con SHA-256.
 
-## Firma
-
-Los primeros instaladores serán artefactos Beta sin firma. Para distribución pública posterior se deberán añadir:
-
-- firma de código de Windows;
-- Developer ID y notarización de Apple para macOS.
+Los artefactos de GitHub Actions son evidencia de CI y no sustituyen una publicación formal.
