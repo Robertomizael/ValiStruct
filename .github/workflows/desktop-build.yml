@@ -70,6 +70,28 @@ jobs:
       - name: Build Windows installer
         working-directory: desktop
         run: npm run dist:win
+      - name: Smoke packaged Windows app
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path dist -Recurse -Filter ValiStruct.exe | Where-Object { $_.FullName -match 'win-unpacked' } | Select-Object -First 1
+          if (-not $exe) { throw 'Packaged Windows executable not found' }
+          $proc = Start-Process -FilePath $exe.FullName -PassThru
+          try {
+            $ready = $false
+            for ($i=0; $i -lt 45; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $health = Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 2
+                if ($health.ok -eq $true) { $ready = $true; break }
+              } catch {}
+            }
+            if (-not $ready) { throw 'Packaged Windows app did not expose a healthy local backend' }
+            $version = Invoke-RestMethod -Uri http://127.0.0.1:8765/version -TimeoutSec 5
+            if ($version.version -ne '5.4.0-beta.1') { throw "Unexpected backend version: $($version.version)" }
+          } finally {
+            if ($proc -and -not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+          }
       - name: Upload Windows autonomous installer
         uses: actions/upload-artifact@v4
         with:
@@ -122,6 +144,31 @@ jobs:
           codesign --force --deep --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           echo "APP_PATH=$PWD/$APP_PATH" >> "$GITHUB_ENV"
+      - name: Smoke packaged macOS app
+        working-directory: desktop
+        shell: bash
+        run: |
+          APP_BIN="$APP_PATH/Contents/MacOS/ValiStruct"
+          test -x "$APP_BIN"
+          "$APP_BIN" >/tmp/valistruct-desktop-smoke.log 2>&1 &
+          APP_PID=$!
+          cleanup() { kill "$APP_PID" 2>/dev/null || true; wait "$APP_PID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:8765/health >/tmp/valistruct-health.json 2>/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/valistruct-desktop-smoke.log || true
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:8765/version | grep -q '"version":"5.4.0-beta.1"'
+          cleanup
+          trap - EXIT
       - name: Build macOS DMG from signed app
         working-directory: desktop
         env:
