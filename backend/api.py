@@ -1668,7 +1668,7 @@ def monitor():
     comments=sum(len(v) for v in _read_json_file(COMMENTS_FILE,{}).values())
     tasks=sum(len(v) for v in _read_json_file(TASKS_FILE,{}).values())
     notifications=sum(len(v) for v in _read_json_file(NOTIFICATIONS_FILE,{}).values())
-    return jsonify({"ok":True,"status":"operativo","app_version":"3.0.0-rc.6",
+    return jsonify({"ok":True,"status":"operativo","app_version":"5.4.0-beta.1",
                     "uptime_seconds":uptime,"uptime_human":f"{h}h {m}m {s}s",
                     "projects_total":projects_total,"comments_total":comments,
                     "tasks_total":tasks,"notifications_total":notifications,
@@ -1792,16 +1792,16 @@ def toggle_incident(incident_id):
 
 
 # -----------------------------
-# ValiStruct 3.0 RC1 release-candidate checks
+# ValiStruct 5.4 Beta checks
 # -----------------------------
 @app.get("/version")
 def version_info():
     return jsonify({
         "ok": True,
         "app": "ValiStruct",
-        "version": "3.0.0-rc.6",
+        "version": "5.4.0-beta.1",
         "project_format": "3.0",
-        "release_channel": "release-candidate"
+        "release_channel": "beta"
     })
 
 @app.get("/rc-check")
@@ -1839,7 +1839,7 @@ def rc_check():
         add("python-docx","fail",str(e))
     add("Auth configuration","pass" if AUTH_ENABLED else "warn","Activa." if AUTH_ENABLED else "Desactivada.")
     add("Institution library","pass" if PROJECT_LIBRARY_ENABLED else "warn","Activa." if PROJECT_LIBRARY_ENABLED else "Desactivada.")
-    return jsonify({"ok":True,"release":"3.0.0-rc.6","checks":checks})
+    return jsonify({"ok":True,"release":"5.4.0-beta.1","checks":checks})
 
 @app.get("/security-status")
 def security_status():
@@ -1900,7 +1900,7 @@ def runtime_audit():
     for label, module in modules:
         add(f"dependency:{label}", "pass" if importlib.util.find_spec(module) else "warn", module)
 
-    return jsonify({"ok": True, "release": "3.0.0-rc.6", "checks": checks})
+    return jsonify({"ok": True, "release": "5.4.0-beta.1", "checks": checks})
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8765, debug=False)
