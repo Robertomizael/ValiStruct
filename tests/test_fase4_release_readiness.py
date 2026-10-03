@@ -11,6 +11,7 @@ def test_v54_release_readiness_metadata_is_coherent():
     validator=(ROOT/"tests/validate_release.py").read_text(encoding="utf-8")
     gate=(ROOT/"tests/beta_gate.py").read_text(encoding="utf-8")
     desktop=(ROOT/".github/workflows/desktop-build.yml").read_text(encoding="utf-8")
+    desktop_pkg=json.loads((ROOT/"desktop/package.json").read_text(encoding="utf-8"))
     rc_workflow=(ROOT/".github/workflows/rc6-validation.yml").read_text(encoding="utf-8")
     index=(ROOT/"index.html").read_text(encoding="utf-8")
     app=(ROOT/"app.js").read_text(encoding="utf-8")
@@ -35,6 +36,10 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert "ValiStruct 3.0 RC6" not in gate
 
     assert "feature/v5-4-fase4-release-readiness" in desktop
+    assert desktop_pkg["dependencies"]["tar"]=="7.4.3"
+    assert desktop_pkg["dependencies"]["xlsx"]=="0.18.5"
+    assert desktop_pkg["devDependencies"]["electron"]=="32.1.2"
+    assert desktop_pkg["devDependencies"]["electron-builder"]=="25.1.8"
     assert "Current beta release gate" in rc_workflow
     assert "python tests/validate_release.py" in rc_workflow
     assert "python tests/beta_gate.py" in rc_workflow
