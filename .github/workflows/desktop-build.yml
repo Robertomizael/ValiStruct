@@ -135,7 +135,10 @@ jobs:
         run: bash ./desktop/scripts/build_runtime_macos.sh
       - name: Install desktop dependencies
         working-directory: desktop
-        run: npm install
+        run: npm ci
+      - name: Audit production npm dependencies
+        working-directory: desktop
+        run: npm audit --omit=dev --audit-level=high
       - name: Build unpacked macOS app
         working-directory: desktop
         env:
