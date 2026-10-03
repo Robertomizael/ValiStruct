@@ -753,6 +753,11 @@ function evaluateDelphi(){
   const c=delphiConfig(),err=validateDelphiConfig(c);
   if(err)return alert(err);
   if(!delphiRoundCount)return alert('Primero cree al menos una ronda.');
+  const current=JSON.stringify(c);
+  if(window.delphiLockedConfig && current!==window.delphiLockedConfig){
+    alert('La configuración Delphi cambió después de iniciar las rondas. Reinicie el flujo para mantener comparabilidad entre rondas.');
+    return false;
+  }
   const rows=[];const previousByItem=new Map();
   for(let round=1;round<=delphiRoundCount;round++){
     for(let i=1;i<=c.items;i++){
@@ -2573,8 +2578,8 @@ function downloadSemResults(){
 function semReportHtml(){
   if(!semStructuralResults)return null;
   const r=semStructuralResults;
-  const pathRows=r.paths.map(p=>`<tr><td>${escapeHtml(p.from)}</td><td>${escapeHtml(p.to)}</td><td>${p.beta.toFixed(3)}</td><td>${p.se.toFixed(3)}</td><td>${p.t.toFixed(2)}</td><td>${p.df}</td><td>${p.p<.001?'&lt; .001':p.p.toFixed(3)}</td></tr>`).join('');
-  const r2Rows=r.equations.map(e=>`<tr><td>${escapeHtml(e.target)}</td><td>${e.r2.toFixed(3)}</td><td>${e.adjR2.toFixed(3)}</td><td>${Number.isFinite(e.f)?e.f.toFixed(2):'∞'}</td><td>${e.dfModel}, ${e.dfResidual}</td><td>${e.fP<.001?'&lt; .001':e.fP.toFixed(3)}</td></tr>`).join('');
+  const pathRows=(r.paths||[]).map(p=>`<tr><td>${escapeHtml(p.from)}</td><td>${escapeHtml(p.to)}</td><td>${Number.isFinite(p.beta)?p.beta.toFixed(3):'—'}</td><td>${Number.isFinite(p.se)?p.se.toFixed(3):'—'}</td><td>${Number.isFinite(p.t)?p.t.toFixed(2):'—'}</td><td>${Number.isFinite(p.df)?p.df:'—'}</td><td>${Number.isFinite(p.p)?(p.p<.001?'&lt; .001':p.p.toFixed(3)):'—'}</td></tr>`).join('');
+  const r2Rows=(r.equations||[]).map(e=>`<tr><td>${escapeHtml(e.target)}</td><td>${Number.isFinite(e.r2)?e.r2.toFixed(3):'—'}</td><td>${Number.isFinite(e.adjR2)?e.adjR2.toFixed(3):'—'}</td><td>${Number.isFinite(e.f)?e.f.toFixed(2):'—'}</td><td>${Number.isFinite(e.dfModel)?e.dfModel:'—'}, ${Number.isFinite(e.dfResidual)?e.dfResidual:'—'}</td><td>${Number.isFinite(e.fP)?(e.fP<.001?'&lt; .001':e.fP.toFixed(3)):'—'}</td></tr>`).join('');
   const medRows=(semMediationResults||[]).map(x=>`<tr><td>${escapeHtml(x.from)}</td><td>${escapeHtml(x.via)}</td><td>${escapeHtml(x.to)}</td><td>${x.indirect.toFixed(3)}</td><td>${x.lower.toFixed(3)}–${x.upper.toFixed(3)}</td></tr>`).join('');
   return `<!doctype html><html lang="es"><meta charset="utf-8"><title>ValiStruct | Latencia</title>
   <style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;color:#222}table{width:100%;border-collapse:collapse;margin:18px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f2f2f2}.note{background:#f8f8f8;padding:14px;border-left:4px solid #7c1f2a}</style>
@@ -3254,12 +3259,22 @@ function restoreProject(state){
     semNodes=state.semNodes||[];
     semEdges=state.semEdges||[];
     semData=state.semData||null;
-    semStructuralResults=state.semStructuralResults||null;
-    semMediationResults=state.semMediationResults||null;
+    const sourceAppVersion=String(state.release?.appVersion||'');
+    const legacyScientificResults=sourceAppVersion!==VALISTRUCT_RELEASE.version;
+    semStructuralResults=legacyScientificResults?null:(state.semStructuralResults||null);
+    semMediationResults=legacyScientificResults?null:(state.semMediationResults||null);
     proCsvText=state.proCsvText||null;
     proLastResponse=state.proLastResponse||null;
     advancedLastResponse=state.advancedLastResponse||null;
-    if(Array.isArray(state.aiken))lastResults=state.aiken;
+    if(legacyScientificResults){
+      lastResults=[];
+      window.valistructLegacyScientificResults={
+        sourceAppVersion:sourceAppVersion||'legacy',
+        aiken:Array.isArray(state.aiken)?state.aiken:null,
+        semStructuralResults:state.semStructuralResults||null,
+        semMediationResults:state.semMediationResults||null
+      };
+    }else if(Array.isArray(state.aiken))lastResults=state.aiken;
     cviLastResults=state.contentValidity?.cvi||null;
     lawsheLastResults=state.contentValidity?.lawshe||null;
     delphiLastResults=state.contentValidity?.delphi||null;
@@ -3287,7 +3302,12 @@ function restoreProject(state){
     else document.getElementById('delphiResults').innerHTML='';
     contentValidityIntegratedHtml='';
     document.getElementById('contentValidityReportResults').innerHTML='';
-    alert('Proyecto cargado.');
+    const sourceVersion=String(state.release?.appVersion||'');
+    if(sourceVersion!==VALISTRUCT_RELEASE.version && (Array.isArray(state.aiken)||state.semStructuralResults||state.semMediationResults)){
+      alert('Proyecto cargado. Los resultados científicos derivados de una versión anterior no se activaron para reporte. Recalcule V de Aiken y/o Latencia con ValiStruct '+VALISTRUCT_RELEASE.displayVersion+' antes de generar informes.');
+    }else{
+      alert('Proyecto cargado.');
+    }
   }catch(e){alert('No fue posible cargar el proyecto: '+e.message);}
 }
 function renderProjectList(){
@@ -7716,12 +7736,12 @@ document.getElementById('downloadBetaMetrics')?.addEventListener('click',()=>{
 
 
 // ============================================================
-// ValiStruct 5.3 Beta · compatibility/release layer
+// ValiStruct 5.4 Beta · compatibility/release layer
 // ============================================================
 const VALISTRUCT_RELEASE = Object.freeze({
   app: 'ValiStruct',
-  version: '5.3.0-beta.1',
-  displayVersion: '5.3 Beta',
+  version: '5.4.0-beta.1',
+  displayVersion: '5.4 Beta',
   projectFormat: '3.0',
   releaseChannel: 'beta',
   featureFreeze: true,
@@ -7755,7 +7775,7 @@ function migrateToV30(state){
   const from = String(s.schemaVersion || s.version || 'legacy');
   s.version='3.0';
   s.schemaVersion='3.0';
-  s.release={channel:'release-candidate',appVersion:'3.0.0-rc.6',migratedFrom:from};
+  s.release={channel:'beta',appVersion:'5.4.0-beta.1',migratedFrom:from};
   if(!s.preferences)s.preferences={};
   if(!s.preferences.profile && typeof loadProfile==='function')s.preferences.profile=loadProfile();
   if(!s.preferences.settings && typeof loadSettings==='function')s.preferences.settings=loadSettings();
