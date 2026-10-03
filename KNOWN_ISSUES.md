@@ -4,7 +4,7 @@
 - Los instaladores de Fase 6 continúan siendo Beta de validación interna hasta completar el cierre.
 - macOS usa firma ad-hoc para pruebas internas; no equivale a Developer ID ni notarización.
 - Windows no cuenta todavía con firma comercial de código.
-- El build macOS actual es arm64; la compatibilidad Intel debe tratarse como objetivo separado.
+- Fase 6 construye candidatos separados para macOS Apple Silicon (arm64) y macOS Intel (x64).
 - Los artefactos de GitHub Actions expiran y no sustituyen un GitHub Release publicado.
 - No se realizará merge a `main` ni publicación sin autorización explícita.
 
