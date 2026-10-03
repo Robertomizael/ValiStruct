@@ -2603,6 +2603,16 @@ const DEFAULT_PRO_API_BASE = 'http://127.0.0.1:8765';
 function getProApiBase(){
   return localStorage.getItem('valistruct_api_base') || DEFAULT_PRO_API_BASE;
 }
+function scientificHeaders(extra={}){
+  const headers={...extra};
+  const token=window.valistructDesktop?.scientificToken;
+  if(token)headers['X-ValiStruct-Session']=token;
+  return headers;
+}
+function scientificFetch(path,options={}){
+  const headers=scientificHeaders(options.headers||{});
+  return fetch(`${getProApiBase()}${path}`,{...options,headers});
+}
 let proCsvText = null;
 let proLastResponse = null;
 
@@ -2784,7 +2794,7 @@ async function runProModel(){
     const timer=setTimeout(()=>controller.abort(),300000);
     let res;
     try{
-      res=await fetch(`${getProApiBase()}/estimate`,{
+      res=await scientificFetch('/estimate',{
         method:'POST',
         headers:authHeaders({'Content-Type':'application/json'}),
         body:JSON.stringify(payload),
@@ -3078,7 +3088,7 @@ async function callAdvanced(action){
   const box=document.getElementById('advancedResults');
   box.innerHTML='<div class="notice">Procesando análisis avanzado…</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/advanced`,{
+    const res=await scientificFetch('/advanced',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
@@ -3660,7 +3670,7 @@ async function downloadApaDocx(){
     institution:'Universidad Autónoma de Sinaloa'
   };
   try{
-    const res=await fetch(`${getProApiBase()}/report-docx`,{
+    const res=await scientificFetch('/report-docx',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
@@ -4305,7 +4315,7 @@ document.getElementById('runLittleMcar')?.addEventListener('click',async()=>{
   const box=document.getElementById('missingResults');
   box.innerHTML='<div class="notice">Ejecutando análisis MCAR en Motor Pro…</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/missingness`,{
+    const res=await scientificFetch('/missingness',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({csv_text:missingDataText})
@@ -4436,7 +4446,7 @@ async function downloadArticleDocx(){
   const out=document.getElementById('articleTablesOutput');
   if(!out?.innerHTML.trim())return alert('Primero genere las tablas.');
   try{
-    const res=await fetch(`${getProApiBase()}/article-docx`,{
+    const res=await scientificFetch('/article-docx',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -4678,7 +4688,7 @@ function buildConsolidatedExportPayload(){
 }
 document.getElementById('downloadConsolidatedXlsx')?.addEventListener('click',async()=>{
   try{
-    const res=await fetch(`${getProApiBase()}/export-xlsx`,{
+    const res=await scientificFetch('/export-xlsx',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(buildConsolidatedExportPayload())
@@ -4724,7 +4734,7 @@ document.getElementById('runSemMonteCarlo')?.addEventListener('click',async()=>{
   const box=document.getElementById('semMcResults');
   box.innerHTML='<div class="notice">Ejecutando simulación SEM en Motor Pro…</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/sem-montecarlo`,{
+    const res=await scientificFetch('/sem-montecarlo',{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
     });
     const data=await res.json();
@@ -4828,7 +4838,7 @@ document.getElementById('runProModelCheck')?.addEventListener('click',async()=>{
   const box=document.getElementById('modelCheckResults');
   box.innerHTML='<div class="notice">Comprobando modelo con Motor Pro…</div>';
   try{
-    const res=await fetch(`${getProApiBase()}/model-check`,{
+    const res=await scientificFetch('/model-check',{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({syntax,variables:vars})
     });
     const data=await res.json();
@@ -5686,7 +5696,7 @@ function previewUnifiedCsv(text){
 async function loadXlsxWorkbook(file){
   const fd=new FormData();
   fd.append('file',file);
-  const res=await fetch(`${getProApiBase()}/xlsx-info`,{method:'POST',body:fd});
+  const res=await scientificFetch('/xlsx-info',{method:'POST',body:fd});
   const data=await res.json();
   if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible leer XLSX.');
   const sel=document.getElementById('xlsxSheetSelect');
@@ -5700,7 +5710,7 @@ async function convertSelectedXlsxSheet(){
   const fd=new FormData();
   fd.append('file',unifiedXlsxFile);
   fd.append('sheet',document.getElementById('xlsxSheetSelect').value||'');
-  const res=await fetch(`${getProApiBase()}/xlsx-to-csv`,{method:'POST',body:fd});
+  const res=await scientificFetch('/xlsx-to-csv',{method:'POST',body:fd});
   const data=await res.json();
   if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible convertir XLSX.');
   unifiedCsvText=data.csv_text;
@@ -6000,7 +6010,7 @@ document.getElementById('convertLegacyFile')?.addEventListener('click',async()=>
   if(!legacyFile)return alert('Seleccione un archivo SAV o DTA.');
   const fd=new FormData();fd.append('file',legacyFile);
   try{
-    const res=await fetch(`${getProApiBase()}/legacy-to-csv`,{method:'POST',body:fd});
+    const res=await scientificFetch('/legacy-to-csv',{method:'POST',body:fd});
     const data=await res.json();
     if(!res.ok||data.ok===false)throw new Error(data.error||'No fue posible convertir.');
     legacyCsvText=data.csv_text;
