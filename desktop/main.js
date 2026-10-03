@@ -588,7 +588,7 @@ async function createWindow() {
         scientificFetch('/efa',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({method:'diagnostics',csv_text:''})
+          body:JSON.stringify({method:'diagnostics',csv_text:null})
         }).then(r=>r.status)
       `);
       if (status === 401) throw new Error('Packaged renderer reached /efa without the desktop session token.');
