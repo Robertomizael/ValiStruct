@@ -15,6 +15,7 @@ on:
       - feature/v5-4-fase2d-privacidad-importacion
       - feature/v5-4-fase3-hardening
       - feature/v5-4-fase4-release-readiness
+      - fix/v5-4-fase6-audit-remediation
     paths:
       - "desktop/**"
       - "navigation-v51.js"
