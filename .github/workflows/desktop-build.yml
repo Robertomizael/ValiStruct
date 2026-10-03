@@ -77,7 +77,11 @@ jobs:
           $exe = Get-ChildItem -Path dist -Filter 'ValiStruct.exe' -File -Recurse | Where-Object { $_.FullName -match 'win-unpacked' } | Select-Object -First 1
           if (-not $exe) { throw 'Packaged Windows executable not found for smoke test.' }
           $env:VALISTRUCT_DESKTOP_SMOKE='1'
-          $p = Start-Process -FilePath $exe.FullName -PassThru -Wait
+          $p = Start-Process -FilePath $exe.FullName -PassThru
+          if (-not $p.WaitForExit(120000)) {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            throw 'Packaged Windows smoke exceeded 120 seconds.'
+          }
           if ($p.ExitCode -ne 0) { throw "Packaged Windows smoke failed with exit code $($p.ExitCode)." }
       - name: Upload Windows autonomous installer
         uses: actions/upload-artifact@v4
@@ -128,7 +132,19 @@ jobs:
         run: |
           APP_PATH="$(find dist -maxdepth 2 -type d -name 'ValiStruct.app' | head -n 1)"
           test -n "$APP_PATH"
-          VALISTRUCT_DESKTOP_SMOKE=1 "$APP_PATH/Contents/MacOS/ValiStruct"
+          VALISTRUCT_DESKTOP_SMOKE=1 "$APP_PATH/Contents/MacOS/ValiStruct" &
+          SMOKE_PID=$!
+          for i in $(seq 1 120); do
+            if ! kill -0 "$SMOKE_PID" 2>/dev/null; then
+              wait "$SMOKE_PID"
+              exit $?
+            fi
+            sleep 1
+          done
+          kill "$SMOKE_PID" 2>/dev/null || true
+          wait "$SMOKE_PID" 2>/dev/null || true
+          echo "Packaged macOS smoke exceeded 120 seconds." >&2
+          exit 1
       - name: Ad-hoc sign macOS app for internal testing
         working-directory: desktop
         shell: bash
