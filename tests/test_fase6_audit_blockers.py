@@ -31,3 +31,31 @@ def test_efa_uses_desktop_scientific_fetch_and_versions_are_current():
     assert desktop["version"]==version["version"]
     assert any(x.get("from")=="../version.json" and x.get("to")=="version.json"
                for x in desktop["build"]["extraResources"])
+
+
+def test_release_reproducibility_and_cleanup():
+    pkg=json.loads((ROOT/"desktop/package.json").read_text())
+    lock=json.loads((ROOT/"desktop/package-lock.json").read_text())
+    runtime=json.loads((ROOT/"release/runtime-v5.4-beta1.json").read_text())
+    workflow=(ROOT/".github/workflows/desktop-build.yml").read_text()
+    rc=(ROOT/".github/workflows/rc6-validation.yml").read_text()
+    ci=(ROOT/".github/workflows/valistruct-ci.yml").read_text()
+    req=(ROOT/"backend/requirements.txt").read_text()
+    mac=(ROOT/"desktop/scripts/build_runtime_macos.sh").read_text()
+    win=(ROOT/"desktop/scripts/build_runtime_windows.ps1").read_text()
+
+    assert lock["lockfileVersion"]==3
+    assert lock["packages"][""]["dependencies"]==pkg["dependencies"]
+    assert workflow.count("run: npm ci")==2
+    assert "run: npm install" not in workflow
+    assert workflow.count("npm audit --omit=dev --audit-level=high")==2
+    assert "Smoke packaged Windows app" in workflow and "Smoke packaged macOS app" in workflow
+    assert "python=3.12.14" in mac and "python=3.12.14" in win
+    assert "r-base=4.5.3" in mac and "r-base=4.5.3" in win
+    assert "r-lavaan=0.7_2" in mac and "r-lavaan=0.7_2" in win
+    assert runtime["python"]=="3.12.14" and runtime["r"]=="4.5.3"
+    assert all("==" in x for x in req.splitlines() if x.strip())
+    assert "tests/BETA_VALIDATION_REPORT.json" in rc
+    assert "tests/RC6_VALIDATION_REPORT.json" not in rc
+    assert '"main"' in ci
+    assert "valistruct-v5-4-0-beta1-fase6-20261003" in (ROOT/"service-worker.js").read_text()
