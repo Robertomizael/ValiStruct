@@ -11,7 +11,8 @@
     "dist:win": "electron-builder --win nsis",
     "pack:mac": "electron-builder --mac dir",
     "dist:mac": "electron-builder --mac dmg",
-    "dist": "electron-builder --win nsis --mac dmg"
+    "dist": "electron-builder --win nsis --mac dmg",
+    "pack:win": "electron-builder --win dir"
   },
   "dependencies": {
     "tar": "7.4.3",
