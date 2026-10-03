@@ -32,6 +32,27 @@ else:
 HERE = os.path.dirname(os.path.abspath(__file__))
 R_ENGINE = os.path.join(HERE, "lavaan_engine.R")
 
+def _load_release_metadata():
+    defaults = {
+        "version": "5.4.0-beta.1",
+        "displayVersion": "5.4 Beta",
+        "projectFormat": "3.0",
+        "releaseChannel": "beta",
+    }
+    try:
+        version_path = Path(HERE).resolve().parent / "version.json"
+        if version_path.exists():
+            data = json.loads(version_path.read_text(encoding="utf-8"))
+            return {**defaults, **{k: data.get(k, defaults[k]) for k in defaults}}
+    except Exception:
+        pass
+    return defaults
+
+RELEASE_METADATA = _load_release_metadata()
+APP_VERSION = RELEASE_METADATA["version"]
+PROJECT_FORMAT = RELEASE_METADATA["projectFormat"]
+RELEASE_CHANNEL = RELEASE_METADATA["releaseChannel"]
+
 # Fase 0: scientific-only backend by default.
 # Institutional/admin/collaboration routes are unavailable unless explicitly
 # enabled. This is a capability gate, not merely a hidden frontend menu.
@@ -1668,7 +1689,7 @@ def monitor():
     comments=sum(len(v) for v in _read_json_file(COMMENTS_FILE,{}).values())
     tasks=sum(len(v) for v in _read_json_file(TASKS_FILE,{}).values())
     notifications=sum(len(v) for v in _read_json_file(NOTIFICATIONS_FILE,{}).values())
-    return jsonify({"ok":True,"status":"operativo","app_version":"3.0.0-rc.6",
+    return jsonify({"ok":True,"status":"operativo","app_version":APP_VERSION,
                     "uptime_seconds":uptime,"uptime_human":f"{h}h {m}m {s}s",
                     "projects_total":projects_total,"comments_total":comments,
                     "tasks_total":tasks,"notifications_total":notifications,
@@ -1792,16 +1813,16 @@ def toggle_incident(incident_id):
 
 
 # -----------------------------
-# ValiStruct 3.0 RC1 release-candidate checks
+# ValiStruct current release metadata and validation checks
 # -----------------------------
 @app.get("/version")
 def version_info():
     return jsonify({
         "ok": True,
         "app": "ValiStruct",
-        "version": "3.0.0-rc.6",
-        "project_format": "3.0",
-        "release_channel": "release-candidate"
+        "version": APP_VERSION,
+        "project_format": PROJECT_FORMAT,
+        "release_channel": RELEASE_CHANNEL
     })
 
 @app.get("/rc-check")
@@ -1839,7 +1860,7 @@ def rc_check():
         add("python-docx","fail",str(e))
     add("Auth configuration","pass" if AUTH_ENABLED else "warn","Activa." if AUTH_ENABLED else "Desactivada.")
     add("Institution library","pass" if PROJECT_LIBRARY_ENABLED else "warn","Activa." if PROJECT_LIBRARY_ENABLED else "Desactivada.")
-    return jsonify({"ok":True,"release":"3.0.0-rc.6","checks":checks})
+    return jsonify({"ok":True,"release":APP_VERSION,"checks":checks})
 
 @app.get("/security-status")
 def security_status():
@@ -1900,7 +1921,7 @@ def runtime_audit():
     for label, module in modules:
         add(f"dependency:{label}", "pass" if importlib.util.find_spec(module) else "warn", module)
 
-    return jsonify({"ok": True, "release": "3.0.0-rc.6", "checks": checks})
+    return jsonify({"ok": True, "release": APP_VERSION, "checks": checks})
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8765, debug=False)
