@@ -29,6 +29,8 @@ on:
       - "app.js"
       - "styles.css"
       - "manifest.webmanifest"
+      - "version.json"
+      - "release/runtime-v5.4-beta1.json"
       - "icons/**"
       - ".github/workflows/desktop-build.yml"
 
