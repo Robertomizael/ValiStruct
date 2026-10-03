@@ -30,5 +30,15 @@
       "desktop/scripts/build_runtime_macos.sh",
       "desktop/scripts/build_runtime_windows.ps1"
     ]
+  },
+  "desktopPackages": {
+    "tar": "7.5.22",
+    "xlsx": "SheetJS 0.20.3 (official CDN tarball)",
+    "electron": "43.7.7",
+    "electronBuilder": "25.1.8"
+  },
+  "security": {
+    "npmProductionAudit": "required; high/critical findings block Desktop Build",
+    "sheetjsSource": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }
