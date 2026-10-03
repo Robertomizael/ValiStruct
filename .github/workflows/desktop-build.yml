@@ -70,6 +70,15 @@ jobs:
       - name: Build Windows installer
         working-directory: desktop
         run: npm run dist:win
+      - name: Smoke packaged Windows app
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path dist -Filter 'ValiStruct.exe' -File -Recurse | Where-Object { $_.FullName -match 'win-unpacked' } | Select-Object -First 1
+          if (-not $exe) { throw 'Packaged Windows executable not found for smoke test.' }
+          $env:VALISTRUCT_DESKTOP_SMOKE='1'
+          $p = Start-Process -FilePath $exe.FullName -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Packaged Windows smoke failed with exit code $($p.ExitCode)." }
       - name: Upload Windows autonomous installer
         uses: actions/upload-artifact@v4
         with:
@@ -113,6 +122,13 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run pack:mac
+      - name: Smoke packaged macOS app
+        working-directory: desktop
+        shell: bash
+        run: |
+          APP_PATH="$(find dist -maxdepth 2 -type d -name 'ValiStruct.app' | head -n 1)"
+          test -n "$APP_PATH"
+          VALISTRUCT_DESKTOP_SMOKE=1 "$APP_PATH/Contents/MacOS/ValiStruct"
       - name: Ad-hoc sign macOS app for internal testing
         working-directory: desktop
         shell: bash
