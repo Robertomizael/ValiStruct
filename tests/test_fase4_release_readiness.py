@@ -11,6 +11,9 @@ def test_v54_release_readiness_metadata_is_coherent():
     validator=(ROOT/"tests/validate_release.py").read_text(encoding="utf-8")
     gate=(ROOT/"tests/beta_gate.py").read_text(encoding="utf-8")
     desktop=(ROOT/".github/workflows/desktop-build.yml").read_text(encoding="utf-8")
+    index=(ROOT/"index.html").read_text(encoding="utf-8")
+    app=(ROOT/"app.js").read_text(encoding="utf-8")
+    sw=(ROOT/"service-worker.js").read_text(encoding="utf-8")
 
     assert version["version"]=="5.4.0-beta.1"
     assert version["displayVersion"]=="5.4 Beta"
@@ -31,3 +34,9 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert "ValiStruct 3.0 RC6" not in gate
 
     assert "feature/v5-4-fase4-release-readiness" in desktop
+
+    assert "ValiStruct v5.4 Beta" in index
+    assert "ValiStruct v5.3" not in index
+    assert "version:'5.4.0-beta.1'" in app
+    assert "version:'5.3.0-beta.1'" not in app
+    assert "valistruct-v5-4-0-beta1-fase4-20261003" in sw
