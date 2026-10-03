@@ -23,7 +23,7 @@ def test_project_roundtrip_and_raw_data_minimization():
           localStorage.removeItem('valistruct_privacy_v21');
           proCsvText='ID,i1,i2\\n1,1,2\\n2,2,3';
           semData=[[1,2],[2,3]];
-          lastResults=[{item:'i1',criterion:'claridad',v:.90}];
+          lastResults=[{calculationVersion:'aiken-score-nk-v54',item:'i1',criterion:'claridad',v:.90}];
           relLastResults={alpha:.88,itemRows:[]};
           efaLastResults={n:120,k:6};
           cfaLastResults={n:120};
