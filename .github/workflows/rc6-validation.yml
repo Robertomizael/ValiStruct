@@ -95,6 +95,11 @@ jobs:
       - name: Candidate provenance gate
         run: pytest -q tests/test_fase5_candidate_manifest.py
 
+      - name: Audit remediation gate
+        env:
+          VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
+        run: pytest -q tests/test_fase6_audit_remediation.py
+
       - name: Current beta release gate
         env:
           VALISTRUCT_RUN_E2E: "0"
