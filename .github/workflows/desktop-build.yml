@@ -130,6 +130,12 @@ jobs:
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm install
+      - name: Upload desktop dependency lock candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-desktop-package-lock
+          path: desktop/package-lock.json
+          if-no-files-found: error
       - name: Build unpacked macOS app
         working-directory: desktop
         env:
