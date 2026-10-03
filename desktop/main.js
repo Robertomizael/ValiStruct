@@ -527,6 +527,7 @@ function installExternalNavigationGuards(win) {
   };
 
   win.webContents.setWindowOpenHandler(({ url }) => {
+    if (!url || url === 'about:blank') return { action: 'allow' };
     openExternal(url);
     return { action: 'deny' };
   });
