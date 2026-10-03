@@ -47,5 +47,6 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert "ValiStruct v5.4 Beta" in index
     assert "ValiStruct v5.3" not in index
     assert "version:'5.4.0-beta.1'" in app
-    assert "version:'5.3.0-beta.1'" not in app
+    assert "5.3.0-beta.1" not in app
+    assert "5.3 Beta" not in app
     assert "valistruct-v5-4-0-beta1-fase6-20261003" in sw
