@@ -75,6 +75,7 @@ jobs:
           pytest -q tests/test_fase0_crosslinks.py
           pytest -q tests/test_fase4_release_readiness.py
           pytest -q tests/test_fase5_candidate_manifest.py
+          pytest -q tests/test_fase6_audit_remediation.py
 
       - name: Numerical R and backend regression
         env:
