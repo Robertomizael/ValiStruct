@@ -27,5 +27,8 @@
   ],
   "published": false,
   "mergedToMain": false,
-  "notes": "Candidate provenance only. This manifest does not publish a GitHub release."
+  "notes": "Candidate provenance only. This manifest does not publish a GitHub release.",
+  "status": "invalidated-by-fase6-audit-pending-rebuild",
+  "valid": false,
+  "invalidatedReason": "Independent audit confirmed desktop AFE token failure and additional release-hardening changes. These artifact IDs and hashes are historical only until Fase 6 rebuild completes."
 }
