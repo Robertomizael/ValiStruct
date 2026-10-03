@@ -17,6 +17,9 @@ def test_desktop_token_bridge_and_scientific_fetch_wiring():
     assert "function scientificFetch(path,options={})" in app
     assert "headers['X-ValiStruct-Session']=token" in app
 
+    efa=(ROOT/"efa-v52.js").read_text(encoding="utf-8")
+    assert "scientificFetch('/efa'" in efa, "/efa must use the desktop scientific token wrapper"
+
     for endpoint in [
         "/estimate","/advanced","/report-docx","/missingness","/article-docx",
         "/export-xlsx","/sem-montecarlo","/model-check","/xlsx-info",
