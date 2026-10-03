@@ -18,6 +18,6 @@ def test_v54_version_metadata_is_coherent():
     assert "ValiStruct Desktop 5.4 Beta" in desktop["description"]
     assert "appVersion:'5.4.0-beta.1'" in app
     assert "projectFormat:'3.0'" in app
-    assert "valistruct-v5-4-0-beta1-fase4-20261003" in sw
+    assert "valistruct-v5-4-0-beta1-fase6-20261003" in sw
     assert "ValiStruct v5.4" in shell
     assert "v5-3-0-fase1-navfix" not in sw
