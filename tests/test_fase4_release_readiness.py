@@ -36,9 +36,9 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert "ValiStruct 3.0 RC6" not in gate
 
     assert "feature/v5-4-fase4-release-readiness" in desktop
-    assert desktop_pkg["dependencies"]["tar"]=="7.4.3"
-    assert desktop_pkg["dependencies"]["xlsx"]=="0.18.5"
-    assert desktop_pkg["devDependencies"]["electron"]=="32.1.2"
+    assert desktop_pkg["dependencies"]["tar"]=="7.5.22"
+    assert desktop_pkg["dependencies"]["xlsx"]=="https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    assert desktop_pkg["devDependencies"]["electron"]=="43.7.7"
     assert desktop_pkg["devDependencies"]["electron-builder"]=="25.1.8"
     assert "Current beta release gate" in rc_workflow
     assert "python tests/validate_release.py" in rc_workflow
