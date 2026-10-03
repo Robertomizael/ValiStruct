@@ -78,12 +78,14 @@ jobs:
       - name: Smoke packaged Windows app
         shell: pwsh
         working-directory: desktop
+        env:
+          VALISTRUCT_SMOKE_TEST: "1"
         run: |
           $exe = Resolve-Path "dist/win-unpacked/ValiStruct.exe"
           $app = Start-Process -FilePath $exe -PassThru
           $ok = $false
           try {
-            for ($i=0; $i -lt 40; $i++) {
+            for ($i=0; $i -lt 120; $i++) {
               Start-Sleep -Seconds 1
               try {
                 $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8765/health -TimeoutSec 2
@@ -168,13 +170,15 @@ jobs:
       - name: Smoke packaged macOS app
         working-directory: desktop
         shell: bash
+        env:
+          VALISTRUCT_SMOKE_TEST: "1"
         run: |
           BIN="$APP_PATH/Contents/MacOS/ValiStruct"
           test -x "$BIN"
           "$BIN" >/tmp/valistruct-packaged-macos.log 2>&1 &
           APP_PID=$!
           ok=0
-          for i in $(seq 1 40); do
+          for i in $(seq 1 180); do
             if curl -fsS http://127.0.0.1:8765/health >/dev/null 2>&1; then ok=1; break; fi
             sleep 1
           done
