@@ -45,3 +45,26 @@ def test_desktop_scientific_token_gate(monkeypatch):
     monkeypatch.delenv("VALISTRUCT_DESKTOP_SESSION_TOKEN",raising=False)
     dev=client.post("/xlsx-info")
     assert dev.status_code!=401
+
+
+def test_desktop_token_gate_covers_all_scientific_routes(monkeypatch):
+    api.app.config["TESTING"]=True
+    client=api.app.test_client()
+    monkeypatch.setenv("VALISTRUCT_DESKTOP_SESSION_TOKEN","session-secret")
+
+    protected=sorted(api.SCIENTIFIC_ROUTE_WHITELIST-api.DESKTOP_TOKEN_EXEMPT)
+    rules={rule.rule:rule for rule in api.app.url_map.iter_rules() if rule.rule in protected}
+
+    assert set(rules)==set(protected)
+    for path in protected:
+        methods=rules[path].methods-{"OPTIONS","HEAD"}
+        method="POST" if "POST" in methods else sorted(methods)[0]
+
+        no_token=client.open(path,method=method)
+        assert no_token.status_code==401, (path,method,no_token.status_code)
+
+        wrong=client.open(path,method=method,headers={"X-ValiStruct-Session":"wrong"})
+        assert wrong.status_code==401, (path,method,wrong.status_code)
+
+        correct=client.open(path,method=method,headers={"X-ValiStruct-Session":"session-secret"})
+        assert correct.status_code!=401, (path,method,correct.status_code)
