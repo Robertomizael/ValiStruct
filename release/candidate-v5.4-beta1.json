@@ -1,0 +1,31 @@
+{
+  "candidate": "ValiStruct 5.4 Beta 1",
+  "version": "5.4.0-beta.1",
+  "displayVersion": "5.4 Beta",
+  "projectFormat": "3.0",
+  "sourceBranch": "feature/v5-4-fase4-release-readiness",
+  "sourceCommit": "538bca5d553e7df9f0b6e02514a483448d207239",
+  "validatedHead": "b4a450365727d86c8dc9b404b04d9112cceb10ee",
+  "workflowRunId": 37145587046,
+  "artifacts": [
+    {
+      "platform": "macOS",
+      "name": "valistruct-desktop-macos-autonomous",
+      "artifactId": 11281679660,
+      "sizeInBytes": 573004166,
+      "archiveSha256": "be707d200986d2e7395c36c074d3ead30c014c3c3ac0e63ce32f262845fdf8b2",
+      "expiresAt": "2027-01-01T18:48:29Z"
+    },
+    {
+      "platform": "Windows",
+      "name": "valistruct-desktop-windows-autonomous",
+      "artifactId": 11281584970,
+      "sizeInBytes": 779603487,
+      "archiveSha256": "6bc7b3ca8a1b35c968d6626d1543bbd3c437785e61250ce3e8b7c4d12d28b752",
+      "expiresAt": "2027-01-01T18:48:29Z"
+    }
+  ],
+  "published": false,
+  "mergedToMain": false,
+  "notes": "Candidate provenance only. This manifest does not publish a GitHub release."
+}
