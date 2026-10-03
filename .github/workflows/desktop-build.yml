@@ -1,4 +1,5 @@
 name: ValiStruct Desktop Autonomous Build
+# Fase 6 final audited rebuild trigger
 
 on:
   workflow_dispatch:
