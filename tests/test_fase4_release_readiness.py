@@ -15,6 +15,7 @@ def test_v54_release_readiness_metadata_is_coherent():
     rc_workflow=(ROOT/".github/workflows/rc6-validation.yml").read_text(encoding="utf-8")
     index=(ROOT/"index.html").read_text(encoding="utf-8")
     app=(ROOT/"app.js").read_text(encoding="utf-8")
+    backend=(ROOT/"backend/api.py").read_text(encoding="utf-8")
     sw=(ROOT/"service-worker.js").read_text(encoding="utf-8")
 
     assert version["version"]=="5.4.0-beta.1"
@@ -47,5 +48,10 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert "ValiStruct v5.4 Beta" in index
     assert "ValiStruct v5.3" not in index
     assert "version:'5.4.0-beta.1'" in app
-    assert "version:'5.3.0-beta.1'" not in app
+    assert "version: '5.4.0-beta.1'" in app
+    assert "5.3.0-beta.1" not in app
+    assert "3.0.0-rc.6" not in app
+    assert '"version": "5.4.0-beta.1"' in backend
+    assert '"release_channel": "beta"' in backend
+    assert "3.0.0-rc.6" not in backend
     assert "valistruct-v5-4-0-beta1-fase4-20261003" in sw
