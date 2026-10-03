@@ -7828,7 +7828,7 @@ async function runRcAuditV30(){
     <div class="metric-card"><span>PASS</span><strong>${pass}</strong></div>
     <div class="metric-card"><span>WARN</span><strong>${warn}</strong></div>
     <div class="metric-card"><span>FAIL</span><strong>${fail}</strong></div>
-    <div class="metric-card"><span>Canal</span><strong>RC1</strong></div>`;
+    <div class="metric-card"><span>Canal</span><strong>Beta</strong></div>`;
   document.getElementById('rcResults').innerHTML=checks.map(c=>`
     <div class="rc-check ${c.status==='pass'?'rc-pass':(c.status==='warn'?'rc-warn':'rc-fail')}">
       <strong>${c.status==='pass'?'🟢':(c.status==='warn'?'🟠':'🔴')} ${escapeHtml(c.name)}</strong>
@@ -7838,7 +7838,7 @@ async function runRcAuditV30(){
 document.getElementById('runRcAudit')?.addEventListener('click',runRcAuditV30);
 document.getElementById('downloadRcAudit')?.addEventListener('click',()=>{
   if(!rcAuditLast)return alert('Ejecute primero la auditoría RC.');
-  saveBlob(JSON.stringify(rcAuditLast,null,2),'application/json;charset=utf-8;','ValiStruct_3_RC6_auditoria.json');
+  saveBlob(JSON.stringify(rcAuditLast,null,2),'application/json;charset=utf-8;','ValiStruct_5_4_Beta_auditoria.json');
 });
 
 // ------------------------------------------------------------
