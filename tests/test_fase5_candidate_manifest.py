@@ -1,4 +1,4 @@
-"""Fase 5: candidate manifest must remain tied to the validated v5.4 beta build."""
+"""Fase 6: candidate manifest must track the audited v5.4 beta rebuild."""
 from pathlib import Path
 import json
 import re
@@ -6,7 +6,7 @@ import re
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def test_candidate_manifest_matches_v54_beta_and_preserves_nonpublication():
+def test_candidate_manifest_matches_audited_v54_beta_and_preserves_nonpublication():
     version=json.loads((ROOT/"version.json").read_text(encoding="utf-8"))
     manifest=json.loads((ROOT/"release/candidate-v5.4-beta1.json").read_text(encoding="utf-8"))
 
@@ -14,25 +14,28 @@ def test_candidate_manifest_matches_v54_beta_and_preserves_nonpublication():
     assert manifest["displayVersion"]==version["displayVersion"]=="5.4 Beta"
     assert manifest["projectFormat"]==version["projectFormat"]=="3.0"
 
-    assert manifest["sourceCommit"]=="538bca5d553e7df9f0b6e02514a483448d207239"
-    assert manifest["validatedHead"]=="b4a450365727d86c8dc9b404b04d9112cceb10ee"
-    assert manifest["workflowRunId"]==37145587046
+    audited_head="4c0d64299c34fb39f7b1ffbe8c61a4a668ad4e3b"
+    assert manifest["sourceBranch"]=="fix/v5-4-fase6-auditoria-independiente"
+    assert manifest["sourceCommit"]==audited_head
+    assert manifest["validatedHead"]==audited_head
+    assert manifest["workflowRunId"]==37161435623
     assert manifest["published"] is False
     assert manifest["mergedToMain"] is False
-    assert manifest["valid"] is False
-    assert manifest["status"]=="invalidated-by-fase6-audit-pending-rebuild"
+    assert manifest["valid"] is True
+    assert manifest["status"]=="validated-fase6-audited-rebuild"
 
     artifacts=manifest["artifacts"]
-    assert {a["platform"] for a in artifacts}=={"macOS","Windows"}
-    assert {a["name"] for a in artifacts}=={
-        "valistruct-desktop-macos-autonomous",
-        "valistruct-desktop-windows-autonomous",
+    assert len(artifacts)==3
+    expected={
+        ("macOS","arm64","valistruct-desktop-macos-arm64-autonomous"): (11288265743,593925689),
+        ("macOS","x64","valistruct-desktop-macos-intel-autonomous"): (11288191001,619205761),
+        ("Windows","x64","valistruct-desktop-windows-autonomous"): (11287114318,803250687),
     }
-
-    expected_sizes={"macOS":573004166,"Windows":779603487}
-    expected_ids={"macOS":11281679660,"Windows":11281584970}
+    assert {(a["platform"],a["architecture"],a["name"]) for a in artifacts}==set(expected)
     for artifact in artifacts:
-        assert artifact["artifactId"]==expected_ids[artifact["platform"]]
-        assert artifact["sizeInBytes"]==expected_sizes[artifact["platform"]]
+        key=(artifact["platform"],artifact["architecture"],artifact["name"])
+        artifact_id,size=expected[key]
+        assert artifact["artifactId"]==artifact_id
+        assert artifact["sizeInBytes"]==size
         assert re.fullmatch(r"[0-9a-f]{64}",artifact["archiveSha256"])
         assert artifact["expiresAt"].endswith("Z")
