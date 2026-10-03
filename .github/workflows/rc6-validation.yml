@@ -98,6 +98,9 @@ jobs:
       - name: Independent audit blocker gate
         run: pytest -q tests/test_fase6_audit_blockers.py
 
+      - name: Desktop lifecycle security gate
+        run: pytest -q tests/test_fase6_desktop_lifecycle_security.py
+
       - name: Current beta release gate
         env:
           VALISTRUCT_RUN_E2E: "0"
