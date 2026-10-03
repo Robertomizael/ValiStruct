@@ -45,15 +45,25 @@ SCIENTIFIC_ROUTE_WHITELIST = frozenset({
 def institutional_mode_enabled():
     return os.environ.get("VALISTRUCT_INSTITUTIONAL_MODE", "false").strip().lower() == "true"
 
+DESKTOP_TOKEN_EXEMPT = frozenset({"/health", "/version"})
+
+def desktop_session_token():
+    return os.environ.get("VALISTRUCT_DESKTOP_SESSION_TOKEN", "").strip()
+
 @app.before_request
 def _valistruct_capability_gate():
-    if institutional_mode_enabled():
-        return None
-    # Preflight is allowed only for scientific endpoints; all other backend
-    # capabilities look nonexistent when institutional mode is off.
-    if request.path in SCIENTIFIC_ROUTE_WHITELIST:
-        return None
-    return jsonify({"ok": False, "error": "Ruta no disponible en modo científico"}), 404
+    if not institutional_mode_enabled():
+        # Preflight is allowed only for scientific endpoints; all other backend
+        # capabilities look nonexistent when institutional mode is off.
+        if request.path not in SCIENTIFIC_ROUTE_WHITELIST:
+            return jsonify({"ok": False, "error": "Ruta no disponible en modo científico"}), 404
+
+    token = desktop_session_token()
+    if token and request.path in SCIENTIFIC_ROUTE_WHITELIST and request.path not in DESKTOP_TOKEN_EXEMPT:
+        supplied = request.headers.get("X-ValiStruct-Session", "")
+        if not supplied or not secrets.compare_digest(supplied, token):
+            return jsonify({"ok": False, "error": "Sesión desktop no autorizada"}), 401
+    return None
 
 def find_rscript():
     return shutil.which("Rscript")
