@@ -11,8 +11,8 @@ rm -f "$ARCHIVE"
 
 conda install -y -n base -c conda-forge conda-pack
 conda create -y -p "$ENV_DIR" -c conda-forge \
-  python=3.12 pip \
-  r-base r-jsonlite r-lavaan r-psych r-naniar
+  python=3.12.14 pip \
+  r-base=4.5.3 r-jsonlite=2.0.0 r-lavaan=0.7_2 r-psych=2.6.9 r-naniar=1.1.0
 
 "$ENV_DIR/bin/python" -m pip install --upgrade pip
 "$ENV_DIR/bin/python" -m pip install -r "$ROOT/backend/requirements.txt"
