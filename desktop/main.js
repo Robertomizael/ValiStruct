@@ -549,6 +549,14 @@ ipcMain.on('valistruct:get-session-token', (event) => {
   event.returnValue = desktopSessionToken || '';
 });
 
+function finishDesktopSmoke(code) {
+  try {
+    if (backendProcess && !backendProcess.killed) backendProcess.kill();
+  } catch (_) {}
+  backendProcess = null;
+  setTimeout(() => app.exit(code), 150);
+}
+
 async function createWindow() {
   try {
     runtimeInfo = await ensureBundledRuntime();
@@ -593,10 +601,10 @@ async function createWindow() {
       `);
       if (status === 401) throw new Error('Packaged renderer reached /efa without the desktop session token.');
       console.log('[ValiStruct] packaged desktop smoke PASS; /efa status=' + status);
-      app.exit(0);
+      finishDesktopSmoke(0);
     } catch (err) {
       console.error('[ValiStruct] packaged desktop smoke FAIL:', err);
-      app.exit(2);
+      finishDesktopSmoke(2);
     }
     return;
   }
