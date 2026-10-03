@@ -9,7 +9,7 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 if (Test-Path $archive) { Remove-Item -Force $archive }
 
 conda install -y -n base -c conda-forge conda-pack
-conda create -y -p $envDir -c conda-forge python=3.12 pip r-base r-jsonlite r-lavaan r-psych r-naniar
+conda create -y -p $envDir -c conda-forge python=3.12.14 pip r-base=4.5.3 r-jsonlite=2.0.0 r-lavaan=0.7_2 r-psych=2.6.9 r-naniar=1.1.0
 
 $python = Join-Path $envDir 'python.exe'
 & $python -m pip install --upgrade pip
@@ -20,6 +20,9 @@ $rscript = Join-Path $envDir 'Scripts/Rscript.exe'
 if (!(Test-Path $rscript)) { $rscript = Join-Path $envDir 'Library/bin/Rscript.exe' }
 if (!(Test-Path $rscript)) { throw 'Rscript.exe was not found in the integrated runtime.' }
 & $rscript -e "library(jsonlite); library(lavaan); library(psych); library(naniar); cat('R runtime OK\n')"
+$runtimeManifest = Join-Path $outDir 'runtime-packages.json'
+conda list -p $envDir --json | Out-File -FilePath $runtimeManifest -Encoding utf8
+if (!(Test-Path $runtimeManifest)) { throw 'Runtime package manifest was not created.' }
 
 $condaRoot = $env:CONDA
 if ([string]::IsNullOrWhiteSpace($condaRoot)) {
