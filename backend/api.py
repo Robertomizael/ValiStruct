@@ -685,6 +685,15 @@ def legacy_to_csv():
         except Exception:
             pass
 
+        def _value_label_key(key):
+            try:
+                number = float(key)
+                if number.is_integer():
+                    return str(int(number))
+            except (TypeError, ValueError):
+                pass
+            return str(key)
+
         value_labels = {}
         try:
             raw_value_labels = getattr(meta, "variable_value_labels", {}) or {}
@@ -692,7 +701,7 @@ def legacy_to_csv():
                 if not isinstance(mapping, dict) or not mapping:
                     continue
                 value_labels[str(col)] = {
-                    str(key): str(label)
+                    _value_label_key(key): str(label)
                     for key, label in mapping.items()
                     if label is not None
                 }
