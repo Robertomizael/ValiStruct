@@ -14,12 +14,12 @@
     "dist": "electron-builder --win nsis --mac dmg"
   },
   "dependencies": {
-    "tar": "^7.4.3",
-    "xlsx": "^0.18.5"
+    "tar": "7.4.3",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
-    "electron": "^32.1.2",
-    "electron-builder": "^25.1.8"
+    "electron": "32.1.2",
+    "electron-builder": "25.1.8"
   },
   "build": {
     "appId": "mx.uas.valistruct",
