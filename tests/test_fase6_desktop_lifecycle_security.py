@@ -23,6 +23,7 @@ def test_desktop_external_navigation_never_opens_with_preload():
     assert "shell } = require('electron')" in main
     assert "function installExternalNavigationGuards(win)" in main
     assert "setWindowOpenHandler" in main
+    assert "url === 'about:blank'" in main
     assert "return { action: 'deny' };" in main
     assert "'will-navigate'" in main
     assert "event.preventDefault();" in main
