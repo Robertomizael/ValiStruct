@@ -18,7 +18,7 @@ npm start
 
 ## Construcción reproducible
 
-Las dependencias directas de Electron están fijadas y Fase 6 incorpora `package-lock.json`. Los workflows usan `npm ci`.
+Las dependencias de Electron están fijadas y Fase 6 incorpora `package-lock.json`. Los workflows usan `npm ci` con Node 22.12. El cierre de seguridad usa `npm audit` y bloquea hallazgos altos/críticos; el audit completo del lockfile de Fase 6 quedó verde tras actualizar `tar`, SheetJS, Electron, electron-builder y `@electron/get`.
 
 El runtime científico también se fija en Fase 6 a versiones concretas de Python, R, lavaan, psych, naniar y dependencias Python. Los instaladores deben reconstruirse después de cualquier cambio de estas versiones.
 
