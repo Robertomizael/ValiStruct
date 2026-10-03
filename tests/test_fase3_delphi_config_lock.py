@@ -27,10 +27,11 @@ def test_delphi_blocks_round_after_configuration_change():
 
         page.locator("#delphiJudgeCount").fill("7")
         page.locator("#addDelphiRound").click()
+        page.locator("#evaluateDelphi").click()
 
         assert page.evaluate("delphiRoundCount")==1
         assert page.locator(".delphi-round").count()==1
-        assert any("configuración Delphi cambió" in msg for msg in dialogs)
+        assert sum("configuración Delphi cambió" in msg for msg in dialogs)>=2
 
         notice=page.locator("#delphiWorkspace .notice").inner_text()
         assert "panel y la configuración de expertos se mantienen constantes entre rondas" in notice
