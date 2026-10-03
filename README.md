@@ -6,9 +6,9 @@ ValiStruct es una plataforma científica de acceso abierto orientada a estudiant
 
 ## Versión actual
 
-**ValiStruct v3.0.1 Beta** (cambios de análisis ordinal, ESEM e invariancia)
+**ValiStruct v5.4 Beta** (`5.4.0-beta.1`)
 
-Esta versión se encuentra en fase Beta para evaluación y pruebas antes de la versión estable 3.0.
+Esta versión se encuentra en fase Beta para evaluación y pruebas antes de una promoción estable. La Fase 4 se dedica exclusivamente a preparación de release, reproducibilidad y validación final; no incorpora nuevas funciones científicas.
 
 ## Descargar para Windows y macOS
 
@@ -43,7 +43,7 @@ Los paquetes de escritorio son Beta y se generan por separado para cada sistema.
 
 ## Validación técnica
 
-La Beta 1 deriva del ciclo RC6 y cuenta con validación automatizada mediante GitHub Actions. El flujo incluye chequeos estáticos, pruebas de backend, equivalencia estadística frente a lavaan directo, smoke tests y pruebas end-to-end en navegador.
+La Beta 5.4 cuenta con validación automatizada mediante GitHub Actions. El flujo incluye chequeos estáticos, pruebas de backend, regresiones científicas, equivalencia estadística frente a lavaan directo, smoke tests, pruebas end-to-end en navegador y compilaciones autónomas para Windows y macOS.
 
 ## Estructura principal
 
