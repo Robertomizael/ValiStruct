@@ -54,7 +54,8 @@ def test_release_reproducibility_and_cleanup():
     assert workflow.count("run: npm ci")==2
     assert workflow.count('node-version: "22.12.0"')==2
     assert "run: npm install" not in workflow
-    assert workflow.count("npm audit --omit=dev --audit-level=high")==2
+    assert workflow.count("npm audit --audit-level=high")==2
+    assert "npm audit --omit=dev" not in workflow
     assert "Smoke packaged Windows app" in workflow and "Smoke packaged macOS app" in workflow
     assert "python=3.12.14" in mac and "python=3.12.14" in win
     assert "r-base=4.5.3" in mac and "r-base=4.5.3" in win
