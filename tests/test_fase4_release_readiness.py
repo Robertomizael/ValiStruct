@@ -39,7 +39,7 @@ def test_v54_release_readiness_metadata_is_coherent():
     assert desktop_pkg["dependencies"]["tar"]=="7.5.22"
     assert desktop_pkg["dependencies"]["xlsx"]=="https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
     assert desktop_pkg["devDependencies"]["electron"]=="43.7.7"
-    assert desktop_pkg["devDependencies"]["electron-builder"]=="25.1.8"
+    assert desktop_pkg["devDependencies"]["electron-builder"]=="26.15.3"
     assert "Current beta release gate" in rc_workflow
     assert "python tests/validate_release.py" in rc_workflow
     assert "python tests/beta_gate.py" in rc_workflow
