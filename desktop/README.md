@@ -6,6 +6,7 @@ El paquete Desktop es autónomo: los workflows integran un runtime local de Pyth
 
 - Windows: instalador NSIS `.exe`.
 - macOS Apple Silicon: imagen `.dmg` arm64.
+- macOS Intel: imagen `.dmg` x64 construida y probada en runner `macos-15-intel`.
 
 ## Desarrollo local
 
