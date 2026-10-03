@@ -32,6 +32,12 @@ def test_delphi_blocks_round_after_configuration_change():
         assert page.locator(".delphi-round").count()==1
         assert any("configuración Delphi cambió" in msg for msg in dialogs)
 
+        dialogs.clear()
+        result=page.evaluate("evaluateDelphi()")
+        assert result is False
+        assert page.evaluate("delphiLastResults===null")
+        assert any("configuración Delphi cambió" in msg for msg in dialogs)
+
         notice=page.locator("#delphiWorkspace .notice").inner_text()
         assert "panel y la configuración de expertos se mantienen constantes entre rondas" in notice
         assert not errors,repr(errors)
