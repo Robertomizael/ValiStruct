@@ -74,7 +74,7 @@ jobs:
           pytest -q tests/test_fase0_crosslinks.py
           pytest -q tests/test_fase4_release_readiness.py
           pytest -q tests/test_fase5_candidate_manifest.py
-          pytest -q tests/test_fase6_audit_remediation.py
+          pytest -q tests/test_fase6_audit_remediation.py -k 'not legacy_project_restore_requires_recalculation'
 
       - name: Numerical R and backend regression
         env:
@@ -113,6 +113,7 @@ jobs:
             fi
             echo "::endgroup::"
           }
+          pytest -q tests/test_fase6_audit_remediation.py -k legacy_project_restore_requires_recalculation
           run_browser_test tests/test_hotfix_startup_privacy.py
           run_browser_test tests/test_v51_stage1.py
           run_browser_test tests/test_v52_ux.py
