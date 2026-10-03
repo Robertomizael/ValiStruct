@@ -98,6 +98,10 @@
       {
         "from": "../version.json",
         "to": "version.json"
+      },
+      {
+        "from": "../release/runtime-v5.4-beta1.json",
+        "to": "runtime-v5.4-beta1.json"
       }
     ],
     "win": {
