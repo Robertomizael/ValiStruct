@@ -16,16 +16,20 @@ def test_desktop_scientific_token_gate(monkeypatch):
 
     monkeypatch.setenv("VALISTRUCT_DESKTOP_SESSION_TOKEN","session-secret")
 
-    no_token=client.post("/xlsx-info")
-    assert no_token.status_code==401
-    assert no_token.get_json()["error"]=="Sesión desktop no autorizada"
+    protected=sorted(api.SCIENTIFIC_ROUTE_WHITELIST-api.DESKTOP_TOKEN_EXEMPT)
+    assert "/efa" in protected
 
-    wrong=client.post("/xlsx-info",headers={"X-ValiStruct-Session":"wrong"})
-    assert wrong.status_code==401
+    for path in protected:
+        no_token=client.post(path)
+        assert no_token.status_code==401, path
+        assert no_token.get_json()["error"]=="Sesión desktop no autorizada"
 
-    # Correct token passes the session gate and reaches endpoint validation.
-    ok=client.post("/xlsx-info",headers={"X-ValiStruct-Session":"session-secret"})
-    assert ok.status_code!=401
+        wrong=client.post(path,headers={"X-ValiStruct-Session":"wrong"})
+        assert wrong.status_code==401, path
+
+        # Correct token passes the session gate and reaches endpoint validation.
+        ok=client.post(path,headers={"X-ValiStruct-Session":"session-secret"})
+        assert ok.status_code!=401, path
 
     # Preflight must remain available for CORS negotiation.
     preflight=client.options(
