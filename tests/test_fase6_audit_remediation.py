@@ -19,10 +19,13 @@ def test_desktop_lifecycle_security_and_userdata_guards():
 def test_legacy_scientific_results_are_quarantined_in_source():
     app=(ROOT/"app.js").read_text(encoding="utf-8")
 
-    assert "legacyScientificResults=sourceAppVersion!==VALISTRUCT_RELEASE.version" in app
-    assert "semStructuralResults=legacyScientificResults?null:" in app
-    assert "semMediationResults=legacyScientificResults?null:" in app
-    assert "Los resultados científicos derivados de una versión anterior no se activaron" in app
+    assert "staleAiken=Array.isArray(state.aiken)" in app
+    assert "calculationVersion!=='aiken-score-nk-v54'" in app
+    assert "staleLatencia=Boolean(state.semStructuralResults)" in app
+    assert "calculationVersion!=='latencia-ols-tf-v54'" in app
+    assert "semStructuralResults=staleLatencia?null:" in app
+    assert "semMediationResults=staleLatencia?null:" in app
+    assert "fueron calculados con una versión de algoritmo anterior" in app
     assert "Number.isFinite(p.df)?p.df:'—'" in app
     assert "Number.isFinite(e.dfResidual)?e.dfResidual:'—'" in app
 
