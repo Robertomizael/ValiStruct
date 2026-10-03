@@ -5,7 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('valistructDesktop', {
   platform: process.platform,
   desktop: true,
-  version: '5.3.0-beta.1',
+  version: '5.4.0-beta.1',
+  scientificToken: ipcRenderer.sendSync('valistruct:get-session-token'),
   parseSpreadsheet: async (name, bytes) => {
     const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     return ipcRenderer.invoke('valistruct:parse-spreadsheet', { name, data });
