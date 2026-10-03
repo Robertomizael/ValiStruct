@@ -41,7 +41,8 @@ def test_aiken_score_interval_uses_scale_range():
           lower:lastResults[0].ci.lower,
           upper:lastResults[0].ci.upper
         })""")
-        assert result["v"]==pytest.approx(.9,abs=1e-12)
+        assert result
+        assert result.get('calculationVersion')=='aiken-score-nk-v54'["v"]==pytest.approx(.9,abs=1e-12)
         assert result["lower"]==pytest.approx(0.6989663548,abs=1e-9)
         assert result["upper"]==pytest.approx(0.9721335188,abs=1e-9)
         assert "0.699–0.972" in page.locator("#aikenResults").inner_text()
