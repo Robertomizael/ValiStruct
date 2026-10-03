@@ -16,6 +16,7 @@ function context(){
   const sandbox={
     Menu:{buildFromTemplate(items){template=items;return {popup({window}){assert.equal(window,win);popped=true;}}}},
     clipboard:{readText(){return 'texto copiado';}},
+    ipcMain:{on(){ /* unrelated desktop IPC registration; ignored by this focused menu test */ }},
   };
   vm.runInNewContext(source.slice(start,end)+'\ninstallTextContextMenu(win);',
     {...sandbox,win});
