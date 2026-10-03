@@ -13,7 +13,8 @@
 - Fija versiones del runtime Python/R y dependencias Python.
 - Corrige el artefacto de validación RC para conservar `BETA_VALIDATION_REPORT.json`.
 - Rota el caché PWA tras las correcciones de auditoría.
-- Reconstrucción de instaladores y regeneración de manifiesto: pendiente hasta cierre de Fase 6.
+- Instaladores reconstruidos para Windows x64, macOS arm64 y macOS x64, y manifiesto del candidato regenerado (`release/candidate-v5.4-beta1.json`).
+- Restituye `tests/test_v301_engine.py` en el CI unificado y fija los SHA-256 del candidato en su gate.
 
 ## 3.0.0-rc.6
 - Harness estadístico ampliado: MLR continuo + WLSMV ordinal.

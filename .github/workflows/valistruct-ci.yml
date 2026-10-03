@@ -87,6 +87,7 @@ jobs:
         run: |
           pytest -q tests/test_efa_engine_r.py
           pytest -q tests/test_motorpro_numerical_regression.py
+          pytest -q tests/test_v301_engine.py
           pytest -q backend/tests
 
       - name: Start frontend without backend
