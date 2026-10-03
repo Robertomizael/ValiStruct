@@ -95,6 +95,9 @@ jobs:
       - name: Candidate provenance gate
         run: pytest -q tests/test_fase5_candidate_manifest.py
 
+      - name: Independent audit blocker gate
+        run: pytest -q tests/test_fase6_audit_blockers.py
+
       - name: Current beta release gate
         env:
           VALISTRUCT_RUN_E2E: "0"
