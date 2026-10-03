@@ -27,8 +27,10 @@ def test_candidate_manifest_matches_v54_beta_and_preserves_nonpublication():
         "valistruct-desktop-windows-autonomous",
     }
 
+    expected_sizes={"macOS":573004166,"Windows":779603487}
+    expected_ids={"macOS":11281679660,"Windows":11281584970}
     for artifact in artifacts:
-        assert artifact["artifactId"]>0
-        assert artifact["sizeInBytes"]>100_000_000
+        assert artifact["artifactId"]==expected_ids[artifact["platform"]]
+        assert artifact["sizeInBytes"]==expected_sizes[artifact["platform"]]
         assert re.fullmatch(r"[0-9a-f]{64}",artifact["archiveSha256"])
         assert artifact["expiresAt"].endswith("Z")
