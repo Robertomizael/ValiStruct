@@ -38,6 +38,7 @@ def test_release_reproducibility_and_cleanup():
     lock=json.loads((ROOT/"desktop/package-lock.json").read_text())
     runtime=json.loads((ROOT/"release/runtime-v5.4-beta1.json").read_text())
     workflow=(ROOT/".github/workflows/desktop-build.yml").read_text()
+    unified=(ROOT/".github/workflows/valistruct-ci.yml").read_text()
     rc=(ROOT/".github/workflows/rc6-validation.yml").read_text()
     ci=(ROOT/".github/workflows/valistruct-ci.yml").read_text()
     req=(ROOT/"backend/requirements.txt").read_text()
@@ -53,6 +54,7 @@ def test_release_reproducibility_and_cleanup():
     assert lock["packages"][""]["dependencies"]==pkg["dependencies"]
     assert workflow.count("run: npm ci")==2
     assert workflow.count('node-version: "22.12.0"')==2
+    assert 'node-version: "22.12.0"' in unified
     assert "run: npm install" not in workflow
     assert workflow.count("npm audit --audit-level=high")==2
     assert "npm audit --omit=dev" not in workflow
