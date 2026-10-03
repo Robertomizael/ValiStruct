@@ -2439,19 +2439,19 @@ function renderStructuralResults(r){
   </div>`;
 
   html += `<div class="workspace"><table class="results-table sem-path-table"><thead><tr>
-    <th>Origen</th><th>Destino</th><th>β</th><th>EE</th><th>z/t aprox.</th><th>p aprox.</th><th>Orientación</th>
+    <th>Origen</th><th>Destino</th><th>β</th><th>EE</th><th>t (gl)</th><th>p</th><th>Orientación</th>
   </tr></thead><tbody>`;
   r.paths.forEach(p=>{
     const sig=Number.isFinite(p.p)&&p.p<.05;
     html+=`<tr><td>${escapeHtml(p.from)}</td><td>${escapeHtml(p.to)}</td>
       <td><strong>${p.beta.toFixed(3)}</strong></td><td>${p.se.toFixed(3)}</td>
-      <td>${p.t.toFixed(2)}</td><td>${p.p<.001?'&lt; .001':p.p.toFixed(3)}</td>
+      <td>${p.t.toFixed(2)} (${p.df})</td><td>${p.p<.001?'&lt; .001':p.p.toFixed(3)}</td>
       <td><span class="status-chip ${sig?'good-bg':'warn-bg'}">${sig?'🟢 Evidencia de asociación':'🟠 Revisar'}</span></td></tr>`;
   });
   html+='</tbody></table></div>';
 
-  html+='<h3>Varianza explicada</h3><div class="workspace"><table class="results-table"><thead><tr><th>Variable endógena</th><th>R²</th></tr></thead><tbody>';
-  r.equations.forEach(e=>html+=`<tr><td>${escapeHtml(e.target)}</td><td>${e.r2.toFixed(3)}</td></tr>`);
+  html+='<h3>Ajuste de las ecuaciones OLS</h3><div class="workspace"><table class="results-table"><thead><tr><th>Variable endógena</th><th>R²</th><th>R² ajustado</th><th>F</th><th>gl</th><th>p modelo</th></tr></thead><tbody>';
+  r.equations.forEach(e=>html+=`<tr><td>${escapeHtml(e.target)}</td><td>${e.r2.toFixed(3)}</td><td>${e.adjR2.toFixed(3)}</td><td>${Number.isFinite(e.f)?e.f.toFixed(2):'∞'}</td><td>${e.dfModel}, ${e.dfResidual}</td><td>${e.fP<.001?'&lt; .001':e.fP.toFixed(3)}</td></tr>`);
   html+='</tbody></table></div>';
   semResults.innerHTML=html;
 }
@@ -2573,16 +2573,16 @@ function downloadSemResults(){
 function semReportHtml(){
   if(!semStructuralResults)return null;
   const r=semStructuralResults;
-  const pathRows=r.paths.map(p=>`<tr><td>${escapeHtml(p.from)}</td><td>${escapeHtml(p.to)}</td><td>${p.beta.toFixed(3)}</td><td>${p.se.toFixed(3)}</td><td>${p.p<.001?'&lt; .001':p.p.toFixed(3)}</td></tr>`).join('');
-  const r2Rows=r.equations.map(e=>`<tr><td>${escapeHtml(e.target)}</td><td>${e.r2.toFixed(3)}</td></tr>`).join('');
+  const pathRows=r.paths.map(p=>`<tr><td>${escapeHtml(p.from)}</td><td>${escapeHtml(p.to)}</td><td>${p.beta.toFixed(3)}</td><td>${p.se.toFixed(3)}</td><td>${p.t.toFixed(2)}</td><td>${p.df}</td><td>${p.p<.001?'&lt; .001':p.p.toFixed(3)}</td></tr>`).join('');
+  const r2Rows=r.equations.map(e=>`<tr><td>${escapeHtml(e.target)}</td><td>${e.r2.toFixed(3)}</td><td>${e.adjR2.toFixed(3)}</td><td>${Number.isFinite(e.f)?e.f.toFixed(2):'∞'}</td><td>${e.dfModel}, ${e.dfResidual}</td><td>${e.fP<.001?'&lt; .001':e.fP.toFixed(3)}</td></tr>`).join('');
   const medRows=(semMediationResults||[]).map(x=>`<tr><td>${escapeHtml(x.from)}</td><td>${escapeHtml(x.via)}</td><td>${escapeHtml(x.to)}</td><td>${x.indirect.toFixed(3)}</td><td>${x.lower.toFixed(3)}–${x.upper.toFixed(3)}</td></tr>`).join('');
   return `<!doctype html><html lang="es"><meta charset="utf-8"><title>ValiStruct | Latencia</title>
   <style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;color:#222}table{width:100%;border-collapse:collapse;margin:18px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f2f2f2}.note{background:#f8f8f8;padding:14px;border-left:4px solid #7c1f2a}</style>
   <body><h1>ValiStruct | Latencia · Informe estructural preliminar</h1>
   <p><strong>Dr. Roberto Joel Tirado Reyes</strong><br>Profesor-investigador · Universidad Autónoma de Sinaloa</p>
-  <div class="note">Estimación preliminar por regresiones estandarizadas sobre variables observadas o compuestos latentes temporales. No sustituye SEM de ML/WLSMV.</div>
-  <h2>Rutas</h2><table><thead><tr><th>Origen</th><th>Destino</th><th>β</th><th>EE</th><th>p aprox.</th></tr></thead><tbody>${pathRows}</tbody></table>
-  <h2>R²</h2><table><thead><tr><th>Variable</th><th>R²</th></tr></thead><tbody>${r2Rows}</tbody></table>
+  <div class="note">Estimación preliminar mediante regresiones lineales OLS sobre variables estandarizadas o compuestos latentes temporales. La inferencia usa t de Student y F con grados de libertad OLS. Este bloque no sustituye SEM de ML/WLSMV ni sus índices globales de ajuste.</div>
+  <h2>Rutas OLS</h2><table><thead><tr><th>Origen</th><th>Destino</th><th>β</th><th>EE</th><th>t</th><th>gl</th><th>p</th></tr></thead><tbody>${pathRows}</tbody></table>
+  <h2>Ajuste por ecuación</h2><table><thead><tr><th>Variable</th><th>R²</th><th>R² ajustado</th><th>F</th><th>gl</th><th>p</th></tr></thead><tbody>${r2Rows}</tbody></table>
   ${medRows?`<h2>Efectos indirectos</h2><table><thead><tr><th>Origen</th><th>Mediador(es)</th><th>Destino</th><th>Indirecto</th><th>IC bootstrap</th></tr></thead><tbody>${medRows}</tbody></table>`:''}
   </body></html>`;
 }
@@ -3387,8 +3387,10 @@ function generateApaReport(){
   }
 
   if(semStructuralResults?.paths?.length){
-    html+=`<h3>Modelo estructural</h3><div class="apa-table-title">Tabla 2<br>Coeficientes de las rutas estructurales</div><table><thead><tr><th>Ruta</th><th>β</th><th>EE</th><th>p</th></tr></thead><tbody>`;
-    semStructuralResults.paths.forEach(x=>html+=`<tr><td>${escapeHtml(x.from)} → ${escapeHtml(x.to)}</td><td>${f3(x.beta)}</td><td>${f3(x.se)}</td><td>${x.p<.001?'&lt; .001':f3(x.p)}</td></tr>`);
+    html+=`<h3>Modelo estructural preliminar por OLS</h3><p>Las rutas se estimaron mediante regresiones lineales sobre variables estandarizadas. Esta salida es exploratoria y no sustituye un SEM estimado por ML/WLSMV.</p><div class="apa-table-title">Tabla 2<br>Coeficientes estandarizados de las rutas OLS</div><table><thead><tr><th>Ruta</th><th>β</th><th>EE</th><th>t</th><th>gl</th><th>p</th></tr></thead><tbody>`;
+    semStructuralResults.paths.forEach(x=>html+=`<tr><td>${escapeHtml(x.from)} → ${escapeHtml(x.to)}</td><td>${f3(x.beta)}</td><td>${f3(x.se)}</td><td>${f3(x.t)}</td><td>${x.df}</td><td>${x.p<.001?'&lt; .001':f3(x.p)}</td></tr>`);
+    html+=`</tbody></table><div class="apa-table-title">Tabla 3<br>Ajuste de las ecuaciones OLS</div><table><thead><tr><th>Variable endógena</th><th>R²</th><th>R² ajustado</th><th>F</th><th>gl</th><th>p</th></tr></thead><tbody>`;
+    semStructuralResults.equations.forEach(e=>html+=`<tr><td>${escapeHtml(e.target)}</td><td>${f3(e.r2)}</td><td>${f3(e.adjR2)}</td><td>${Number.isFinite(e.f)?e.f.toFixed(2):'∞'}</td><td>${e.dfModel}, ${e.dfResidual}</td><td>${e.fP<.001?'&lt; .001':f3(e.fP)}</td></tr>`);
     html+=`</tbody></table>`;
   }
 
