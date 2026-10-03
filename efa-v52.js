@@ -32,8 +32,8 @@ async function callR(method){
   const payload={method,csv_text:csvSource(),item_names:efaData.itemNames,
     factors:Number(el('efaFactors').value),rotation:el('efaRotation').value,
     parallel_runs:Number(el('efaParallelRuns').value)};
-  const response=await fetch(getProApiBase()+'/efa',{method:'POST',
-    headers:typeof authHeaders==='function'?authHeaders({'Content-Type':'application/json'}):{'Content-Type':'application/json'},
+  const response=await scientificFetch('/efa',{method:'POST',
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)});
   let data;
   try{data=await response.json();}catch(_){throw new Error('Motor R respondió en formato no válido.');}
