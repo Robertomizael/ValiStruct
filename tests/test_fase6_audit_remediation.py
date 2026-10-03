@@ -17,6 +17,7 @@ def test_audit_remediation_wiring_and_metadata():
     requirements_dev=(ROOT/"backend/requirements-dev.txt").read_text(encoding="utf-8")
     mac_runtime=(ROOT/"desktop/scripts/build_runtime_macos.sh").read_text(encoding="utf-8")
     win_runtime=(ROOT/"desktop/scripts/build_runtime_windows.ps1").read_text(encoding="utf-8")
+    package_lock=(ROOT/"desktop/package-lock.json").read_text(encoding="utf-8")
 
     # Blocking finding: EFA must use the same protected scientific fetch path.
     assert "scientificFetch('/efa'" in efa
@@ -78,3 +79,12 @@ def test_audit_remediation_wiring_and_metadata():
     assert "python=3.12.14" in win_runtime
     assert "r-base=4.5.3" in win_runtime
     assert "r-lavaan=0.7_2" in win_runtime
+
+    assert '"lockfileVersion": 3' in package_lock
+    assert '"electron": "32.1.2"' in package_lock
+    assert '"electron-builder": "25.1.8"' in package_lock
+    assert '"tar": "7.4.3"' in package_lock
+    assert '"xlsx": "0.18.5"' in package_lock
+    assert desktop_ci.count("run: npm ci")==2
+    assert "run: npm install" not in desktop_ci
+    assert "Commit generated desktop dependency lock" not in desktop_ci
