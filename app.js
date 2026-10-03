@@ -753,6 +753,11 @@ function evaluateDelphi(){
   const c=delphiConfig(),err=validateDelphiConfig(c);
   if(err)return alert(err);
   if(!delphiRoundCount)return alert('Primero cree al menos una ronda.');
+  const current=JSON.stringify(c);
+  if(window.delphiLockedConfig && current!==window.delphiLockedConfig){
+    alert('La configuración Delphi cambió después de iniciar las rondas. Reinicie el flujo antes de evaluar para mantener comparabilidad entre rondas.');
+    return false;
+  }
   const rows=[];const previousByItem=new Map();
   for(let round=1;round<=delphiRoundCount;round++){
     for(let i=1;i<=c.items;i++){
@@ -3201,11 +3206,29 @@ function rawProjectDataConsent(){
   try { return JSON.parse(localStorage.getItem('valistruct_privacy_v21')||'{}').rawData==='yes'; }
   catch(_) { return false; }
 }
+const SCIENTIFIC_RESULTS_FORMAT='5.4-fase6';
+
+function isCurrentLatenciaResultFormat(result){
+  if(!result || !Array.isArray(result.paths) || !Array.isArray(result.equations)) return false;
+  const pathsOk=result.paths.every(p=>
+    Number.isFinite(p.beta) && Number.isFinite(p.se) && Number.isFinite(p.t) &&
+    Number.isFinite(p.df) && Number.isFinite(p.p)
+  );
+  const equationsOk=result.equations.every(e=>
+    Number.isFinite(e.r2) && Number.isFinite(e.adjR2) &&
+    Number.isFinite(e.f) && Number.isFinite(e.fP) &&
+    Number.isFinite(e.dfModel) && Number.isFinite(e.dfResidual) &&
+    Number.isFinite(e.n)
+  );
+  return pathsOk && equationsOk;
+}
+
 function projectState(){
   return {
     version:'1.1',
     appVersion:'5.4.0-beta.1',
     projectFormat:'3.0',
+    scientificResultsVersion:SCIENTIFIC_RESULTS_FORMAT,
     savedAt:new Date().toISOString(),
     name:(document.getElementById('projectName')?.value||'Proyecto ValiStruct').trim(),
     author:(document.getElementById('projectAuthor')?.value||'').trim(),
@@ -3254,12 +3277,34 @@ function restoreProject(state){
     semNodes=state.semNodes||[];
     semEdges=state.semEdges||[];
     semData=state.semData||null;
-    semStructuralResults=state.semStructuralResults||null;
+    const scientificFormat=String(state.scientificResultsVersion||'legacy');
+    const currentScientificFormat=scientificFormat===SCIENTIFIC_RESULTS_FORMAT;
+    const compatibilityWarnings=[];
+    window.valistructLegacyScientificResults={};
+
+    if(state.semStructuralResults && isCurrentLatenciaResultFormat(state.semStructuralResults)){
+      semStructuralResults=state.semStructuralResults;
+    }else{
+      if(state.semStructuralResults){
+        window.valistructLegacyScientificResults.latencia=state.semStructuralResults;
+        compatibilityWarnings.push('Latencia: resultados heredados no se reactivaron porque faltan campos de inferencia OLS actuales. Reestime el modelo antes de reportar.');
+      }
+      semStructuralResults=null;
+    }
     semMediationResults=state.semMediationResults||null;
     proCsvText=state.proCsvText||null;
     proLastResponse=state.proLastResponse||null;
     advancedLastResponse=state.advancedLastResponse||null;
-    if(Array.isArray(state.aiken))lastResults=state.aiken;
+
+    if(Array.isArray(state.aiken) && currentScientificFormat){
+      lastResults=state.aiken;
+    }else{
+      if(Array.isArray(state.aiken) && state.aiken.length){
+        window.valistructLegacyScientificResults.aiken=state.aiken;
+        compatibilityWarnings.push('V de Aiken: resultados históricos preservados en el archivo, pero sus intervalos de confianza no se reutilizan sin evidencia de haber sido calculados con el método 5.4 actual. Recalcule antes de reportar.');
+      }
+      lastResults=[];
+    }
     cviLastResults=state.contentValidity?.cvi||null;
     lawsheLastResults=state.contentValidity?.lawshe||null;
     delphiLastResults=state.contentValidity?.delphi||null;
@@ -3287,7 +3332,14 @@ function restoreProject(state){
     else document.getElementById('delphiResults').innerHTML='';
     contentValidityIntegratedHtml='';
     document.getElementById('contentValidityReportResults').innerHTML='';
-    alert('Proyecto cargado.');
+
+    if(window.valistructLegacyScientificResults.aiken){
+      resultsEl.innerHTML='<div class="model-error"><strong>Resultado histórico de V de Aiken preservado, no reactivado.</strong> El valor V permanece dentro del archivo del proyecto, pero el IC debe recalcularse con la metodología 5.4 antes de utilizarse en un informe nuevo.</div>';
+    }
+    if(window.valistructLegacyScientificResults.latencia){
+      semResults.innerHTML='<div class="model-error"><strong>Resultado histórico de Latencia preservado, no reactivado.</strong> Reestime la regresión OLS preliminar para obtener EE, t, gl, p, R² ajustado y prueba F compatibles con la versión actual.</div>';
+    }
+    alert(compatibilityWarnings.length ? 'Proyecto cargado.\n\n'+compatibilityWarnings.join('\n') : 'Proyecto cargado.');
   }catch(e){alert('No fue posible cargar el proyecto: '+e.message);}
 }
 function renderProjectList(){
