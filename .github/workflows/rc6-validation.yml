@@ -92,6 +92,11 @@ jobs:
           VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
         run: pytest -q tests/test_e2e_playwright.py
 
+      - name: Historical result and Delphi gate
+        env:
+          VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
+        run: pytest -q tests/test_fase6_historical_results_and_delphi.py
+
       - name: Candidate provenance gate
         run: pytest -q tests/test_fase5_candidate_manifest.py
 
