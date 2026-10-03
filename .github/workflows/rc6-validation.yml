@@ -92,6 +92,17 @@ jobs:
           VALISTRUCT_FRONTEND_URL: http://127.0.0.1:8000
         run: pytest -q tests/test_e2e_playwright.py
 
+      - name: Current beta release gate
+        env:
+          VALISTRUCT_RUN_E2E: "0"
+          VALISTRUCT_AUTH_ENABLED: "false"
+          VALISTRUCT_PROJECT_LIBRARY_ENABLED: "false"
+          VALISTRUCT_ENV: "development"
+          VALISTRUCT_INSTITUTIONAL_MODE: "true"
+        run: |
+          python tests/validate_release.py
+          python tests/beta_gate.py
+
       - name: Upload validation report
         if: always()
         uses: actions/upload-artifact@v4
