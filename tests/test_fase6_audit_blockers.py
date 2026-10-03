@@ -45,8 +45,14 @@ def test_release_reproducibility_and_cleanup():
     win=(ROOT/"desktop/scripts/build_runtime_windows.ps1").read_text()
 
     assert lock["lockfileVersion"]==3
+    assert pkg["dependencies"]["tar"]=="7.5.22"
+    assert pkg["dependencies"]["xlsx"]=="https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    assert pkg["devDependencies"]["electron"]=="43.7.7"
+    assert pkg["devDependencies"]["electron-builder"]=="26.15.3"
+    assert pkg["overrides"]["@electron/get"]=="5.1.0"
     assert lock["packages"][""]["dependencies"]==pkg["dependencies"]
     assert workflow.count("run: npm ci")==2
+    assert workflow.count('node-version: "22.12.0"')==2
     assert "run: npm install" not in workflow
     assert workflow.count("npm audit --omit=dev --audit-level=high")==2
     assert "Smoke packaged Windows app" in workflow and "Smoke packaged macOS app" in workflow
@@ -54,6 +60,9 @@ def test_release_reproducibility_and_cleanup():
     assert "r-base=4.5.3" in mac and "r-base=4.5.3" in win
     assert "r-lavaan=0.7_2" in mac and "r-lavaan=0.7_2" in win
     assert runtime["python"]=="3.12.14" and runtime["r"]=="4.5.3"
+    assert runtime["buildNode"]=="22.12.0"
+    assert runtime["desktopPackages"]["electronBuilder"]=="26.15.3"
+    assert runtime["desktopPackages"]["electronGet"]=="5.1.0"
     assert all("==" in x for x in req.splitlines() if x.strip())
     assert "tests/BETA_VALIDATION_REPORT.json" in rc
     assert "tests/RC6_VALIDATION_REPORT.json" not in rc
