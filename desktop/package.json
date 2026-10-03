@@ -93,6 +93,10 @@
       {
         "from": "runtime/valistruct-runtime.tar.gz",
         "to": "runtime/valistruct-runtime.tar.gz"
+      },
+      {
+        "from": "runtime/runtime-packages.json",
+        "to": "runtime/runtime-packages.json"
       }
     ],
     "win": {
