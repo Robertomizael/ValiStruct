@@ -11,14 +11,16 @@ rm -f "$ARCHIVE"
 
 conda install -y -n base -c conda-forge conda-pack
 conda create -y -p "$ENV_DIR" -c conda-forge \
-  python=3.12 pip \
-  r-base r-jsonlite r-lavaan r-psych r-naniar
+  python=3.12.14 pip \
+  r-base=4.5.3 r-jsonlite=2.0.0 r-lavaan=0.7_2 r-psych=2.6.9 r-naniar=1.1.0
 
 "$ENV_DIR/bin/python" -m pip install --upgrade pip
 "$ENV_DIR/bin/python" -m pip install -r "$ROOT/backend/requirements.txt"
 
 "$ENV_DIR/bin/python" -c "import flask, flask_cors, pandas, openpyxl, pyreadstat, docx, bs4, xlsxwriter, portalocker; print('Python runtime OK')"
 "$ENV_DIR/bin/Rscript" -e "library(jsonlite); library(lavaan); library(psych); library(naniar); cat('R runtime OK\n')"
+conda list -p "$ENV_DIR" --json > "$OUT_DIR/runtime-packages.json"
+test -s "$OUT_DIR/runtime-packages.json"
 
 CONDA_ROOT="${CONDA:-$(conda info --base)}"
 CONDA_PACK="$CONDA_ROOT/bin/conda-pack"
