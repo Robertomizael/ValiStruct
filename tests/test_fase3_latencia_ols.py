@@ -19,6 +19,8 @@ def test_latencia_ols_matches_controlled_reference_and_reports_model_fit():
         page.on("pageerror",lambda e:errors.append(str(e)))
         page.goto(URL,wait_until="load")
 
+        assert page.evaluate("""() => String(estimateStructuralModel).includes("calculationVersion:'latencia-ols-tf-v54'")""")
+
         fit=page.evaluate(
             """({x1,x2,y})=>{
               const X1=standardizedSeries(x1);
