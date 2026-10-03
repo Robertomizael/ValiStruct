@@ -1,5 +1,20 @@
 # Changelog
 
+## 5.4.0-beta.1 — Fase 6 auditoría independiente
+- Corrige el token de sesión desktop en AFE/R (`/efa`).
+- Cubre toda la lista blanca científica con el gate de token.
+- Unifica metadatos activos de versión en frontend/backend.
+- Evita rotación de token y doble backend al recrear ventanas en macOS.
+- Mueve el directorio local de proyectos a `userData`.
+- Bloquea navegación externa dentro de Electron y abre HTTP/HTTPS en el navegador del sistema.
+- Aísla resultados históricos incompatibles de Aiken/Latencia y exige reestimación antes de reportarlos.
+- Aplica el bloqueo Delphi también al evaluar.
+- Normaliza claves de etiquetas de valor SAV/DTA y añade cobertura DTA.
+- Fija versiones del runtime Python/R y dependencias Python.
+- Corrige el artefacto de validación RC para conservar `BETA_VALIDATION_REPORT.json`.
+- Rota el caché PWA tras las correcciones de auditoría.
+- Reconstrucción de instaladores y regeneración de manifiesto: pendiente hasta cierre de Fase 6.
+
 ## 3.0.0-rc.6
 - Harness estadístico ampliado: MLR continuo + WLSMV ordinal.
 - Comparación de cargas estandarizadas contra lavaan directo.
