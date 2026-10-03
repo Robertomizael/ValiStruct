@@ -581,6 +581,26 @@ async function createWindow() {
   installExternalNavigationGuard(win);
   await win.loadFile(frontend);
   await injectDesktopUX(win);
+
+  if (process.env.VALISTRUCT_DESKTOP_SMOKE === '1') {
+    try {
+      const status = await win.webContents.executeJavaScript(`
+        scientificFetch('/efa',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({method:'diagnostics',csv_text:''})
+        }).then(r=>r.status)
+      `);
+      if (status === 401) throw new Error('Packaged renderer reached /efa without the desktop session token.');
+      console.log('[ValiStruct] packaged desktop smoke PASS; /efa status=' + status);
+      app.exit(0);
+    } catch (err) {
+      console.error('[ValiStruct] packaged desktop smoke FAIL:', err);
+      app.exit(2);
+    }
+    return;
+  }
+
   win.maximize();
 }
 
