@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard, shell } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const crypto = require('crypto');
 const path = require('path');
@@ -449,7 +449,13 @@ function waitForBackend(timeoutMs = 45000) {
   });
 }
 
+function backendIsRunning() {
+  return Boolean(backendProcess && backendProcess.exitCode === null && !backendProcess.killed);
+}
+
 function startBackend() {
+  if (backendIsRunning()) return backendProcess;
+
   const runtime = runtimeInfo || findSystemRuntime();
   desktopSessionToken = crypto.randomBytes(32).toString('hex');
   if (!runtime.python) throw new Error('No se encontró el motor Python integrado.');
@@ -459,6 +465,9 @@ function startBackend() {
   const apiFile = path.join(backendDir, 'api.py');
   if (!fs.existsSync(apiFile)) throw new Error(`No se encontró el backend: ${apiFile}`);
 
+  const projectDir = path.join(app.getPath('userData'), 'institution_projects');
+  fs.mkdirSync(projectDir, { recursive: true });
+
   const args = runtime.python === 'py' ? ['-3', apiFile] : [apiFile];
   backendProcess = spawn(runtime.python, args, {
     cwd: backendDir,
@@ -467,6 +476,7 @@ function startBackend() {
       VALISTRUCT_AUTH_ENABLED: 'false',
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
+      VALISTRUCT_PROJECT_DIR: projectDir,
       VALISTRUCT_DESKTOP_SESSION_TOKEN: desktopSessionToken,
       FLASK_RUN_PORT: '8765'
     },
@@ -476,7 +486,12 @@ function startBackend() {
 
   backendProcess.stdout.on('data', (d) => console.log(`[backend] ${d}`));
   backendProcess.stderr.on('data', (d) => console.error(`[backend] ${d}`));
-  backendProcess.on('exit', (code) => console.log(`Backend finalizado: ${code}`));
+  backendProcess.on('exit', (code) => {
+    console.log(`Backend finalizado: ${code}`);
+    backendProcess = null;
+    desktopSessionToken = null;
+  });
+  return backendProcess;
 }
 
 async function injectDesktopUX(win) {
@@ -504,6 +519,24 @@ async function injectDesktopUX(win) {
   if (fs.existsSync(excelPath)) {
     await win.webContents.executeJavaScript(fs.readFileSync(excelPath, 'utf8'));
   }
+}
+
+function installExternalNavigationGuards(win) {
+  const openExternal = (url) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+  };
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    openExternal(url);
+    return { action: 'deny' };
+  });
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
+      openExternal(url);
+    }
+  });
 }
 
 // Native right-click actions on editable text fields and selected report text.
@@ -536,7 +569,7 @@ ipcMain.on('valistruct:get-session-token', (event) => {
 
 async function createWindow() {
   try {
-    runtimeInfo = await ensureBundledRuntime();
+    runtimeInfo = runtimeInfo || await ensureBundledRuntime();
     startBackend();
     await waitForBackend();
   } catch (err) {
@@ -563,6 +596,7 @@ async function createWindow() {
     : path.resolve(__dirname, '..', 'index.html');
 
   installTextContextMenu(win);
+  installExternalNavigationGuards(win);
   await win.loadFile(frontend);
   await injectDesktopUX(win);
   win.maximize();
