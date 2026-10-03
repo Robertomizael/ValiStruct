@@ -2,6 +2,7 @@
 
 const { app, BrowserWindow, dialog, ipcMain, Menu, clipboard } = require('electron');
 const { spawn, spawnSync } = require('child_process');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -9,6 +10,7 @@ const tar = require('tar');
 const XLSX = require('xlsx');
 
 let backendProcess = null;
+let desktopSessionToken = null;
 let runtimeInfo = null;
 
 function normalizeExcelLabel(value) {
@@ -449,6 +451,7 @@ function waitForBackend(timeoutMs = 45000) {
 
 function startBackend() {
   const runtime = runtimeInfo || findSystemRuntime();
+  desktopSessionToken = crypto.randomBytes(32).toString('hex');
   if (!runtime.python) throw new Error('No se encontró el motor Python integrado.');
   if (!runtime.rscript) throw new Error('No se encontró el motor R integrado.');
 
@@ -464,6 +467,7 @@ function startBackend() {
       VALISTRUCT_AUTH_ENABLED: 'false',
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
+      VALISTRUCT_DESKTOP_SESSION_TOKEN: desktopSessionToken,
       FLASK_RUN_PORT: '8765'
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -526,6 +530,10 @@ function installTextContextMenu(win) {
   });
 }
 
+ipcMain.on('valistruct:get-session-token', (event) => {
+  event.returnValue = desktopSessionToken || '';
+});
+
 async function createWindow() {
   try {
     runtimeInfo = await ensureBundledRuntime();
@@ -540,7 +548,7 @@ async function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 760,
-    title: 'ValiStruct v5.3 Beta · Simplificación científica',
+    title: 'ValiStruct v5.4 Beta · Validación científica',
     backgroundColor: '#f4f6f8',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
