@@ -29,6 +29,9 @@ def test_real_r_paf_through_browser_and_exports():
         assert "Ejes principales" in page.locator("#efaResults").inner_text()
         assert page.locator("#efaResults .efa-diag-cards > div").count()==4
         assert page.locator("#efaResults .efa-r-results table").count() >=1
+        assert page.locator("#efaScreeSvg").count() == 1
+        assert page.locator("#efaVarianceExplained").count() == 1
+        assert page.locator("#efaRotatedPattern").count() == 1
         assert "terminada" in page.locator("#efaEngineStatus").inner_text()
         with page.expect_download() as csv:
             page.locator("#downloadEfaResults").click()
