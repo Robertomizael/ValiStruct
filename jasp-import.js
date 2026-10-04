@@ -91,9 +91,16 @@ function inspectModel(model){
     if(op===':=')return;
     if(op==='=~'){
       rhs.split('+').forEach(term=>{
-        const name=term.trim().replace(/^(?:[-+]?(?:\d+(?:\.\d+)?|\.\d+)\s*\*\s*)/,'').trim();
-        if(IDENT.test(name)) required.add(name);
-        else unsupported.push('Indicador no interpretable en línea '+(i+1)+': '+term.trim().slice(0,45));
+        const raw=term.trim();
+        // JASP may export explicit parameter labels/modifiers before an
+        // indicator, e.g. lambda_1_1*i01 or 1*i01. lavaan accepts these
+        // modifiers; for dataset validation we only need the final variable.
+        const parts=raw.split('*').map(x=>x.trim()).filter(Boolean);
+        const name=parts.length?parts[parts.length-1]:'';
+        const modifiers=parts.slice(0,-1);
+        const safeModifier=x=>IDENT.test(x)||/^[-+]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(x)||/^(?:NA|start\([^)]*\)|label\([^)]*\))$/i.test(x);
+        if(IDENT.test(name) && modifiers.every(safeModifier)) required.add(name);
+        else unsupported.push('Indicador no interpretable en línea '+(i+1)+': '+raw.slice(0,45));
       });
     }
   });
