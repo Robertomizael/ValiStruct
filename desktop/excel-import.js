@@ -351,7 +351,11 @@
       const agreement=Number(document.getElementById('delphiAgreementThreshold')?.value||80);
       const iqr=Number(document.getElementById('delphiIqrThreshold')?.value||1);
       const rows=[['Ronda','Item',...Array.from({length:judges},(_,i)=>'Experto '+(i+1)),'Retroalimentacion','_Modalidad','_Escala_min','_Escala_max','_Favorable_desde','_Acuerdo_requerido_pct','_IQR_max']];
-      for(let round=1;round<=2;round++)for(let i=1;i<=items;i++)rows.push([round,'Ítem '+i,...Array(judges).fill(''),'',round===1&&i===1?mode:'',round===1&&i===1?min:'',round===1&&i===1?max:'',round===1&&i===1?favorable:'',round===1&&i===1?agreement:'',round===1&&i===1?iqr:'']);
+      for(let round=1;round<=2;round++){
+        for(let i=1;i<=items;i++){
+          rows.push([round,'Ítem '+i,...Array(judges).fill(''),'',round===1&&i===1?mode:'',round===1&&i===1?min:'',round===1&&i===1?max:'',round===1&&i===1?favorable:'',round===1&&i===1?agreement:'',round===1&&i===1?iqr:'']);
+        }
+      }
       return rows.map(r=>r.map(csvQuote).join(',')).join('\n');
     }
     throw new Error('Perfil de plantilla no reconocido.');
@@ -367,73 +371,10 @@
   }
   function headerIndex(headers,pattern){return headers.findIndex(h=>pattern.test(normalizeExcelLabel(h)));}
   function judgeColumns(headers,label){
-    return headers.map((h,i)=>{const m=normalizeExcelLabel(h).match(new RegExp('^'+label+'\\s*(\\d+)  function replaceVisibleTextPreservingChildren(el,nextText){
-    const node=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
-    if(node)node.textContent=`${nextText} `; else el.insertBefore(document.createTextNode(`${nextText} `),el.firstChild||null);
-  }
-
-  function enhanceFileInputs(root=document){
-    root.querySelectorAll('input[type="file"]').forEach(input=>{
-      const accept=(input.getAttribute('accept')||'').toLowerCase();
-      if(!accept||accept.includes('csv')||accept.includes('excel')||accept.includes('spreadsheet')){
-        input.setAttribute('accept',ACCEPT); input.dataset.valistructExcelEnabled='true';
-      }
-    });
-    root.querySelectorAll('button,label,span,p,div').forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if(t==='Importar CSV')replaceVisibleTextPreservingChildren(el,'Importar CSV / XLSX');
-      else if(t==='Archivo CSV')replaceVisibleTextPreservingChildren(el,'Archivo CSV / XLSX');
-      else if(t==='Seleccionar CSV')replaceVisibleTextPreservingChildren(el,'Seleccionar CSV / XLSX');
-    });
-    root.querySelectorAll('button[id]').forEach(button=>{
-      const text=(button.textContent||'').trim();
-      if(!/descargar (plantilla|resultados) csv/i.test(text)||button.dataset.excelButtonsAdded==='true')return;
-      button.dataset.excelButtonsAdded='true';
-      ['xlsx','xls'].forEach(format=>{
-        const b=document.createElement('button'); b.type='button'; b.className=button.className;
-        b.textContent=text.replace(/CSV/i,format==='xlsx'?'Excel (.xlsx)':'Excel 97-2003 (.xls)');
-        b.dataset.excelSource=button.id; b.dataset.excelFormat=format; button.insertAdjacentElement('afterend',b);
-      });
-    });
-    ensureJudgeTemplatePanel(); ensureContentTemplatePanels(); ensureDataResetButtons(); hideEfaFactorQuestion();
-  }
-
-  document.addEventListener('click',event=>{
-    const efaBtn=event.target.closest?.('#calculateEfa');
-    if(efaBtn){
-      lastStatAction='AFE';
-      try { if(efaManualOverride)efaManualOverride=false; else setAutomaticEfaFactors(); }
-      catch(err){ event.preventDefault(); event.stopImmediatePropagation(); lastStatAction=null; return alert(statErrorMessage(err)); }
-      setTimeout(()=>{ try{enhanceEfaResults();}finally{lastStatAction=null;} },80);
-    }
-    const cfaBtn=event.target.closest?.('#estimateCfa');
-    if(cfaBtn){ lastStatAction='AFC'; setTimeout(()=>{lastStatAction=null;},500); }
-
-    const trigger=event.target.closest?.('button[data-excel-source]');
-    if(trigger){ const source=document.getElementById(trigger.dataset.excelSource); if(!source)return; pendingExcelExport={format:trigger.dataset.excelFormat||'xlsx',sourceId:source.id}; source.click(); return; }
-    const anchor=event.target.closest?.('a[download]');
-    if(!anchor||!pendingExcelExport||!CSV_EXT.test(anchor.download||''))return;
-    const blob=blobRegistry.get(anchor.href); if(!blob)return;
-    event.preventDefault(); event.stopImmediatePropagation(); const req=pendingExcelExport; pendingExcelExport=null;
-    exportCsvBlobAsExcel(blob,anchor.download,req.format,req).catch(err=>alert(`No fue posible exportar a Excel: ${err.message}`));
-  },true);
-
-  document.addEventListener('change',async event=>{
-    const input=event.target;
-    if(!(input instanceof HTMLInputElement)||input.type!=='file'||input.dataset.valistructExcelEnabled!=='true')return;
-    const file=input.files?.[0]; if(!file||CSV_EXT.test(file.name)||!EXCEL_EXT.test(file.name))return;
-    event.stopImmediatePropagation(); event.preventDefault();
-    try{
-      input.disabled=true; const converted=await excelToCsvFile(file); applySpreadsheetConfig(converted.config);
-      const dt=new DataTransfer(); dt.items.add(converted.file); input.files=dt.files; input.disabled=false; input.dispatchEvent(new Event('change',{bubbles:true}));
-    }catch(err){input.disabled=false;input.value='';alert(`No fue posible importar el archivo de Excel: ${err.message}`);}
-  },true);
-
-  enhanceFileInputs();
-  const observer=new MutationObserver(()=>enhanceFileInputs());
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-})();
-));return m?{idx:i,num:Number(m[1])}:null;}).filter(Boolean).sort((a,b)=>a.num-b.num);
+    return headers.map((h,i)=>{
+      const m=normalizeExcelLabel(h).match(new RegExp('^'+label+'\\s*(\\d+)$'));
+      return m?{idx:i,num:Number(m[1])}:null;
+    }).filter(Boolean).sort((a,b)=>a.num-b.num);
   }
   function firstConfig(rows,idx){
     if(idx<0)return '';
@@ -553,7 +494,7 @@
         b.dataset.excelSource=button.id; b.dataset.excelFormat=format; button.insertAdjacentElement('afterend',b);
       });
     });
-    ensureJudgeTemplatePanel(); ensureDataResetButtons(); hideEfaFactorQuestion();
+    ensureJudgeTemplatePanel(); ensureContentTemplatePanels(); ensureDataResetButtons(); hideEfaFactorQuestion();
   }
 
   document.addEventListener('click',event=>{
