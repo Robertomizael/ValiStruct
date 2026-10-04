@@ -47,3 +47,19 @@ test('imports JASP lavaan parameter labels before indicators',()=>{
  assert.deepEqual(Array.from(r.required),['i01','i02','i03','i04','i05','i06']);
  assert.equal(r.model.includes('lambda_1_1*i01'),true);
 });
+
+
+test('imports exact five-factor 28-item JASP syntax supplied in acceptance testing',()=>{
+ const src=`# Factores
+Factor1 =~ lambda_1_1*i01 + lambda_1_2*i02 + lambda_1_3*i03 + lambda_1_4*i04 + lambda_1_5*i05
+Factor2 =~ lambda_2_1*i06 + lambda_2_2*i07 + lambda_2_3*i08 + lambda_2_4*i09 + lambda_2_5*i10 + lambda_2_6*i11
+Factor3 =~ lambda_3_1*i12 + lambda_3_2*i13 + lambda_3_3*i14 + lambda_3_4*i15 + lambda_3_5*i16 + lambda_3_6*i17
+Factor4 =~ lambda_4_1*i18 + lambda_4_2*i19 + lambda_4_3*i20 + lambda_4_4*i21 + lambda_4_5*i22 + lambda_4_6*i23
+Factor5 =~ lambda_5_1*i24 + lambda_5_2*i25 + lambda_5_3*i26 + lambda_5_4*i27 + lambda_5_5*i28`;
+ const r=parse(src);
+ assert.deepEqual(Array.from(r.factors),['Factor1','Factor2','Factor3','Factor4','Factor5']);
+ assert.equal(r.required.length,28);
+ assert.equal(r.required[0],'i01');
+ assert.equal(r.required[27],'i28');
+ assert.ok(r.model.includes('lambda_5_5*i28'));
+});
