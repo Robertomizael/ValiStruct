@@ -88,3 +88,29 @@ def test_invalid_bootstrap_returns_meaningful_error_not_r_exception():
         assert proc.returncode==0,proc.stderr
         output=json.loads((root/"o.json").read_text())
         assert output["ok"] is False and "bootstrap" in output["error"].lower()
+
+
+def test_continuous_mlr_ignores_stale_ordinal_list_and_fiml_bootstrap_does_not_crash():
+    csv_text,syntax,names=synthetic_data(n=180,groups=(4,4))
+    with tempfile.TemporaryDirectory() as td:
+        root=Path(td)
+        payload={
+            "syntax":syntax,
+            "csv_text":csv_text,
+            "estimator":"MLR",
+            "data_type":"continuous",
+            "missing":"fiml",
+            "bootstrap":1000,
+            "ordinal_vars":names,
+        }
+        (root/"i.json").write_text(json.dumps(payload),encoding="utf-8")
+        proc=subprocess.run(["Rscript",str(ENGINE),str(root/"i.json"),str(root/"o.json")],
+            capture_output=True,text=True,timeout=180)
+        assert proc.returncode==0,proc.stderr
+        output=json.loads((root/"o.json").read_text(encoding="utf-8"))
+        assert output.get("ok") is True,output.get("error")
+        assert output["data_type"]=="continuous"
+        assert output["estimator"]=="MLR"
+        assert output["ordered_vars"]==[]
+        assert output["missing_used"]=="fiml"
+        assert output["converged"] is True
