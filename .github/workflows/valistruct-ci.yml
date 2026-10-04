@@ -69,6 +69,7 @@ jobs:
           node --check participant-data.js
           node --check jasp-import.js
           node --check efa-v52.js
+          node --check desktop/excel-import.js
           node --test tests/test_jasp_import.cjs
           node --test tests/test_desktop_context_menu.cjs
           python tests/static_frontend_audit.py
@@ -78,6 +79,7 @@ jobs:
           pytest -q tests/test_fase5_candidate_manifest.py
           pytest -q tests/test_fase6_audit_blockers.py
           pytest -q tests/test_fase6_desktop_lifecycle_security.py
+          pytest -q tests/test_fase7_acceptance_fixes.py
 
       - name: Numerical R and backend regression
         env:
