@@ -26,6 +26,7 @@ on:
       - "v52.css"
       - "efa-v52.css"
       - "efa-v52.js"
+      - "jasp-import.js"
       - "backend/**"
       - "index.html"
       - "app.js"
