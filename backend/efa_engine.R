@@ -90,6 +90,16 @@ output <- tryCatch({
     result$parallel_eigenvalues <- unname(as.numeric(pa$fa.sim))
     result$parallel_recommended <- as.integer(pa$nfact)
     result$factor_correlations <- matrix_json(Phi)
+    va <- estimate$Vaccounted
+    if(!is.null(va) && length(dim(va))==2L) {
+      result$variance_accounted <- list(
+        row_names=unname(rownames(va)),
+        col_names=unname(colnames(va)),
+        values=matrix_json(va)
+      )
+    } else {
+      result$variance_accounted <- NULL
+    }
     result$fit <- list(rms=safe(estimate$rms),dof=safe(estimate$dof),
       chisq=safe(estimate$STATISTIC),p=safe(estimate$PVAL),rmsea=safe(estimate$RMSEA[1]))
     result$warnings <- character()
