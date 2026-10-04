@@ -2776,16 +2776,31 @@ function buildProPayload(){
   const syntax=box?.value.trim()||'';
   if(!syntax)throw new Error('Ingrese sintaxis lavaan.');
   if(!proCsvText)throw new Error('Importe un archivo CSV.');
+  const dataType=document.getElementById('proDataType').value;
+  const ordinalVars=(document.getElementById('proOrdinalVars')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);
   return {
     syntax,
     csv_text:proCsvText,
     estimator:document.getElementById('proEstimator').value,
-    data_type:document.getElementById('proDataType').value,
+    data_type:dataType,
     missing:document.getElementById('proMissing').value,
     bootstrap:Number(document.getElementById('proBootstrap').value)||0,
-    ordinal_vars: (document.getElementById('proOrdinalVars')?.value||'').split(',').map(x=>x.trim()).filter(Boolean)
+    // A stale ordinal list must never force a model declared as continuous
+    // into lavaan's categorical code path.
+    ordinal_vars:dataType==='ordinal'?ordinalVars:[]
   };
 }
+
+function syncProOrdinalControls(){
+  const type=document.getElementById('proDataType');
+  const input=document.getElementById('proOrdinalVars');
+  if(!type||!input)return;
+  const ordinal=type.value==='ordinal';
+  input.disabled=!ordinal;
+  input.title=ordinal?'Indique las variables ordinales; deje vacío para usar los indicadores del modelo.':'Este campo se ignora porque el tipo de datos seleccionado es Continuos.';
+}
+document.getElementById('proDataType')?.addEventListener('change',syncProOrdinalControls);
+syncProOrdinalControls();
 
 async function runProModel(){
   const button=document.getElementById('runProModel');
