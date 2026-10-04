@@ -17,6 +17,7 @@ on:
       - feature/v5-4-fase3-hardening
       - feature/v5-4-fase4-release-readiness
       - fix/v5-4-fase6-auditoria-independiente
+      - feature/v5-4-fase7-aceptacion-funcional
     paths:
       - "desktop/**"
       - "navigation-v51.js"
