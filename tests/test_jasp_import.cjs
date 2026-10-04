@@ -36,3 +36,14 @@ test('rejects non-model text and malformed model lines',()=>{
  assert.throws(()=>parse('data.frame(x=1)'),/modelo lavaan literal/);
  assert.throws(()=>parse('F =~ i01 + i02\nthis is not lavaan'),/fuera del importador seguro/);
 });
+
+
+test('imports JASP lavaan parameter labels before indicators',()=>{
+ const r=parse([
+   'Factor1 =~ lambda_1_1*i01 + lambda_1_2*i02 + lambda_1_3*i03',
+   'Factor2 =~ lambda_2_1*i04 + lambda_2_2*i05 + lambda_2_3*i06'
+ ].join('\n'));
+ assert.deepEqual(Array.from(r.factors),['Factor1','Factor2']);
+ assert.deepEqual(Array.from(r.required),['i01','i02','i03','i04','i05','i06']);
+ assert.equal(r.model.includes('lambda_1_1*i01'),true);
+});
