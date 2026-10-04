@@ -35,9 +35,13 @@ async function callR(method){
   const response=await scientificFetch('/efa',{method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)});
+  const raw=await response.text();
   let data;
-  try{data=await response.json();}catch(_){throw new Error('Motor R respondió en formato no válido.');}
-  if(!response.ok||data.ok!==true)throw new Error(data.error||'El motor R no pudo finalizar el análisis.');
+  try{data=JSON.parse(raw);}catch(_){
+    const detail=String(raw||'').replace(/\s+/g,' ').trim().slice(0,240);
+    throw new Error('Motor R devolvió una respuesta no JSON (HTTP '+response.status+').'+(detail?' Detalle: '+detail:''));
+  }
+  if(!response.ok||data.ok!==true)throw new Error(data.error||('El motor R no pudo finalizar el análisis (HTTP '+response.status+').'));
   return data;
 }
 function diagnosticMarkup(d){
@@ -54,28 +58,74 @@ function renderDiagnostics(d){
   diagnostics=d;
   el('efaDiagnosticResults').innerHTML=diagnosticMarkup(d);
 }
+function screeMarkup(d){
+  const observed=(d.eigenvalues||[]).map(Number),sim=(d.parallel_eigenvalues||[]).map(Number);
+  if(!observed.length)return '';
+  const W=900,H=320,padL=52,padR=22,padT=22,padB=42;
+  const maxY=Math.max(1,...observed.filter(Number.isFinite),...sim.filter(Number.isFinite))*1.08;
+  const x=i=>padL+(observed.length===1?0:i*(W-padL-padR)/(observed.length-1));
+  const y=v=>padT+(maxY-Number(v))*(H-padT-padB)/maxY;
+  const path=arr=>arr.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  let ticks='';
+  for(let i=0;i<observed.length;i++)ticks+='<text x="'+x(i).toFixed(1)+'" y="'+(H-16)+'" text-anchor="middle" font-size="11">'+(i+1)+'</text>';
+  const y1=y(1);
+  return '<div class="efa-chart-wrap"><h3>Gráfica de sedimentación (scree plot)</h3>'+
+    '<svg id="efaScreeSvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfica de sedimentación de autovalores" style="width:100%;max-width:900px;background:#fff;border:1px solid #dbe3ec;border-radius:12px">'+
+    '<line x1="'+padL+'" y1="'+(H-padB)+'" x2="'+(W-padR)+'" y2="'+(H-padB)+'" stroke="#52677d"/>'+
+    '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB)+'" stroke="#52677d"/>'+
+    '<line x1="'+padL+'" y1="'+y1.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y1.toFixed(1)+'" stroke="#8b98a6" stroke-dasharray="6 5"/>'+
+    '<text x="'+(padL-10)+'" y="'+(y1+4).toFixed(1)+'" text-anchor="end" font-size="11">1.0</text>'+
+    '<path d="'+path(observed)+'" fill="none" stroke="currentColor" stroke-width="3"/>'+
+    (sim.length?'<path d="'+path(sim.slice(0,observed.length))+'" fill="none" stroke="#777" stroke-width="2" stroke-dasharray="7 5"/>':'')+
+    observed.map((v,i)=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="4" fill="currentColor"><title>Factor '+(i+1)+': '+fmt(v)+'</title></circle>').join('')+
+    ticks+'<text x="'+(W/2)+'" y="'+(H-2)+'" text-anchor="middle" font-size="12">Componente / factor</text>'+
+    '<text x="16" y="'+(H/2)+'" transform="rotate(-90 16 '+(H/2)+')" text-anchor="middle" font-size="12">Autovalor</text></svg>'+
+    '<p class="ci-note">Línea continua: autovalores observados. Línea discontinua: referencia del análisis paralelo. La línea horizontal marca autovalor = 1.</p></div>';
+}
+function varianceMarkup(d){
+  const va=d.variance_accounted;
+  if(!va?.values?.length)return '';
+  const names=va.row_names||[],cols=va.col_names||[];
+  let html='<h3>Varianza total explicada</h3><div class="workspace"><table id="efaVarianceExplained" class="results-table"><thead><tr><th>Indicador</th>';
+  cols.forEach((name,i)=>html+='<th>'+esc(name||('Factor '+(i+1)))+'</th>');
+  html+='</tr></thead><tbody>';
+  va.values.forEach((row,i)=>{html+='<tr><th>'+esc(names[i]||('Indicador '+(i+1)))+'</th>'+row.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>';});
+  html+='</tbody></table></div>';
+  if(['oblimin','promax'].includes(String(d.rotation||'').toLowerCase()))html+='<p class="ci-note">En rotaciones oblicuas los factores pueden correlacionarse; la partición de varianza no debe interpretarse como componentes ortogonales independientes.</p>';
+  return html;
+}
+function matrixMarkup(title,mat,rowNames,threshold=null){
+  if(!Array.isArray(mat)||!mat.length)return '';
+  let html='<h3>'+esc(title)+'</h3><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th>';
+  const k=mat[0]?.length||0;for(let j=0;j<k;j++)html+='<th>Factor '+(j+1)+'</th>';
+  html+='</tr></thead><tbody>';
+  mat.forEach((row,i)=>{html+='<tr><th>'+esc(rowNames?.[i]||('Ítem '+(i+1)))+'</th>'+row.map(v=>'<td class="'+(threshold!=null&&Math.abs(Number(v))>=threshold?'loading-strong':'')+'">'+fmt(v)+'</td>').join('')+'</tr>';});
+  return html+'</tbody></table></div>';
+}
 function renderR(d){
   remote=d;
   sourceRevision=sourceToken();
   const p=d.loadings||[],k=d.factors,phi=d.phi||[];
-  let html='<div class="efa-r-results"><div class="efa-r-head"><div><span class="vs-v52-eyebrow">RESULTADO DEL MOTOR R / PSYCH</span><h3>'+esc(methodName[d.method]||d.method)+'</h3><p>Rotación: '+esc(d.rotation)+' · '+d.n_complete+' casos completos · '+d.n_excluded+' excluidos · psicometría: psych '+esc(d.package_version)+'</p></div><span class="vs-v52-status">Cálculo ejecutado</span></div>'+
+  const threshold=Number(el('efaLoadingThreshold').value);
+  let html='<div class="efa-r-results"><div class="efa-r-head"><div><span class="vs-v52-eyebrow">RESULTADO DEL MOTOR R / PSYCH</span><h3>'+esc(methodName[d.method]||d.method)+'</h3><p>Rotación: '+esc(d.rotation)+' · '+d.n_complete+' casos completos · '+d.n_excluded+' excluidos · psych '+esc(d.package_version)+'</p></div><span class="vs-v52-status">Cálculo ejecutado</span></div>'+
     diagnosticMarkup(d)+
     '<div class="efa-result-grid"><div><small>Factores extraídos</small><strong>'+k+'</strong></div><div><small>Análisis paralelo: factores sugeridos</small><strong>'+fmt(d.parallel_recommended,0)+'</strong></div><div><small>RMS residual</small><strong>'+fmt(d.fit?.rms)+'</strong></div><div><small>χ² del ajuste</small><strong>'+fmt(d.fit?.chisq,2)+'</strong></div></div>'+
-    '<h3>Patrón de cargas factoriales</h3><div class="workspace"><table class="results-table"><thead><tr><th>Ítem</th>';
+    screeMarkup(d)+varianceMarkup(d)+
+    '<h3>Matriz de cargas factoriales rotadas (patrón)</h3><div class="workspace"><table id="efaRotatedPattern" class="results-table"><thead><tr><th>Ítem</th>';
   for(let j=0;j<k;j++)html+='<th>Factor '+(j+1)+'</th>';
   html+='<th>Comunalidad</th></tr></thead><tbody>';
   p.forEach((row,i)=>{
-    html+='<tr><th>'+esc(d.item_names[i])+'</th>'+row.map(v=>'<td class="'+(Math.abs(v)>=Number(el('efaLoadingThreshold').value)?'loading-strong':'')+'">'+fmt(v)+'</td>').join('')+'<td>'+fmt(d.communalities[i])+'</td></tr>';
+    html+='<tr><th>'+esc(d.item_names[i])+'</th>'+row.map(v=>'<td class="'+(Math.abs(v)>=threshold?'loading-strong':'')+'">'+fmt(v)+'</td>').join('')+'<td>'+fmt(d.communalities[i])+'</td></tr>';
   });
-  html+='</tbody></table></div><details><summary>Correlaciones entre factores, estructura y análisis paralelo</summary>';
-  function table(mat,first){let result='<div class="workspace"><table class="results-table"><tbody>';mat.forEach((row,i)=>{result+='<tr><th>'+first+' '+(i+1)+'</th>'+row.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>'});return result+'</tbody></table></div>'}
-  html+='<h4>Correlaciones entre factores</h4>'+table(phi,'Factor')+
-    '<h4>Matriz de estructura</h4>'+table(d.structure||[],'Ítem')+
-    '<h4>Autovalores observados y de simulación</h4><div class="workspace"><table class="results-table"><thead><tr><th>Componente / factor</th><th>Observado (R)</th><th>Simulado (factores comunes)</th></tr></thead><tbody>';
-  d.eigenvalues.forEach((v,i)=>html+='<tr><td>'+(i+1)+'</td><td>'+fmt(v)+'</td><td>'+fmt(d.parallel_eigenvalues?.[i])+'</td></tr>');
-  html+='</tbody></table></div></details><p class="efa-method-warning">La elección del método, el número de factores y la rotación debe justificarse teóricamente. ACP no equivale a análisis factorial común. La factorabilidad y los resultados no prueban por sí solos validez de constructo.</p></div>';
+  html+='</tbody></table></div>';
+  html+=matrixMarkup('Matriz de estructura',d.structure||[],d.item_names,threshold);
+  if(Array.isArray(phi)&&phi.length>1)html+=matrixMarkup('Correlaciones entre factores',phi,Array.from({length:phi.length},(_,i)=>'Factor '+(i+1)));
+  html+='<h3>Autovalores y análisis paralelo</h3><div class="workspace"><table class="results-table"><thead><tr><th>Componente / factor</th><th>Observado (R)</th><th>Simulado (factores comunes)</th></tr></thead><tbody>';
+  (d.eigenvalues||[]).forEach((v,i)=>html+='<tr><td>'+(i+1)+'</td><td>'+fmt(v)+'</td><td>'+fmt(d.parallel_eigenvalues?.[i])+'</td></tr>');
+  html+='</tbody></table></div><p class="efa-method-warning">La elección del método, el número de factores y la rotación debe justificarse teóricamente. ACP no equivale a análisis factorial común. La factorabilidad y los resultados no prueban por sí solos validez de constructo.</p></div>';
   el('efaResults').innerHTML=html;
 }
+
 function busyState(value){
   busy=value;
   ['calculateEfa','efaDiagnostics'].forEach(id=>{if(el(id))el(id).disabled=value});
