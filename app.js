@@ -2606,6 +2606,10 @@ document.getElementById('downloadSemReport').addEventListener('click',()=>{const
 // -----------------------------
 const DEFAULT_PRO_API_BASE = 'http://127.0.0.1:8765';
 function getProApiBase(){
+  // Desktop must always use its bundled loopback backend. Persisted web settings
+  // from an older installation can otherwise point /efa to a frontend/dev URL,
+  // which returns HTML and surfaces as "Motor R respondió en formato no válido".
+  if(window.valistructDesktop?.desktop)return DEFAULT_PRO_API_BASE;
   return localStorage.getItem('valistruct_api_base') || DEFAULT_PRO_API_BASE;
 }
 function scientificHeaders(extra={}){
