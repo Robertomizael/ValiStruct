@@ -295,6 +295,9 @@
   // ---------------------------------------------------------------------------
   // XLSX templates for Delphi, I-CVI/S-CVI and Lawshe
   // ---------------------------------------------------------------------------
+  function normalizeExcelLabel(value){
+    return String(value??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[._-]+/g,' ').replace(/\s+/g,' ');
+  }
   function csvQuote(value){
     const s=String(value??'');
     return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
