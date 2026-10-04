@@ -97,6 +97,11 @@ def test_desktop_renderer_patch_does_not_hijack_motorpro_execution():
         page.wait_for_function("document.querySelector('#proResults')?.innerText.includes('CFI')",timeout=180000)
         assert "=~" in page.locator("#proSyntax").input_value()
         assert "No se pudo ejecutar" not in page.locator("#proResults").inner_text()
+        # Desktop acceptance: a successful Motor Pro fit must also render the
+        # publication-style path diagram from the standardized lavaan parameters.
+        page.wait_for_function("document.querySelector('#proResults .vs-publication-diagram') !== null",timeout=15000)
+        assert page.locator("#proResults .vs-publication-diagram svg").count()==1
+        assert "Path diagram SEM" in page.locator("#proResults .vs-publication-diagram").inner_text()
         assert not errors,repr(errors)
         browser.close()
 
