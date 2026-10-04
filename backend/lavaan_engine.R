@@ -184,12 +184,18 @@ result <- tryCatch({
   }
 
   ordered_vars <- NULL
-  if (length(requested_ordinal)) {
-    ordered_vars <- requested_ordinal
-  } else if (identical(data_type, "ordinal") || identical(estimator, "WLSMV")) {
-    model_ov <- tryCatch(lavNames(lavaanify(req$syntax), "ov.nox"),
-                         error = function(e) character())
-    ordered_vars <- intersect(model_ov, names(dat))
+  # Explicit "continuous" must remain continuous even if the UI still contains
+  # a stale comma-separated ordinal list from a previous analysis. Passing
+  # ordered= together with ML/MLR makes lavaan switch to the categorical path,
+  # where FIML (missing='ml') is not available.
+  if (identical(data_type, "ordinal") || identical(estimator, "WLSMV")) {
+    if (length(requested_ordinal)) {
+      ordered_vars <- requested_ordinal
+    } else {
+      model_ov <- tryCatch(lavNames(lavaanify(req$syntax), "ov.nox"),
+                           error = function(e) character())
+      ordered_vars <- intersect(model_ov, names(dat))
+    }
     if (!length(ordered_vars)) stop("No se identificaron indicadores ordinales del modelo.")
   }
 
@@ -228,8 +234,11 @@ result <- tryCatch({
       ordered = ordered_vars,
       std.lv = TRUE,
       meanstructure = TRUE,
-      se = if (boot > 0 && estimator %in% c("ML","MLR")) "bootstrap" else "standard",
-      bootstrap = if (boot > 0) boot else 1000,
+      # lavaan bootstrap SEs are supported here only with conventional ML.
+      # MLR already supplies robust SE/test statistics; requesting bootstrap with
+      # MLR can fail in lavaan and must not block an otherwise valid model.
+      se = if (boot > 0 && identical(estimator, "ML")) "bootstrap" else "standard",
+      bootstrap = if (boot > 0 && identical(estimator, "ML")) boot else 1000,
       rotation = rotation
     )
   )
@@ -282,6 +291,11 @@ result <- tryCatch({
   guidance <- c()
   if (!is.null(estimator_override_note)) guidance <- c(guidance, estimator_override_note)
   guidance <- c(guidance, paste0("Estimador utilizado: ", estimator, ". ", estimator_recommendation$reason))
+  if (boot > 0 && !identical(estimator, "ML")) {
+    guidance <- c(guidance,
+      paste0("Se solicitaron ", boot, " remuestreos bootstrap, pero el estimador ", estimator,
+             " usa su corrección propia de errores estándar/prueba en este motor; el bootstrap no se aplicó al ajuste principal."))
+  }
 
   if (identical(data_type, "continuous") && isTRUE(mardia$ok)) {
     guidance <- c(guidance,
