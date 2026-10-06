@@ -73,35 +73,34 @@ jobs:
           const fs=require('fs');
           const p=require('/tmp/pathv2/path-v2.js');
           console.log('exports=',Object.keys(p).sort().join(','));
+          for (const k of ['fromLavaan','layout','render','toSvg','toPdf','normalizeOptions']) {
+            console.log('fn',k,'type=',typeof p[k],'arity=',typeof p[k]==='function'?p[k].length:'-');
+          }
           const fixture=JSON.parse(fs.readFileSync('/tmp/pathv2/f2.json','utf8'));
-          let model=null;
-          const candidates=[];
-          for(const [k,v] of Object.entries(p)) if(v && typeof v==='object') candidates.push(k);
-          console.log('object_exports=',candidates.join(','));
-          function callAdapter(){
-            const A=p.PathModelAdapter||p.Adapter||p.adapter;
-            if(!A) throw new Error('Adapter export not found');
-            if(typeof A.fromLavaan==='function') return A.fromLavaan(fixture);
-            if(typeof A==='function') return A(fixture);
-            throw new Error('fromLavaan not found');
-          }
-          model=callAdapter();
+          const model=p.fromLavaan(fixture);
+          if(!model) throw new Error('fromLavaan returned empty model');
           console.log('model_counts', model.factors?.length, model.indicators?.length, model.loadings?.length);
-          const L=p.PathLayoutEngine||p.Layout||p.layout;
-          if(!L) throw new Error('Layout export not found');
-          const layoutFn=(typeof L.layout==='function')?L.layout.bind(L):(typeof L==='function'?L:null);
-          if(!layoutFn) throw new Error('layout function not found');
+          console.log('model_keys',Object.keys(model).sort().join(','));
           for(const orientation of ['LR','TB','RL','BT']){
-            const out=layoutFn(model,{orientation});
-            if(!out) throw new Error('layout failed '+orientation);
-            console.log('orientation_ok',orientation);
+            const opts=p.normalizeOptions ? p.normalizeOptions({orientation}) : {orientation};
+            const laid=p.layout(model,opts);
+            if(!laid) throw new Error('layout failed '+orientation);
+            console.log('orientation_ok',orientation,'keys=',Object.keys(laid).sort().join(','));
           }
-          const E=p.PathExporter||p.Exporter||p.exporter;
-          if(E){
-            console.log('exporter_methods=',Object.keys(E).filter(k=>typeof E[k]==='function').sort().join(','));
-          }
+          const opts=p.normalizeOptions ? p.normalizeOptions({orientation:'LR'}) : {orientation:'LR'};
+          const laid=p.layout(model,opts);
+          const scene=p.render(model,laid,opts);
+          if(!scene) throw new Error('render returned empty scene');
+          console.log('scene_keys',Object.keys(scene).sort().join(','));
+          const svg=p.toSvg(scene,opts);
+          if(typeof svg!=='string' || !svg.includes('<svg')) throw new Error('SVG export failed');
+          console.log('svg_ok',svg.length,svg.includes('data-path-renderer="v2"'));
+          const pdf=p.toPdf(scene,opts);
+          const pdfLen=pdf?.length ?? pdf?.byteLength ?? 0;
+          if(!pdfLen) throw new Error('PDF export failed');
+          console.log('pdf_ok',pdfLen);
           console.log('PATH_PRODUCTION_DIAGNOSTIC_OK');
           NODE
 
           echo '=== FEATURE MARKERS ==='
-          grep -En "Rotar|Horizontal|Vertical|Invertir|AMOS|JASP|publicaci|toSvg|toPdf|pngBlob" /tmp/pathv2/path-v2.js | head -120
+          grep -En "Rotar|Horizontal|Vertical|Invertir|AMOS|JASP|publicaci|toSvg|toPdf|pngBlob|orientation" /tmp/pathv2/path-v2.js | head -160
