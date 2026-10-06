@@ -1,0 +1,79 @@
+name: PATH v2 recovered object inventory
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-recovery-trigger-2'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inventory recovered Git objects
+        shell: bash
+        run: |
+          set -u
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes()
+          i=b.find(b'PACK')
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          mkdir -p /tmp/recover && cd /tmp/recover
+          git init -q
+          git unpack-objects -r < /tmp/partial.pack || true
+
+          echo '=== OBJECT INVENTORY ==='
+          for f in $(find .git/objects -mindepth 2 -maxdepth 2 -type f | sort); do
+            d=$(basename "$(dirname "$f")")
+            n=$(basename "$f")
+            oid="$d$n"
+            type=$(git cat-file -t "$oid")
+            size=$(git cat-file -s "$oid")
+            echo "OBJECT $oid TYPE=$type SIZE=$size"
+            case "$type" in
+              commit|tree)
+                git cat-file -p "$oid" | sed -n '1,160p'
+                ;;
+              blob)
+                git cat-file blob "$oid" > /tmp/blob
+                echo "SHA256=$(sha256sum /tmp/blob | awk '{print $1}')"
+                echo '--- blob preview ---'
+                python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/blob').read_bytes()
+          try:
+              s=b.decode('utf-8')
+              print('\n'.join(s.splitlines()[:25]))
+          except UnicodeDecodeError:
+              print('<binary>')
+          PY
+                echo '--- end preview ---'
+                ;;
+            esac
+            echo
+          done
+
+          echo '=== EXPECTED PATH-V2 SHA SEARCH ==='
+          for f in $(find .git/objects -mindepth 2 -maxdepth 2 -type f | sort); do
+            d=$(basename "$(dirname "$f")"); n=$(basename "$f"); oid="$d$n"
+            if [ "$(git cat-file -t "$oid")" = blob ]; then
+              git cat-file blob "$oid" > /tmp/blob
+              s=$(sha256sum /tmp/blob | awk '{print $1}')
+              if [ "$s" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815" ]; then
+                echo "FOUND PATH-V2 BLOB $oid"
+              fi
+            fi
+          done
