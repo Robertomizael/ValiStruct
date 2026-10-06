@@ -1,0 +1,73 @@
+name: PATH v2 scale and complex-model gate
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-scale-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  scale-complex:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recover exact renderer and audited fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 >/tmp/partial.b64
+          base64 --decode /tmp/partial.b64 >/tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r </tmp/partial.pack || true
+          git show "$TREE:path-v2.js" >/tmp/path-v2.js
+          for f in f4_24 f6_40 resid_cov cross; do git show "$TREE:tests/fixtures/path_v2/$f.json" >"/tmp/$f.json"; done
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+
+      - name: Render large and complex models in all orientations
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs'), {performance}=require('perf_hooks');
+          const p=require('/tmp/path-v2.js');
+          const names=['f4_24','f6_40','resid_cov','cross'];
+          for(const name of names){
+            const raw=JSON.parse(fs.readFileSync('/tmp/'+name+'.json','utf8'));
+            const rawBefore=JSON.stringify(raw);
+            const model=p.fromLavaan(raw);
+            const modelBefore=JSON.stringify(model);
+            console.log('fixture='+name+' factors='+model.factors.length+' indicators='+model.indicators.length+' loadings='+model.loadings.length+' residCov='+model.residualCovariances.length+' undrawn='+model.undrawn.length);
+            for(const orientation of ['LR','TB','RL','BT']){
+              const t0=performance.now();
+              const opts=p.normalizeOptions(model,{orientation,style:'publication'});
+              const laid=p.layout(model,opts);
+              const scene=p.render(model,opts);
+              const svg=p.toSvg(scene);
+              const ms=performance.now()-t0;
+              if(!laid?.nodes || laid.nodes.size!==model.factors.length+model.indicators.length) throw new Error(name+' node loss '+orientation);
+              if(!scene?.ops?.length || !svg.includes('<svg')) throw new Error(name+' render/export failed '+orientation);
+              if(ms>2000) throw new Error(name+' render too slow '+orientation+' '+ms);
+              console.log('render_ok fixture='+name+' dir='+orientation+' ops='+scene.ops.length+' svgBytes='+Buffer.byteLength(svg)+' ms='+ms.toFixed(2));
+            }
+            if(JSON.stringify(raw)!==rawBefore) throw new Error(name+' source mutated');
+            if(JSON.stringify(model)!==modelBefore) throw new Error(name+' model mutated');
+            if(name==='resid_cov' && model.residualCovariances.length<1) throw new Error('Residual covariances lost');
+            if(name==='cross' && model.loadings.length<1) throw new Error('Cross-loading fixture lost loadings');
+            console.log('immutability_ok '+name);
+          }
+          console.log('PATH_SCALE_AND_COMPLEX_MODEL_GATE_OK');
+          NODE
