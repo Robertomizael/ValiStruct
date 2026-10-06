@@ -1,0 +1,130 @@
+name: PATH v2 real interaction gate
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-interaction-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  interaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recover exact PATH v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 >/tmp/partial.b64
+          base64 --decode /tmp/partial.b64 >/tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r </tmp/partial.pack || true
+          git show "$TREE:path-v2.js" >/tmp/path-v2.js
+          git show "$TREE:tests/fixtures/path_v2/f2.json" >/tmp/f2.json
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Click real PATH controls and verify orientation changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/path-interaction.html <<'HTML'
+          <!doctype html><html><head><meta charset="utf-8"></head><body><div id="host"></div><script src="/path-v2.js"></script></body></html>
+          HTML
+          cat >/tmp/path-interaction.cjs <<'NODE'
+          const {chromium}=require('playwright');
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1400,height:1000}});
+            const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
+            await page.goto('http://127.0.0.1:8124/path-interaction.html');
+            const fixture=JSON.parse(fs.readFileSync('/tmp/f2.json','utf8'));
+            await page.evaluate(f=>{
+              const p=window.ValiStructPathV2;
+              const model=p.fromLavaan(f);
+              window.__sourceBefore=JSON.stringify(f);
+              window.__modelBefore=JSON.stringify(model);
+              window.__pathApi=p.mount(document.getElementById('host'),model,{design:'amosH'});
+            },fixture);
+            const host=page.locator('[data-path-renderer="v2"]');
+            const dir=()=>host.getAttribute('data-path-dir');
+            const design=()=>host.getAttribute('data-path-design');
+            if(await dir()!=='LR') throw new Error('AMOS horizontal did not start LR: '+await dir());
+            console.log('initial design='+await design()+' dir='+await dir());
+
+            await page.getByRole('button',{name:'Vertical',exact:true}).click();
+            if(await dir()!=='TB') throw new Error('Vertical click did not set TB: '+await dir());
+            console.log('vertical_ok dir='+await dir());
+
+            await page.getByRole('button',{name:/Rotar 90/}).click();
+            if(await dir()!=='RL') throw new Error('Rotate from TB did not set RL: '+await dir());
+            console.log('rotate_90_ok dir='+await dir());
+
+            await page.getByRole('button',{name:'Invertir horizontal',exact:true}).click();
+            if(await dir()!=='LR') throw new Error('Horizontal flip did not set LR: '+await dir());
+            console.log('flip_horizontal_ok dir='+await dir());
+
+            await page.getByRole('button',{name:'Vertical',exact:true}).click();
+            if(await dir()!=='TB') throw new Error('Vertical re-entry failed');
+            await page.getByRole('button',{name:'Invertir vertical',exact:true}).click();
+            if(await dir()!=='BT') throw new Error('Vertical flip did not set BT: '+await dir());
+            console.log('flip_vertical_ok dir='+await dir());
+
+            await page.getByRole('button',{name:'Horizontal',exact:true}).click();
+            if(await dir()!=='LR') throw new Error('Horizontal click did not restore LR');
+            console.log('horizontal_ok dir='+await dir());
+
+            const select=host.locator('select[data-opt="design"]');
+            const options=await select.locator('option').allTextContents();
+            console.log('design_options='+JSON.stringify(options));
+            for(const expected of ['AMOS horizontal','AMOS vertical','JASP vertical','Automático','Modo publicación']){
+              if(!options.some(x=>x.includes(expected))) throw new Error('Missing design option '+expected);
+            }
+            await select.selectOption('jaspV');
+            if(await design()!=='jaspV' || await dir()!=='TB') throw new Error('JASP vertical selection failed');
+            console.log('jasp_vertical_ok design='+await design()+' dir='+await dir());
+            await select.selectOption('publication');
+            if(await design()!=='publication') throw new Error('Publication mode selection failed');
+            console.log('publication_mode_ok design='+await design()+' dir='+await dir());
+
+            const invariant=await page.evaluate(()=>({
+              modelSame: JSON.stringify(window.__pathApi.model)===window.__modelBefore,
+              sourceBefore:window.__sourceBefore,
+              svgOps:document.querySelector('[data-role="viewport"] svg').innerHTML.length
+            }));
+            if(!invariant.modelSame) throw new Error('Interactive controls mutated model');
+            if(invariant.svgOps<100) throw new Error('SVG did not render after interactions');
+            if(errors.length) throw new Error('Page errors: '+errors.join(' | '));
+            console.log('INTERACTIVE_MODEL_IMMUTABILITY_OK');
+            console.log('PATH_REAL_ROTATION_AND_STYLE_CONTROLS_OK');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cp /tmp/path-v2.js /tmp/path-v2.js.tmp && mv /tmp/path-v2.js.tmp /tmp/path-v2.js
+          cd /tmp && python3 -m http.server 8124 >/tmp/path-int-http.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER || true' EXIT
+          sleep 1
+          cd "$GITHUB_WORKSPACE"
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node /tmp/path-interaction.cjs
