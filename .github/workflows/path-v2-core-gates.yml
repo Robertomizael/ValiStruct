@@ -1,0 +1,89 @@
+name: PATH v2 recovered core gates
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-core-gates-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  core-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recover exact PATH v2 and run core gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT=5d57520ac36b9a41e80b8932d84bbad38aec2a5d
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r < /tmp/partial.pack || true
+          test "$(git rev-parse "$COMMIT^{tree}")" = "$TREE"
+          git show "$TREE:path-v2.js" > /tmp/path-v2.js
+          git show "$TREE:tests/fixtures/path_v2/f2.json" > /tmp/f2.json
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+          node --check /tmp/path-v2.js
+
+          node <<'NODE'
+          const fs=require('fs');
+          const p=require('/tmp/path-v2.js');
+          const fixture=JSON.parse(fs.readFileSync('/tmp/f2.json','utf8'));
+          const fixtureBefore=JSON.stringify(fixture);
+          const model=p.fromLavaan(fixture);
+          const modelBefore=JSON.stringify(model);
+          if(JSON.stringify(fixture)!==fixtureBefore) throw new Error('fromLavaan mutated source fixture');
+          console.log('adapter_ok factors='+model.factors.length+' indicators='+model.indicators.length+' loadings='+model.loadings.length);
+
+          for(const orientation of ['LR','TB','RL','BT']){
+            const opts=p.normalizeOptions(model,{orientation});
+            const laid=p.layout(model,opts);
+            if(!laid || !laid.nodes || !laid.edges) throw new Error('layout failed '+orientation);
+            if(JSON.stringify(model)!==modelBefore) throw new Error('layout mutated statistical model '+orientation);
+            const scene=p.render(model,opts);
+            if(!scene || !Array.isArray(scene.ops) || scene.ops.length===0) throw new Error('render failed '+orientation);
+            if(JSON.stringify(model)!==modelBefore) throw new Error('render mutated statistical model '+orientation);
+            console.log('orientation_ok '+orientation+' ops='+scene.ops.length+' size='+scene.width+'x'+scene.height);
+          }
+
+          for(const style of ['classic','modern','publication']){
+            const opts=p.normalizeOptions(model,{orientation:'LR',style});
+            const scene=p.render(model,opts);
+            if(!scene || !scene.ops?.length) throw new Error('style render failed '+style);
+            console.log('style_ok '+style+' ops='+scene.ops.length);
+          }
+
+          const opts=p.normalizeOptions(model,{orientation:'LR',style:'publication'});
+          const scene=p.render(model,opts);
+          const svg=p.toSvg(scene);
+          if(typeof svg!=='string' || !svg.startsWith('<?xml') || !svg.includes('data-path-renderer="v2"')) throw new Error('SVG gate failed');
+          console.log('svg_ok bytes='+Buffer.byteLength(svg));
+
+          const measure=(s,size,bold)=>String(s??'').length*Number(size||12)*(bold?0.58:0.54);
+          const pdf=p.toPdf(scene,measure);
+          const buf=Buffer.isBuffer(pdf)?pdf:Buffer.from(pdf);
+          if(buf.length<100 || !buf.subarray(0,5).toString().startsWith('%PDF-')) throw new Error('PDF gate failed');
+          if(!buf.toString('latin1').includes('%%EOF')) throw new Error('PDF EOF gate failed');
+          console.log('pdf_ok bytes='+buf.length+' eof=true');
+
+          if(JSON.stringify(fixture)!==fixtureBefore) throw new Error('source fixture mutated by PATH pipeline');
+          if(JSON.stringify(model)!==modelBefore) throw new Error('statistical model mutated by PATH pipeline');
+          console.log('STATISTICAL_IMMUTABILITY_OK');
+          console.log('PATH_CORE_GATES_OK');
+          NODE
