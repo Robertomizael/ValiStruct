@@ -67,7 +67,7 @@ jobs:
               window.__modelBefore=JSON.stringify(model);
               window.__pathApi=p.mount(document.getElementById('host'),model,{design:'amosH'});
             },fixture);
-            const host=page.locator('[data-path-renderer="v2"]');
+            const host=page.locator('div.vs-path-v2[data-path-renderer="v2"]').first();
             const dir=()=>host.getAttribute('data-path-dir');
             const design=()=>host.getAttribute('data-path-design');
             if(await dir()!=='LR') throw new Error('AMOS horizontal did not start LR: '+await dir());
@@ -102,16 +102,16 @@ jobs:
               if(!options.some(x=>x.includes(expected))) throw new Error('Missing design option '+expected);
             }
             await select.selectOption('jaspV');
-            if(await design()!=='jaspV' || await dir()!=='TB') throw new Error('JASP vertical selection failed');
+            if(await design()!=='jaspV' || await dir()!=='TB') throw new Error('JASP vertical selection failed: design='+await design()+' dir='+await dir());
             console.log('jasp_vertical_ok design='+await design()+' dir='+await dir());
             await select.selectOption('publication');
-            if(await design()!=='publication') throw new Error('Publication mode selection failed');
+            if(await design()!=='publication') throw new Error('Publication mode selection failed: '+await design());
             console.log('publication_mode_ok design='+await design()+' dir='+await dir());
 
             const invariant=await page.evaluate(()=>({
               modelSame: JSON.stringify(window.__pathApi.model)===window.__modelBefore,
-              sourceBefore:window.__sourceBefore,
-              svgOps:document.querySelector('[data-role="viewport"] svg').innerHTML.length
+              sourceSame: JSON.stringify(JSON.parse(window.__sourceBefore))===window.__sourceBefore,
+              svgOps:document.querySelector('div.vs-path-v2 [data-role="viewport"] svg').innerHTML.length
             }));
             if(!invariant.modelSame) throw new Error('Interactive controls mutated model');
             if(invariant.svgOps<100) throw new Error('SVG did not render after interactions');
@@ -121,7 +121,6 @@ jobs:
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          cp /tmp/path-v2.js /tmp/path-v2.js.tmp && mv /tmp/path-v2.js.tmp /tmp/path-v2.js
           cd /tmp && python3 -m http.server 8124 >/tmp/path-int-http.log 2>&1 &
           SERVER=$!
           trap 'kill $SERVER || true' EXIT
