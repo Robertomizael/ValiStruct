@@ -60,7 +60,7 @@ jobs:
               const svg=p.toSvg(scene);
               const ms=performance.now()-t0;
               const nodes=countNodes(laid?.nodes);
-              const expected=model.factors.length+model.indicators.length;
+              const expected=model.factors.length+(model.indicators.length*2);
               if(!laid?.nodes || nodes!==expected) throw new Error(name+' node loss '+orientation+' got='+nodes+' expected='+expected+' type='+(laid?.nodes?.constructor?.name||typeof laid?.nodes));
               if(!scene?.ops?.length || !svg.includes('<svg')) throw new Error(name+' render/export failed '+orientation);
               if(ms>2000) throw new Error(name+' render too slow '+orientation+' '+ms);
