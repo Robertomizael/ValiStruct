@@ -1,0 +1,49 @@
+name: PATH v2 audited CI inspection
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-audited-ci-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Recover audited tree and inspect unified CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 >/tmp/partial.b64
+          base64 --decode /tmp/partial.b64 >/tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r </tmp/partial.pack || true
+          git cat-file -e "$TREE^{tree}"
+          git show "$TREE:.github/workflows/valistruct-ci.yml" >/tmp/valistruct-ci.yml
+          echo '=== PATH v2 CI markers ==='
+          grep -n 'path-v2.js' /tmp/valistruct-ci.yml
+          grep -n 'test_path_v2.cjs' /tmp/valistruct-ci.yml
+          grep -n 'test_path_v2_browser.py' /tmp/valistruct-ci.yml
+          grep -n 'setup-r' /tmp/valistruct-ci.yml
+          grep -n 'lavaan' /tmp/valistruct-ci.yml
+          grep -n 'fetch-depth: 0' /tmp/valistruct-ci.yml
+          grep -n 'run_browser_test' /tmp/valistruct-ci.yml | tail -10
+          grep -q 'node --check path-v2.js' /tmp/valistruct-ci.yml
+          grep -q 'node --test tests/test_path_v2.cjs' /tmp/valistruct-ci.yml
+          grep -q 'run_browser_test tests/test_path_v2_browser.py' /tmp/valistruct-ci.yml
+          grep -q 'any::lavaan' /tmp/valistruct-ci.yml
+          grep -q 'fetch-depth: 0' /tmp/valistruct-ci.yml
+          echo AUDITED_UNIFIED_CI_PATH_V2_WIRING_OK
