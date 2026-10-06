@@ -1,0 +1,160 @@
+name: PATH v2 Electron and PNG gates
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-electron-png-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  electron-and-png:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recover exact audited production tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r < /tmp/partial.pack || true
+          git cat-file -e "$TREE^{tree}"
+          test "$(git rev-parse "$BASE:app.js")" = "$(git rev-parse "$TREE:app.js")"
+          test "$(git rev-parse "$BASE:backend")" = "$(git rev-parse "$TREE:backend")"
+          git show "$TREE:path-v2.js" > /tmp/path-v2.js
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+
+          echo '=== PNG/MOUNT API SOURCE MARKERS ==='
+          node <<'NODE'
+          const p=require('/tmp/path-v2.js');
+          console.log('mount_arity='+p.mount.length);
+          console.log('mount_source_begin');
+          console.log(p.mount.toString().slice(0,10000));
+          console.log('mount_source_end');
+          NODE
+
+          echo '=== EXACT DESKTOP PACKAGE ==='
+          git show "$TREE:desktop/package.json" | sed -n '1,260p'
+          echo '=== DESKTOP V2 PROTECTION ==='
+          git show "$TREE:desktop/preload.js" | grep -n -C 3 'data-path-renderer="v2"' || true
+          git show "$TREE:desktop/renderer-fixes.js" | grep -n -C 3 'data-path-renderer="v2"' || true
+
+      - name: Assemble exact production workspace for packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          git archive "$BASE" | tar -x -C /tmp/valistruct-prod
+        continue-on-error: true
+
+      - name: Assemble workspace robustly
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          rm -rf /tmp/valistruct-prod && mkdir -p /tmp/valistruct-prod
+          git archive "$BASE" | tar -x -C /tmp/valistruct-prod
+          for p in path-v2.js index.html service-worker.js desktop/package.json desktop/preload.js desktop/renderer-fixes.js; do
+            mkdir -p "/tmp/valistruct-prod/$(dirname "$p")"
+            git show "$TREE:$p" > "/tmp/valistruct-prod/$p"
+          done
+          test "$(sha256sum /tmp/valistruct-prod/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+          grep -q 'path-v2.js' /tmp/valistruct-prod/index.html
+          grep -q 'path-v2.js' /tmp/valistruct-prod/service-worker.js
+
+      - name: Package Electron as Linux directory only
+        shell: bash
+        working-directory: /tmp/valistruct-prod/desktop
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npx electron-builder --linux dir --publish never
+          echo '=== package outputs ==='
+          find dist -maxdepth 4 -type f | sed -n '1,240p'
+          APPDIR=$(find dist -maxdepth 2 -type d -name '*unpacked' | head -1)
+          test -n "$APPDIR"
+          echo "APPDIR=$APPDIR"
+          find "$APPDIR" -type f -name 'path-v2.js' -print -quit | grep -q 'path-v2.js'
+          PACKED_PATH=$(find "$APPDIR" -type f -name 'path-v2.js' -print -quit)
+          test "$(sha256sum "$PACKED_PATH" | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+          echo "ELECTRON_PACKAGED_PATH_V2_OK $PACKED_PATH"
+
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Browser PNG export gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/valistruct-prod/path-v2.js /tmp/path-v2.js
+          git show 10c8600e71ef706c451b2459ed09d49e9d1ac7b4:tests/fixtures/path_v2/f2.json > /tmp/f2.json
+          cat > /tmp/png-gate.html <<'HTML'
+          <!doctype html><html><body><div id="host"></div><script src="/path-v2.js"></script></body></html>
+          HTML
+          cat > /tmp/png-gate.cjs <<'NODE'
+          const { chromium }=require('playwright');
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1400,height:1000}});
+            const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
+            await page.goto('http://127.0.0.1:8123/png-gate.html');
+            const fixture=JSON.parse(fs.readFileSync('/tmp/f2.json','utf8'));
+            const result=await page.evaluate(async fixture=>{
+              const p=window.ValiStructPathV2;
+              const model=p.fromLavaan(fixture);
+              const host=document.getElementById('host');
+              const mounted=p.mount(host,model,{orientation:'LR',style:'publication'});
+              await new Promise(r=>setTimeout(r,100));
+              const buttons=[...host.querySelectorAll('button')].map(b=>({text:b.textContent.trim(),title:b.title||'',disabled:b.disabled}));
+              return {buttons,html:host.innerHTML.slice(0,4000),mountedType:typeof mounted};
+            },fixture);
+            console.log('mountedType='+result.mountedType);
+            console.log('buttons='+JSON.stringify(result.buttons));
+            const pngButton=page.locator('#host button').filter({hasText:/PNG/i}).first();
+            if(await pngButton.count()===0) throw new Error('PNG button not found');
+            if(await pngButton.isDisabled()) throw new Error('PNG button disabled');
+            const [download]=await Promise.all([
+              page.waitForEvent('download',{timeout:10000}),
+              pngButton.click()
+            ]);
+            const suggested=download.suggestedFilename();
+            const out='/tmp/path-v2-export.png';
+            await download.saveAs(out);
+            const b=fs.readFileSync(out);
+            const sig=b.subarray(0,8).toString('hex');
+            if(sig!=='89504e470d0a1a0a') throw new Error('Invalid PNG signature '+sig);
+            if(b.length<1000) throw new Error('PNG unexpectedly small '+b.length);
+            if(errors.length) throw new Error('Browser page errors: '+errors.join(' | '));
+            console.log('PNG_BROWSER_EXPORT_OK filename='+suggested+' bytes='+b.length);
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cd /tmp && python3 -m http.server 8123 >/tmp/png-http.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER || true' EXIT
+          sleep 1
+          cd "$GITHUB_WORKSPACE"
+          node /tmp/png-gate.cjs
