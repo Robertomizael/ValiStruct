@@ -1,0 +1,107 @@
+name: PATH v2 recovered production diagnostic
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-production-diagnostic-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  production-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Recover audited production objects and validate PATH v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
+          COMMIT=5d57520ac36b9a41e80b8932d84bbad38aec2a5d
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r < /tmp/partial.pack || true
+          git cat-file -e "$COMMIT^{commit}"
+          git cat-file -e "$TREE^{tree}"
+
+          echo '=== EXACT TREE / PRODUCTION INVARIANTS ==='
+          test "$(git rev-parse "$COMMIT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$COMMIT^")" = "$BASE"
+          test "$(git rev-parse "$BASE:app.js")" = "$(git rev-parse "$TREE:app.js")"
+          test "$(git rev-parse "$BASE:backend")" = "$(git rev-parse "$TREE:backend")"
+          echo APP_JS_UNCHANGED
+          echo BACKEND_TREE_UNCHANGED
+
+          mkdir -p /tmp/pathv2
+          for p in path-v2.js index.html service-worker.js desktop/package.json desktop/preload.js desktop/renderer-fixes.js docs/PATH_V2_IMPLEMENTACION.md; do
+            git show "$TREE:$p" > "/tmp/pathv2/$(echo "$p" | tr '/' '_')"
+          done
+          git show "$TREE:tests/fixtures/path_v2/f2.json" > /tmp/pathv2/f2.json
+          git show "$TREE:tests/fixtures/path_v2/resid_cov.json" > /tmp/pathv2/resid_cov.json
+
+          echo '=== PATH V2 HASH + SYNTAX ==='
+          test "$(sha256sum /tmp/pathv2/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+          node --check /tmp/pathv2/path-v2.js
+          echo PATH_V2_SHA_AND_SYNTAX_OK
+
+          echo '=== WIRING ==='
+          grep -n 'path-v2.js' /tmp/pathv2/index.html
+          grep -n 'path-v2.js' /tmp/pathv2/service-worker.js
+          grep -n 'data-path-renderer' /tmp/pathv2/path-v2.js | head -20
+          grep -n 'data-path-renderer' /tmp/pathv2/desktop_preload.js || true
+          grep -n 'data-path-renderer' /tmp/pathv2/desktop_renderer-fixes.js || true
+
+          echo '=== MODULE API / LAYOUT / EXPORT DIAGNOSTIC ==='
+          node <<'NODE'
+          const fs=require('fs');
+          const p=require('/tmp/pathv2/path-v2.js');
+          console.log('exports=',Object.keys(p).sort().join(','));
+          const fixture=JSON.parse(fs.readFileSync('/tmp/pathv2/f2.json','utf8'));
+          let model=null;
+          const candidates=[];
+          for(const [k,v] of Object.entries(p)) if(v && typeof v==='object') candidates.push(k);
+          console.log('object_exports=',candidates.join(','));
+          function callAdapter(){
+            const A=p.PathModelAdapter||p.Adapter||p.adapter;
+            if(!A) throw new Error('Adapter export not found');
+            if(typeof A.fromLavaan==='function') return A.fromLavaan(fixture);
+            if(typeof A==='function') return A(fixture);
+            throw new Error('fromLavaan not found');
+          }
+          model=callAdapter();
+          console.log('model_counts', model.factors?.length, model.indicators?.length, model.loadings?.length);
+          const L=p.PathLayoutEngine||p.Layout||p.layout;
+          if(!L) throw new Error('Layout export not found');
+          const layoutFn=(typeof L.layout==='function')?L.layout.bind(L):(typeof L==='function'?L:null);
+          if(!layoutFn) throw new Error('layout function not found');
+          for(const orientation of ['LR','TB','RL','BT']){
+            const out=layoutFn(model,{orientation});
+            if(!out) throw new Error('layout failed '+orientation);
+            console.log('orientation_ok',orientation);
+          }
+          const E=p.PathExporter||p.Exporter||p.exporter;
+          if(E){
+            console.log('exporter_methods=',Object.keys(E).filter(k=>typeof E[k]==='function').sort().join(','));
+          }
+          console.log('PATH_PRODUCTION_DIAGNOSTIC_OK');
+          NODE
+
+          echo '=== FEATURE MARKERS ==='
+          grep -En "Rotar|Horizontal|Vertical|Invertir|AMOS|JASP|publicaci|toSvg|toPdf|pngBlob" /tmp/pathv2/path-v2.js | head -120
