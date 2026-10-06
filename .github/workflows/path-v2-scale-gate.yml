@@ -45,6 +45,7 @@ jobs:
           const fs=require('fs'), {performance}=require('perf_hooks');
           const p=require('/tmp/path-v2.js');
           const names=['f4_24','f6_40','resid_cov','cross'];
+          const countNodes=n=> n instanceof Map ? n.size : Array.isArray(n) ? n.length : n && typeof n==='object' ? Object.keys(n).length : 0;
           for(const name of names){
             const raw=JSON.parse(fs.readFileSync('/tmp/'+name+'.json','utf8'));
             const rawBefore=JSON.stringify(raw);
@@ -58,10 +59,12 @@ jobs:
               const scene=p.render(model,opts);
               const svg=p.toSvg(scene);
               const ms=performance.now()-t0;
-              if(!laid?.nodes || laid.nodes.size!==model.factors.length+model.indicators.length) throw new Error(name+' node loss '+orientation);
+              const nodes=countNodes(laid?.nodes);
+              const expected=model.factors.length+model.indicators.length;
+              if(!laid?.nodes || nodes!==expected) throw new Error(name+' node loss '+orientation+' got='+nodes+' expected='+expected+' type='+(laid?.nodes?.constructor?.name||typeof laid?.nodes));
               if(!scene?.ops?.length || !svg.includes('<svg')) throw new Error(name+' render/export failed '+orientation);
               if(ms>2000) throw new Error(name+' render too slow '+orientation+' '+ms);
-              console.log('render_ok fixture='+name+' dir='+orientation+' ops='+scene.ops.length+' svgBytes='+Buffer.byteLength(svg)+' ms='+ms.toFixed(2));
+              console.log('render_ok fixture='+name+' dir='+orientation+' nodes='+nodes+' ops='+scene.ops.length+' svgBytes='+Buffer.byteLength(svg)+' ms='+ms.toFixed(2));
             }
             if(JSON.stringify(raw)!==rawBefore) throw new Error(name+' source mutated');
             if(JSON.stringify(model)!==modelBefore) throw new Error(name+' model mutated');
