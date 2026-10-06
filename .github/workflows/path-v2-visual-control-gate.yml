@@ -1,0 +1,101 @@
+name: PATH v2 visual control gate
+
+on:
+  push:
+    branches: [integration/path-v2-upload]
+    paths: ['.ci/path-v2-visual-control-trigger']
+
+permissions:
+  contents: read
+
+jobs:
+  visual-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recover exact renderer and fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 >/tmp/partial.b64
+          base64 --decode /tmp/partial.b64 >/tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r </tmp/partial.pack || true
+          git show "$TREE:path-v2.js" >/tmp/path-v2.js
+          git show "$TREE:tests/fixtures/path_v2/f2.json" >/tmp/f2.json
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Verify UI controls change actual geometry and capture states
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/path-v2-control-shots
+          cat >/tmp/control.html <<'HTML'
+          <!doctype html><html><body><div id="host"></div><script src="/path-v2.js"></script></body></html>
+          HTML
+          cat >/tmp/control.cjs <<'NODE'
+          const {chromium}=require('playwright');
+          const fs=require('fs'),crypto=require('crypto');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1600,height:1000}});
+            await page.goto('http://127.0.0.1:8126/control.html');
+            const f=JSON.parse(fs.readFileSync('/tmp/f2.json','utf8'));
+            await page.evaluate(f=>{
+              const p=window.ValiStructPathV2;
+              p.mount(document.getElementById('host'),p.fromLavaan(f),{design:'amosH'});
+            },f);
+            const host=page.locator('div.vs-path-v2[data-path-renderer="v2"]').first();
+            const svg=host.locator('[data-role="viewport"] svg');
+            async function digest(label,file){
+              const html=await svg.innerHTML();
+              const hash=crypto.createHash('sha256').update(html).digest('hex');
+              const box=await svg.boundingBox();
+              const dir=await host.getAttribute('data-path-dir');
+              const design=await host.getAttribute('data-path-design');
+              console.log(label+' hash='+hash+' dir='+dir+' design='+design+' box='+JSON.stringify(box));
+              await host.screenshot({path:'/tmp/path-v2-control-shots/'+file});
+              return hash;
+            }
+            const h0=await digest('initial','01_initial_amosH.png');
+            await page.getByRole('button',{name:'Vertical',exact:true}).click();
+            const h1=await digest('vertical_button','02_vertical_button.png');
+            if(h1===h0) throw new Error('Vertical button did not change SVG geometry');
+            await page.getByRole('button',{name:/Rotar 90/}).click();
+            const h2=await digest('rotate90','03_rotate90.png');
+            if(h2===h1) throw new Error('Rotate 90 did not change SVG geometry');
+            const select=host.locator('select[data-opt="design"]');
+            await select.selectOption('amosV');
+            const h3=await digest('amosV_select','04_amosV_select.png');
+            if(await host.getAttribute('data-path-dir')!=='TB') throw new Error('AMOS vertical selector did not set TB');
+            await select.selectOption('publication');
+            const h4=await digest('publication_select','05_publication_select.png');
+            if(h4===h3) throw new Error('Publication selector did not change SVG');
+            console.log('PATH_VISUAL_CONTROL_GEOMETRY_OK');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          cd /tmp && python3 -m http.server 8126 >/tmp/control-http.log 2>&1 &
+          SERVER=$!; trap 'kill $SERVER || true' EXIT; sleep 1
+          cd "$GITHUB_WORKSPACE"
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node /tmp/control.cjs
+      - name: Upload control-state screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: path-v2-control-state-snapshots
+          path: /tmp/path-v2-control-shots/*.png
+          retention-days: 14
