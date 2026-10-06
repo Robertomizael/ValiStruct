@@ -1,0 +1,59 @@
+name: PATH v2 partial bundle recovery diagnostic
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-recovery-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild partial bundle and attempt object recovery
+        shell: bash
+        run: |
+          set -u
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          echo "partial_bytes=$(wc -c </tmp/partial.bundle)"
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes()
+          i=b.find(b'PACK')
+          print('pack_offset=', i)
+          if i < 0:
+              raise SystemExit('PACK header not found')
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          print('partial_pack_bytes=', len(b)-i)
+          PY
+
+          mkdir -p /tmp/recover && cd /tmp/recover
+          git init -q
+          git remote add origin "$GITHUB_WORKSPACE"
+          echo "--- unpack partial pack ---"
+          git unpack-objects -r < /tmp/partial.pack || true
+          echo "--- recovered loose objects ---"
+          find .git/objects -type f | sort | sed -n '1,200p'
+
+          echo "--- probe expected commit/tree ---"
+          for obj in 5d57520ac36b9a41e80b8932d84bbad38aec2a5d 10c8600e71ef706c451b2459ed09d49e9d1ac7b4; do
+            if git cat-file -e "$obj" 2>/dev/null; then
+              echo "RECOVERED $obj type=$(git cat-file -t "$obj")"
+              git cat-file -p "$obj" | sed -n '1,120p'
+            else
+              echo "MISSING $obj"
+            fi
+          done
+
+          echo "--- fsck recovered objects ---"
+          git fsck --full --no-reflogs 2>&1 | sed -n '1,240p' || true
