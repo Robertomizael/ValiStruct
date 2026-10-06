@@ -41,31 +41,13 @@ jobs:
           git show "$TREE:path-v2.js" > /tmp/path-v2.js
           test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
 
-          echo '=== PNG/MOUNT API SOURCE MARKERS ==='
-          node <<'NODE'
-          const p=require('/tmp/path-v2.js');
-          console.log('mount_arity='+p.mount.length);
-          console.log('mount_source_begin');
-          console.log(p.mount.toString().slice(0,10000));
-          console.log('mount_source_end');
-          NODE
-
           echo '=== EXACT DESKTOP PACKAGE ==='
           git show "$TREE:desktop/package.json" | sed -n '1,260p'
           echo '=== DESKTOP V2 PROTECTION ==='
           git show "$TREE:desktop/preload.js" | grep -n -C 3 'data-path-renderer="v2"' || true
           git show "$TREE:desktop/renderer-fixes.js" | grep -n -C 3 'data-path-renderer="v2"' || true
 
-      - name: Assemble exact production workspace for packaging
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
-          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
-          git archive "$BASE" | tar -x -C /tmp/valistruct-prod
-        continue-on-error: true
-
-      - name: Assemble workspace robustly
+      - name: Assemble exact production workspace
         shell: bash
         run: |
           set -euo pipefail
@@ -88,13 +70,10 @@ jobs:
           set -euo pipefail
           npm install --no-audit --no-fund
           npx electron-builder --linux dir --publish never
-          echo '=== package outputs ==='
-          find dist -maxdepth 4 -type f | sed -n '1,240p'
           APPDIR=$(find dist -maxdepth 2 -type d -name '*unpacked' | head -1)
           test -n "$APPDIR"
-          echo "APPDIR=$APPDIR"
-          find "$APPDIR" -type f -name 'path-v2.js' -print -quit | grep -q 'path-v2.js'
           PACKED_PATH=$(find "$APPDIR" -type f -name 'path-v2.js' -print -quit)
+          test -n "$PACKED_PATH"
           test "$(sha256sum "$PACKED_PATH" | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
           echo "ELECTRON_PACKAGED_PATH_V2_OK $PACKED_PATH"
 
@@ -126,12 +105,10 @@ jobs:
               const p=window.ValiStructPathV2;
               const model=p.fromLavaan(fixture);
               const host=document.getElementById('host');
-              const mounted=p.mount(host,model,{orientation:'LR',style:'publication'});
+              p.mount(host,model,{orientation:'LR',style:'publication'});
               await new Promise(r=>setTimeout(r,100));
-              const buttons=[...host.querySelectorAll('button')].map(b=>({text:b.textContent.trim(),title:b.title||'',disabled:b.disabled}));
-              return {buttons,html:host.innerHTML.slice(0,4000),mountedType:typeof mounted};
+              return {buttons:[...host.querySelectorAll('button')].map(b=>({text:b.textContent.trim(),disabled:b.disabled}))};
             },fixture);
-            console.log('mountedType='+result.mountedType);
             console.log('buttons='+JSON.stringify(result.buttons));
             const pngButton=page.locator('#host button').filter({hasText:/PNG/i}).first();
             if(await pngButton.count()===0) throw new Error('PNG button not found');
@@ -140,7 +117,6 @@ jobs:
               page.waitForEvent('download',{timeout:10000}),
               pngButton.click()
             ]);
-            const suggested=download.suggestedFilename();
             const out='/tmp/path-v2-export.png';
             await download.saveAs(out);
             const b=fs.readFileSync(out);
@@ -148,7 +124,7 @@ jobs:
             if(sig!=='89504e470d0a1a0a') throw new Error('Invalid PNG signature '+sig);
             if(b.length<1000) throw new Error('PNG unexpectedly small '+b.length);
             if(errors.length) throw new Error('Browser page errors: '+errors.join(' | '));
-            console.log('PNG_BROWSER_EXPORT_OK filename='+suggested+' bytes='+b.length);
+            console.log('PNG_BROWSER_EXPORT_OK filename='+download.suggestedFilename()+' bytes='+b.length);
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
@@ -157,4 +133,4 @@ jobs:
           trap 'kill $SERVER || true' EXIT
           sleep 1
           cd "$GITHUB_WORKSPACE"
-          node /tmp/png-gate.cjs
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node /tmp/png-gate.cjs
