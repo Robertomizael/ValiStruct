@@ -1,0 +1,141 @@
+name: PATH v2 real lavaan invariance gate
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-real-lavaan-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  lavaan-path-invariance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::lavaan
+            any::jsonlite
+
+      - name: Recover exact audited PATH v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT=5d57520ac36b9a41e80b8932d84bbad38aec2a5d
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 > /tmp/partial.b64
+          base64 --decode /tmp/partial.b64 > /tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r < /tmp/partial.pack || true
+          test "$(git rev-parse "$COMMIT^{tree}")" = "$TREE"
+          git show "$TREE:path-v2.js" > /tmp/path-v2.js
+          test "$(sha256sum /tmp/path-v2.js | awk '{print $1}')" = "f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815"
+          node --check /tmp/path-v2.js
+
+      - name: Generate deterministic CFA data and request
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import csv, json, random, math
+          rng=random.Random(20261006)
+          n=500
+          rows=[]
+          for i in range(n):
+              f1=rng.gauss(0,1)
+              f2=0.35*f1 + math.sqrt(1-0.35**2)*rng.gauss(0,1)
+              vals=[]
+              for lam in (0.82,0.76,0.71,0.67):
+                  vals.append(lam*f1 + math.sqrt(1-lam**2)*rng.gauss(0,1))
+              for lam in (0.80,0.74,0.69,0.64):
+                  vals.append(lam*f2 + math.sqrt(1-lam**2)*rng.gauss(0,1))
+              rows.append(vals)
+          from io import StringIO
+          s=StringIO(); w=csv.writer(s); w.writerow([f'x{i}' for i in range(1,9)]); w.writerows(rows)
+          req={
+            'csv_text':s.getvalue(),
+            'syntax':'F1 =~ x1 + x2 + x3 + x4\nF2 =~ x5 + x6 + x7 + x8\nF1 ~~ F2',
+            'estimator':'MLR','data_type':'continuous','missing':'listwise','bootstrap':0
+          }
+          open('/tmp/request.json','w',encoding='utf-8').write(json.dumps(req,ensure_ascii=False))
+          PY
+
+      - name: Run real Motor Pro lavaan engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          Rscript backend/lavaan_engine.R /tmp/request.json /tmp/response.json
+          Rscript -e "stopifnot(requireNamespace('lavaan',quietly=TRUE),requireNamespace('jsonlite',quietly=TRUE))"
+          python3 - <<'PY'
+          import json
+          r=json.load(open('/tmp/response.json'))
+          assert r.get('ok') is True, r
+          assert r.get('converged') is True, r
+          print('lavaan_ok estimator=',r.get('estimator'),'n=',r.get('n'))
+          print('fit=',{k:r.get('fit',{}).get(k) for k in ['chisq','df','pvalue','cfi','tli','rmsea','srmr','aic','bic']})
+          print('parameters=',len(r.get('parameters',[])))
+          PY
+
+      - name: Verify real lavaan statistics are invariant through PATH v2
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs'), crypto=require('crypto');
+          const p=require('/tmp/path-v2.js');
+          const result=JSON.parse(fs.readFileSync('/tmp/response.json','utf8'));
+          const fitKeys=['chisq','df','pvalue','cfi','tli','rmsea','srmr','aic','bic'];
+          const paramKeys=['lhs','op','rhs','est','std_all','se','z','pvalue'];
+          const snapshot=()=>({
+            fit:Object.fromEntries(fitKeys.map(k=>[k,result.fit?.[k] ?? null])),
+            parameters:(result.parameters||[]).map(x=>Object.fromEntries(paramKeys.map(k=>[k,x[k] ?? null])))
+          });
+          const before=snapshot();
+          const beforeText=JSON.stringify(before);
+          const beforeHash=crypto.createHash('sha256').update(beforeText).digest('hex');
+          const rawBefore=JSON.stringify(result);
+
+          const model=p.fromLavaan(result);
+          if(model.factors.length!==2 || model.indicators.length!==8 || model.loadings.length!==8) throw new Error('Unexpected real CFA adapter counts');
+          const modelBefore=JSON.stringify(model);
+          for(const orientation of ['LR','TB','RL','BT']){
+            const opts=p.normalizeOptions(model,{orientation,style:'publication'});
+            const layout=p.layout(model,opts);
+            const scene=p.render(model,opts);
+            if(!layout?.nodes || !scene?.ops?.length) throw new Error('Real lavaan render failed '+orientation);
+            const svg=p.toSvg(scene);
+            if(!svg.includes('data-path-renderer="v2"')) throw new Error('SVG marker missing '+orientation);
+          }
+
+          const after=snapshot();
+          const afterText=JSON.stringify(after);
+          const afterHash=crypto.createHash('sha256').update(afterText).digest('hex');
+          if(beforeText!==afterText) throw new Error('AFC statistics changed after PATH rendering');
+          if(rawBefore!==JSON.stringify(result)) throw new Error('Raw lavaan response mutated');
+          if(modelBefore!==JSON.stringify(model)) throw new Error('Normalized statistical model mutated');
+
+          const sourceLoadings=result.parameters.filter(x=>x.op==='=~');
+          if(sourceLoadings.length!==8) throw new Error('Expected 8 source loadings');
+          const nonFinite=sourceLoadings.some(x=>['est','std_all','se','z','pvalue'].some(k=>x[k]===undefined));
+          if(nonFinite) throw new Error('Missing real loading statistic in source');
+
+          console.log('real_model_counts factors=2 indicators=8 loadings=8');
+          console.log('statistics_sha256_before='+beforeHash);
+          console.log('statistics_sha256_after ='+afterHash);
+          console.log('REAL_LAVAAN_PATH_STATISTICAL_INVARIANCE_OK');
+          NODE
