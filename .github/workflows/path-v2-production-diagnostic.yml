@@ -68,6 +68,9 @@ jobs:
           grep -n 'data-path-renderer' /tmp/pathv2/desktop_preload.js || true
           grep -n 'data-path-renderer' /tmp/pathv2/desktop_renderer-fixes.js || true
 
+          echo '=== FEATURE MARKERS ==='
+          grep -En "Rotar|Horizontal|Vertical|Invertir|AMOS|JASP|publicaci|toSvg|toPdf|pngBlob|orientation" /tmp/pathv2/path-v2.js | head -160 || true
+
           echo '=== MODULE API / LAYOUT / EXPORT DIAGNOSTIC ==='
           node <<'NODE'
           const fs=require('fs');
@@ -77,14 +80,14 @@ jobs:
           const model=p.fromLavaan(fixture);
           if(!model) throw new Error('fromLavaan returned empty model');
           console.log('model_counts', model.factors?.length, model.indicators?.length, model.loadings?.length);
+          console.log('capabilities', JSON.stringify(model.capabilities));
           for(const orientation of ['LR','TB','RL','BT']){
-            const opts=p.normalizeOptions({orientation},model);
+            const opts=p.normalizeOptions(model,{orientation});
             const laid=p.layout(model,opts);
             if(!laid) throw new Error('layout failed '+orientation);
             console.log('orientation_ok',orientation,'keys=',Object.keys(laid).sort().join(','));
           }
-          const opts=p.normalizeOptions({orientation:'LR'},model);
-          const laid=p.layout(model,opts);
+          const opts=p.normalizeOptions(model,{orientation:'LR'});
           const scene=p.render(model,opts);
           if(!scene) throw new Error('render returned empty scene');
           console.log('scene_keys',Object.keys(scene).sort().join(','));
@@ -97,6 +100,3 @@ jobs:
           console.log('pdf_ok',pdfLen);
           console.log('PATH_PRODUCTION_DIAGNOSTIC_OK');
           NODE
-
-          echo '=== FEATURE MARKERS ==='
-          grep -En "Rotar|Horizontal|Vertical|Invertir|AMOS|JASP|publicaci|toSvg|toPdf|pngBlob|orientation" /tmp/pathv2/path-v2.js | head -160
