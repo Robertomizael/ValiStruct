@@ -1,0 +1,32 @@
+name: PATH v2 audited bundle import
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-bundle/part*'
+
+permissions:
+  contents: write
+
+jobs:
+  import-audited-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout staging branch with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected target is still at audited base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/v5-4-fase3-hardening
+          test "$(git rev-parse origin/feature/v5-4-fase3-hardening)" = "6e78c3a62d2c493081c94114bea0e1fa0cb79590"
+
+      - name: Reconstruct, verify and fast-forward exact audited commit
+        shell: bash
+        run: bash .ci/path-v2-bundle/import_verified_bundle.sh
