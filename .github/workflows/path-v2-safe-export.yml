@@ -73,4 +73,5 @@ jobs:
           name: path-v2-safe-export
           path: /tmp/path-v2-safe-export
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
