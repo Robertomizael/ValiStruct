@@ -1,0 +1,76 @@
+name: PATH v2 safe export
+
+on:
+  push:
+    branches:
+      - integration/path-v2-upload
+    paths:
+      - '.ci/path-v2-safe-export-trigger'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Recover audited files and build safe export
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6e78c3a62d2c493081c94114bea0e1fa0cb79590
+          COMMIT=5d57520ac36b9a41e80b8932d84bbad38aec2a5d
+          TREE=10c8600e71ef706c451b2459ed09d49e9d1ac7b4
+          PATHSHA=f0a0c36ee8eec452876d8dda188ca8a42e966976f00548e46231e6f051f1e815
+          mkdir -p /tmp/path-v2-safe-export/files
+          cat .ci/path-v2-bundle/part00 .ci/path-v2-bundle/part01 .ci/path-v2-bundle/part02 .ci/path-v2-bundle/part03 >/tmp/partial.b64
+          base64 --decode /tmp/partial.b64 >/tmp/partial.bundle
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/partial.bundle').read_bytes(); i=b.find(b'PACK'); assert i>=0
+          Path('/tmp/partial.pack').write_bytes(b[i:])
+          PY
+          git unpack-objects -r </tmp/partial.pack || true
+          test "$(git rev-parse "$COMMIT^")" = "$BASE"
+          test "$(git rev-parse "$COMMIT^{tree}")" = "$TREE"
+          test "$(git rev-parse "$BASE:app.js")" = "$(git rev-parse "$TREE:app.js")"
+          test "$(git rev-parse "$BASE:backend")" = "$(git rev-parse "$TREE:backend")"
+          git diff-tree --no-commit-id --name-status -r "$BASE" "$COMMIT" >/tmp/path-v2-safe-export/manifest.tsv
+          test "$(wc -l </tmp/path-v2-safe-export/manifest.tsv | tr -d ' ')" = "18"
+          : > /tmp/path-v2-safe-export/exported.tsv
+          : > /tmp/path-v2-safe-export/missing.tsv
+          while IFS=$'\t' read -r status path extra; do
+            test -n "$path"
+            if [ "$status" = "D" ]; then
+              printf '%s\t%s\n' "$status" "$path" >>/tmp/path-v2-safe-export/exported.tsv
+              continue
+            fi
+            if git cat-file -e "$TREE:$path" 2>/dev/null; then
+              mkdir -p "/tmp/path-v2-safe-export/files/$(dirname "$path")"
+              git show "$TREE:$path" > "/tmp/path-v2-safe-export/files/$path"
+              printf '%s\t%s\n' "$status" "$path" >>/tmp/path-v2-safe-export/exported.tsv
+            else
+              printf '%s\t%s\n' "$status" "$path" >>/tmp/path-v2-safe-export/missing.tsv
+            fi
+          done </tmp/path-v2-safe-export/manifest.tsv
+          test "$(wc -l </tmp/path-v2-safe-export/missing.tsv | tr -d ' ')" = "3"
+          grep -Fxq $'A\ttests/fixtures/path_v2/make_fixtures.cjs' /tmp/path-v2-safe-export/missing.tsv
+          grep -Fxq $'A\ttests/test_path_v2.cjs' /tmp/path-v2-safe-export/missing.tsv
+          grep -Fxq $'A\ttests/test_path_v2_browser.py' /tmp/path-v2-safe-export/missing.tsv
+          test "$(sha256sum /tmp/path-v2-safe-export/files/path-v2.js | awk '{print $1}')" = "$PATHSHA"
+          find /tmp/path-v2-safe-export/files -type f -print0 | sort -z | xargs -0 sha256sum >/tmp/path-v2-safe-export/sha256.txt
+          echo SAFE_EXPORT_OK
+          cat /tmp/path-v2-safe-export/manifest.tsv
+          echo '=== missing ==='
+          cat /tmp/path-v2-safe-export/missing.tsv
+      - name: Upload safe export
+        uses: actions/upload-artifact@v4
+        with:
+          name: path-v2-safe-export
+          path: /tmp/path-v2-safe-export
+          if-no-files-found: error
+          retention-days: 7
