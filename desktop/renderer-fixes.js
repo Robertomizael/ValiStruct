@@ -166,7 +166,8 @@
     renderProResults=function(data){
       previousRenderPro(data);
       const model=proModel(data);
-      if(model && typeof proResults!=='undefined' && proResults){
+      // PATH v2 (path-v2.js) es el renderer compartido web/escritorio; este diagrama queda solo como fallback.
+      if(model && typeof proResults!=='undefined' && proResults && !proResults.querySelector('[data-path-renderer="v2"]')){
         proResults.insertAdjacentHTML('beforeend',buildPathDiagram(model));
       }
     };

@@ -263,8 +263,10 @@ contextBridge.exposeInMainWorld('valistructDesktop', {
 
   function enhanceCfaDiagram() {
     document.querySelectorAll('.cfa-diagram').forEach(box => {
+      // PATH v2 owns its own styling: never recolor, resize or restyle it.
+      if (box.closest('[data-path-renderer="v2"]')) return;
       const svg = box.querySelector('svg');
-      if (!svg || svg.dataset.vsEnhanced === '1') return;
+      if (!svg || svg.dataset.vsEnhanced === '1' || svg.closest('[data-path-renderer="v2"]')) return;
       svg.dataset.vsEnhanced = '1';
 
       let maxX = 0, maxY = 0;

@@ -1,0 +1,137 @@
+{
+ "_nota": "Fixture sintético para pruebas de dibujo del PATH v2. No es un resultado real.",
+ "name": "1 factor / 5 ítems",
+ "ok": true,
+ "converged": true,
+ "estimator": "MLR",
+ "fit": {
+  "chisq": 187.432,
+  "df": 98,
+  "pvalue": 0.000001,
+  "cfi": 0.957,
+  "tli": 0.948,
+  "rmsea": 0.052,
+  "rmsea.ci.lower": 0.041,
+  "rmsea.ci.upper": 0.063,
+  "srmr": 0.047,
+  "aic": 10234.118,
+  "bic": 10389.557
+ },
+ "fit_robust": {
+  "cfi.robust": 0.951,
+  "tli.robust": 0.94,
+  "rmsea.robust": 0.055
+ },
+ "parameters": [
+  {
+   "lhs": "F1",
+   "op": "=~",
+   "rhs": "i01",
+   "est": 1,
+   "se": null,
+   "z": null,
+   "pvalue": null,
+   "std_all": 0.57
+  },
+  {
+   "lhs": "F1",
+   "op": "=~",
+   "rhs": "i02",
+   "est": 1.06,
+   "se": 0.06,
+   "z": 17.666667,
+   "pvalue": 0.0004,
+   "std_all": 0.59
+  },
+  {
+   "lhs": "F1",
+   "op": "=~",
+   "rhs": "i03",
+   "est": 1.19,
+   "se": 0.06,
+   "z": 19.833333,
+   "pvalue": 0.0004,
+   "std_all": 0.61
+  },
+  {
+   "lhs": "F1",
+   "op": "=~",
+   "rhs": "i04",
+   "est": 0.92,
+   "se": 0.06,
+   "z": 15.333333,
+   "pvalue": 0.0004,
+   "std_all": 0.63
+  },
+  {
+   "lhs": "F1",
+   "op": "=~",
+   "rhs": "i05",
+   "est": 1.05,
+   "se": 0.06,
+   "z": 17.5,
+   "pvalue": 0.0004,
+   "std_all": 0.65
+  },
+  {
+   "lhs": "i01",
+   "op": "~~",
+   "rhs": "i01",
+   "est": 0.87763,
+   "se": 0.04,
+   "z": 21.94075,
+   "pvalue": 0.0004,
+   "std_all": 0.6751
+  },
+  {
+   "lhs": "i02",
+   "op": "~~",
+   "rhs": "i02",
+   "est": 0.84747,
+   "se": 0.04,
+   "z": 21.18675,
+   "pvalue": 0.0004,
+   "std_all": 0.6519
+  },
+  {
+   "lhs": "i03",
+   "op": "~~",
+   "rhs": "i03",
+   "est": 0.81627,
+   "se": 0.04,
+   "z": 20.40675,
+   "pvalue": 0.0004,
+   "std_all": 0.6279
+  },
+  {
+   "lhs": "i04",
+   "op": "~~",
+   "rhs": "i04",
+   "est": 0.78403,
+   "se": 0.04,
+   "z": 19.60075,
+   "pvalue": 0.0004,
+   "std_all": 0.6031
+  },
+  {
+   "lhs": "i05",
+   "op": "~~",
+   "rhs": "i05",
+   "est": 0.75075,
+   "se": 0.04,
+   "z": 18.76875,
+   "pvalue": 0.0004,
+   "std_all": 0.5775
+  },
+  {
+   "lhs": "F1",
+   "op": "~~",
+   "rhs": "F1",
+   "est": 0.6,
+   "se": 0.09,
+   "z": 6.666667,
+   "pvalue": 0.0004,
+   "std_all": 1
+  }
+ ]
+}

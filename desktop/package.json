@@ -75,6 +75,10 @@
         "to": "app/jasp-import.js"
       },
       {
+        "from": "../path-v2.js",
+        "to": "app/path-v2.js"
+      },
+      {
         "from": "../styles.css",
         "to": "app/styles.css"
       },
