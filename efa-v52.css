@@ -1,9 +1,9 @@
 /* Fase correctiva AFE · acciones y descargas visibles antes del desplazamiento. */
 body.vs-v52 #efa{max-width:1220px;margin:0 auto}
 body.vs-v52 #efa .section-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-body.vs-v52 #efa .efa-action-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 6px;background:#fff;padding:16px;border:1px solid #dae5ef;border-radius:16px;box-shadow:0 4px 22px rgba(20,57,92,.055)}
+body.vs-v52 #efa .efa-action-toolbar{display:flex!important;visibility:visible!important;opacity:1!important;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 6px;background:#fff;padding:16px;border:1px solid #dae5ef;border-radius:16px;box-shadow:0 4px 22px rgba(20,57,92,.055);position:sticky;top:96px;z-index:32}
 body.vs-v52 #efa .efa-action-toolbar button{flex:0 1 auto;max-width:100%;border:1px solid #c5d6e6;border-radius:10px;background:#fff;color:#1b4d76;font-size:12px;font-weight:700;padding:12px 14px;line-height:1.3;cursor:pointer}
-body.vs-v52 #efa .efa-action-toolbar button.primary{background:#1b6aa4!important;border-color:#1b6aa4!important;color:#fff!important}
+body.vs-v52 #efa .efa-action-toolbar button.primary{background:#1b6aa4!important;border-color:#1b6aa4!important;color:#fff!important;font-size:13px;padding:13px 18px;box-shadow:0 3px 10px rgba(27,106,164,.22)}
 body.vs-v52 #efa .efa-action-toolbar button:disabled{opacity:.55;cursor:wait}
 body.vs-v52 #efa .efa-engine-status{padding:10px 14px;border-radius:8px;background:#eff6fe;color:#305875;font-size:12px;line-height:1.55;border-left:3px solid #4c8cbb;margin:10px 0 16px}
 body.vs-v52 #efa .efa-engine-status.efa-error{background:#fff4f2;color:#943e3d;border-color:#bf6060}
@@ -24,4 +24,5 @@ body.vs-v52 #efa .efa-r-head p,body.vs-v52 #efa .efa-diagnostic-panel p{font-siz
 body.vs-v52 #efa .efa-method-warning{padding:12px 16px;background:#fff9e9;border-left:3px solid #c3993d;color:#745621;font-size:12px;line-height:1.6}
 body.vs-v52 #efa .efa-r-results details{padding:13px;background:#f7fbff;border:1px solid #dfe9f3;border-radius:11px;margin:17px 0}
 @media(max-width:1100px){body.vs-v52 #efa .efa-diag-cards,body.vs-v52 #efa .efa-result-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:810px){body.vs-v52 #efa .efa-action-toolbar{top:8px}}
 @media(max-width:700px){body.vs-v52 #efa .efa-method-grid{grid-template-columns:1fr}body.vs-v52 #efa .efa-method-grid label:first-child{grid-column:span 1}body.vs-v52 #efa .efa-diag-cards,body.vs-v52 #efa .efa-result-grid{grid-template-columns:1fr}}
