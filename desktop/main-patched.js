@@ -9,12 +9,14 @@ const path = require('path');
 app.on('web-contents-created', (_event, contents) => {
   if (contents.getType && contents.getType() !== 'window') return;
   contents.on('did-finish-load', async () => {
-    try {
-      const patchPath = path.join(__dirname, 'renderer-fixes.js');
-      const source = fs.readFileSync(patchPath, 'utf8');
-      await contents.executeJavaScript(source, true);
-    } catch (err) {
-      console.error('[ValiStruct] renderer-fixes injection failed:', err);
+    for (const file of ['renderer-fixes.js', 'content-validity-xlsx-renderer.js']) {
+      try {
+        const patchPath = path.join(__dirname, file);
+        const source = fs.readFileSync(patchPath, 'utf8');
+        await contents.executeJavaScript(source, true);
+      } catch (err) {
+        console.error(`[ValiStruct] ${file} injection failed:`, err);
+      }
     }
   });
 });
