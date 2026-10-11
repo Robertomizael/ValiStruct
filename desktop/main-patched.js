@@ -18,6 +18,18 @@ app.on('web-contents-created', (_event, contents) => {
         console.error(`[ValiStruct] ${file} injection failed:`, err);
       }
     }
+    try {
+      await contents.executeJavaScript(`
+        [['cviWorkspace','cviXlsxControls'],['lawsheWorkspace','lawsheXlsxControls'],['delphiWorkspace','delphiXlsxControls']].forEach(([hostId,boxId])=>{
+          const host=document.getElementById(hostId),box=document.getElementById(boxId);
+          if(!host||!box||box.parentElement===host)return;
+          const anchor=host.querySelector('.button-row');
+          if(anchor)anchor.insertAdjacentElement('afterend',box); else host.appendChild(box);
+        });
+      `, true);
+    } catch (err) {
+      console.error('[ValiStruct] content-validity XLSX layout normalization failed:', err);
+    }
   });
 });
 
