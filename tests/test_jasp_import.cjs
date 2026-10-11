@@ -13,6 +13,26 @@ test('imports raw lavaan measurement model',()=>{
  assert.deepEqual(Array.from(r.factors),['F1','F2']);
  assert.deepEqual(Array.from(r.required),['i01','i02','i03','i04','i05','i06']);
 });
+
+test('imports JASP labeled measurement parameters and preserves model text',()=>{
+ const syntax=[
+  'Factor1 =~ lambda_1_1*i01 + lambda_1_2*i02 + lambda_1_3*i03 + lambda_1_4*i04 + lambda_1_5*i05',
+  'Factor2 =~ lambda_2_1*i06 + lambda_2_2*i07 + lambda_2_3*i08 + lambda_2_4*i09 + lambda_2_5*i10 + lambda_2_6*i11',
+  'Factor3 =~ lambda_3_1*i12 + lambda_3_2*i13 + lambda_3_3*i14 + lambda_3_4*i15 + lambda_3_5*i16 + lambda_3_6*i17',
+  'Factor4 =~ lambda_4_1*i18 + lambda_4_2*i19 + lambda_4_3*i20 + lambda_4_4*i21 + lambda_4_5*i22 + lambda_4_6*i23',
+  'Factor5 =~ lambda_5_1*i24 + lambda_5_2*i25 + lambda_5_3*i26 + lambda_5_4*i27 + lambda_5_5*i28'
+ ].join('\n');
+ const r=parse(syntax);
+ assert.deepEqual(Array.from(r.factors),['Factor1','Factor2','Factor3','Factor4','Factor5']);
+ assert.deepEqual(Array.from(r.required),Array.from({length:28},(_,i)=>`i${String(i+1).padStart(2,'0')}`));
+ assert.equal(r.model,syntax);
+});
+
+test('imports numeric and NA lavaan modifiers when checking indicator names',()=>{
+ const r=parse('F1 =~ 1*i01 + NA*i02 + start(0.7)*i03');
+ assert.deepEqual(Array.from(r.required),['i01','i02','i03']);
+});
+
 test('imports JASP-style R wrapper without executing the R code',()=>{
  const r=parse("library(lavaan)\nmodel <- 'F1 =~ i01 + i02 + i03'\nfit <- cfa(model, data = d, estimator = 'WLSMV', ordered=c('i01','i02'))");
  assert.equal(r.model,'F1 =~ i01 + i02 + i03');
