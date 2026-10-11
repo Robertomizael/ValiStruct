@@ -1,15 +1,25 @@
 """AFE v5.2 regression: visible actions, diagnostics without ACP, CSV exports."""
 import os
+from pathlib import Path
 import pytest
 pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import sync_playwright
 
 URL=os.getenv("VALISTRUCT_FRONTEND_URL","http://127.0.0.1:8000")
+ROOT=Path(__file__).resolve().parents[1]
 
 def open_efa(page):
     """Open AFE independently of the current accordion state."""
-    page.locator(".nav button[data-section=\'efa\']").evaluate("(el)=>el.click()")
-    page.wait_for_function("document.getElementById(\'efa\')?.classList.contains(\'visible\')")
+    page.locator(".nav button[data-section='efa']").evaluate("(el)=>el.click()")
+    page.wait_for_function("document.getElementById('efa')?.classList.contains('visible')")
+
+def test_efa_toolbar_css_is_shell_independent():
+    """Electron must not need body.vs-v52 for the AFE action bar to be visible."""
+    css=(ROOT/"efa-v52.css").read_text(encoding="utf-8")
+    assert "#efa #efaActions.efa-action-toolbar" in css
+    assert "body.vs-v52 #efa .efa-action-toolbar" not in css
+    assert "display:flex!important" in css
+    assert "visibility:visible!important" in css
 
 def test_efa_toolbar_diagnostics_and_local_export():
     with sync_playwright() as p:
