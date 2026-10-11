@@ -32,6 +32,8 @@
       "main.js",
       "main-patched.js",
       "renderer-fixes.js",
+      "content-validity-xlsx-renderer.js",
+      "content-validity-xlsx-main.js",
       "preload.js",
       "ux-shell.js",
       "ux-shell.css",
