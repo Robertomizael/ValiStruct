@@ -29,10 +29,10 @@ def test_existing_scientific_engines_are_not_replaced_by_xlsx_layer():
     renderer = (ROOT / 'desktop' / 'content-validity-xlsx-renderer.js').read_text(encoding='utf-8')
     assert 'function calculateCvi()' in app
     assert 'const cvr=(ne-c.judges/2)/(c.judges/2);' in app
-    assert 'function calculateDelphi()' in app
+    assert 'function evaluateDelphi()' in app
     assert 'function calculateCvi()' not in renderer
     assert 'function calculateLawshe()' not in renderer
-    assert 'function calculateDelphi()' not in renderer
+    assert 'function evaluateDelphi()' not in renderer
 
 
 def test_xlsx_import_validates_expected_response_domains():
