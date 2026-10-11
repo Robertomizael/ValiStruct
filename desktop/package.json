@@ -32,6 +32,7 @@
       "main.js",
       "main-patched.js",
       "renderer-fixes.js",
+      "v54-desktop-session-auth.js",
       "content-validity-xlsx-renderer.js",
       "content-validity-xlsx-results.js",
       "content-validity-xlsx-hardening.js",
