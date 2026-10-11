@@ -78,6 +78,16 @@ function parseOptions(source){
     out.warnings.push('Código específico de JASP: solo se extrae el modelo lavaan. Otras operaciones de JASP no se reproducen.');
   return out;
 }
+function measurementIndicator(term){
+  let value=String(term||'').trim();
+  // lavaan permite modificadores previos al indicador, p.ej. 0.8*i01,
+  // NA*i01 o etiquetas de parámetros generadas por JASP como lambda_1_1*i01.
+  // Para validar nombres de columnas necesitamos solamente el indicador final,
+  // pero la sintaxis original se conserva intacta para la ejecución en lavaan.
+  const star=value.lastIndexOf('*');
+  if(star>=0)value=value.slice(star+1).trim();
+  return IDENT.test(value)?value:null;
+}
 function inspectModel(model){
   const clean=stripComments(model).trim();
   const lines=clean.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
@@ -91,8 +101,8 @@ function inspectModel(model){
     if(op===':=')return;
     if(op==='=~'){
       rhs.split('+').forEach(term=>{
-        const name=term.trim().replace(/^(?:[-+]?(?:\d+(?:\.\d+)?|\.\d+)\s*\*\s*)/,'').trim();
-        if(IDENT.test(name)) required.add(name);
+        const name=measurementIndicator(term);
+        if(name)required.add(name);
         else unsupported.push('Indicador no interpretable en línea '+(i+1)+': '+term.trim().slice(0,45));
       });
     }
