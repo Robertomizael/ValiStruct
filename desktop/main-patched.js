@@ -9,7 +9,7 @@ const path = require('path');
 app.on('web-contents-created', (_event, contents) => {
   if (contents.getType && contents.getType() !== 'window') return;
   contents.on('did-finish-load', async () => {
-    for (const file of ['renderer-fixes.js', 'content-validity-xlsx-renderer.js', 'content-validity-xlsx-results.js', 'content-validity-xlsx-hardening.js', 'v54-content-validity-runtime-fix.js', 'v54-analysis-workflow.js', 'v54-diagnostics-interpretation.js', 'v54-results-hub.js']) {
+    for (const file of ['renderer-fixes.js', 'content-validity-xlsx-renderer.js', 'content-validity-xlsx-results.js', 'content-validity-xlsx-hardening.js', 'v54-content-validity-runtime-fix.js', 'v54-analysis-workflow.js', 'v54-diagnostics-interpretation.js', 'v54-cfa-professional-path.js', 'v54-results-hub.js']) {
       try {
         const patchPath = path.join(__dirname, file);
         const source = fs.readFileSync(patchPath, 'utf8');
