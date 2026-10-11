@@ -35,6 +35,7 @@
       "content-validity-xlsx-renderer.js",
       "content-validity-xlsx-results.js",
       "content-validity-xlsx-hardening.js",
+      "v54-content-validity-runtime-fix.js",
       "preload.js",
       "ux-shell.js",
       "ux-shell.css",
