@@ -37,7 +37,16 @@ jobs:
           node --check desktop/v54-diagnostics-interpretation.js
           node --check desktop/v54-cfa-professional-path.js
           node --check desktop/v54-results-hub.js
+          node --check desktop/v54-content-validity-runtime-fix.js
+          node --check desktop/v54-results-preview-fix.js
+          node --check desktop/v54-latencia-editing.js
+          node --check desktop/v54-context-menu.js
+          node --check desktop/content-validity-xlsx-renderer.js
+          node --check desktop/content-validity-xlsx-hardening.js
           node --check desktop/main-patched.js
+
+      - name: Run behavioral hotfix checks
+        run: node --test tests/test_v54_behavioral_hotfixes.cjs
 
       - name: Run v5.4 hardening contracts
         run: |
