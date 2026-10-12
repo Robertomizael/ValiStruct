@@ -56,17 +56,47 @@
     menu.style.top=Math.max(6,Math.min(y,window.innerHeight-rect.height-8))+'px';
   }
 
+  function semHitAt(x,y){
+    const stack=document.elementsFromPoint?.(x,y)||[];
+    const node=stack.map(el=>el.closest?.('#latenciaCanvas .sem-node')).find(Boolean)||null;
+    const edge=stack.map(el=>el.closest?.('#latenciaCanvas .sem-edge')).find(Boolean)||null;
+    return {node,edge};
+  }
+
+  function stopSemDrag(){
+    const canvas=document.getElementById('latenciaCanvas');
+    try{ canvas?.dispatchEvent(new Event('pointercancel',{bubbles:true,cancelable:true})); }catch(_){ }
+    try{ window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,cancelable:true,button:2})); }catch(_){ }
+  }
+
+  function selectSemHit(node,edge){
+    stopSemDrag();
+    if(edge){
+      try{ edge.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,button:0})); }catch(_){ }
+      return;
+    }
+    // Nodes are selected by the real pointerdown/mousedown that precedes the
+    // contextmenu event. Do not synthesize another down event: it would arm
+    // both the legacy and pointer draggers and can move a node on Windows.
+    if(node && !node.classList.contains('selected')){
+      try{
+        node.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,clientX:0,clientY:0,button:0}));
+        window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,cancelable:true,button:0}));
+      }catch(_){ }
+    }
+  }
+
   document.addEventListener('contextmenu',evt=>{
     const target=evt.target;
-    const node=target?.closest?.('#latenciaCanvas .sem-node');
-    const edge=target?.closest?.('#latenciaCanvas .sem-edge');
+    const hit=semHitAt(evt.clientX,evt.clientY);
+    const node=hit.node;
+    const edge=hit.edge;
     const editable=target?.closest?.('input,textarea,[contenteditable="true"]');
     const selection=selectedText();
 
     if(node || edge){
       evt.preventDefault(); evt.stopPropagation();
-      const hit=node||edge;
-      try{ hit.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,clientX:evt.clientX,clientY:evt.clientY,button:0})); }catch(_){ }
+      selectSemHit(node,edge);
       const label=node ? (node.querySelector('text')?.textContent||'') : '';
       const items=[];
       if(node){
