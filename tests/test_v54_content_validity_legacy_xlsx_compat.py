@@ -14,10 +14,12 @@ def test_validation_is_structure_based_not_filename_only():
 
 
 def test_legacy_schema_is_accepted_when_matrix_is_valid():
-    assert 'schema markers are advisory' in HARDENING
-    assert 'if(schema&&schema!==SCHEMA)' in HARDENING
+    # Legacy workbooks remain valid when their matrix structure is valid.
+    # Schema markers may trigger a warning, but they are not a hard rejection.
+    assert 'if(schema&&schema!==SCHEMA)console.warn' in HARDENING
     assert "legacy:!schema" in HARDENING
     assert "if(schema!==SCHEMA)throw" not in HARDENING
+    assert 'const m=matrixInfo(rows)' in HARDENING
 
 
 def test_renderer_reads_excel_by_content_and_supports_xls_xlsx():
