@@ -81,9 +81,19 @@
   function matrix(rows,expertPrefix){
     const idx=rows.findIndex(r=>{const h=(r||[]).map(norm);return h.includes('item')&&h.some(x=>new RegExp(`^(?:juez|experto)\\s*\\d+$`).test(x));});
     if(idx<0)throw new Error('No se encontró la matriz de respuestas. Conserve los encabezados Ítem y Juez/Experto 1…n.');
-    const h=rows[idx].map(norm),itemIdx=h.indexOf('item'),obsIdx=h.findIndex(x=>['observaciones','observacion','comentarios','comentario'].includes(x)),roundIdx=h.indexOf('ronda');
+    const h=rows[idx].map(norm),itemIdx=h.indexOf('item'),numberIdx=h.findIndex(x=>['no item','numero item','numero de item'].includes(x)),obsIdx=h.findIndex(x=>['observaciones','observacion','comentarios','comentario'].includes(x)),roundIdx=h.indexOf('ronda');
     const judges=h.map((x,i)=>new RegExp(`^(?:juez|experto)\\s*(\\d+)$`).exec(x)?{i,n:Number(RegExp.$1)}:null).filter(Boolean).sort((a,b)=>a.n-b.n);
-    const data=rows.slice(idx+1).filter(r=>r&&r.some(v=>String(v??'').trim()!=='')).map(r=>({item:String(r[itemIdx]??'').trim(),round:roundIdx>=0?Number(r[roundIdx])||1:1,ratings:judges.map(c=>String(r[c.i]??'').trim()),observation:obsIdx>=0?String(r[obsIdx]??'').trim():''})).filter(x=>x.item);
+    const data=[];
+    for(const r of rows.slice(idx+1)){
+      const row=(r||[]).map(v=>String(v??'').trim());
+      const firstNonEmpty=row.find(v=>v!=='')||'';
+      if(!row.some(Boolean))break;
+      if(norm(firstNonEmpty)==='identificacion de expertos'||norm(row[itemIdx])==='correo/identificador opcional')break;
+      if(numberIdx>=0 && !/^\d+$/.test(row[numberIdx]||''))break;
+      const item=String(r[itemIdx]??'').trim();
+      if(!item)break;
+      data.push({item,round:roundIdx>=0?Number(r[roundIdx])||1:1,ratings:judges.map(c=>String(r[c.i]??'').trim()),observation:obsIdx>=0?String(r[obsIdx]??'').trim():''});
+    }
     if(!data.length)throw new Error('La plantilla no contiene ítems.'); return{data,judges:judges.length};
   }
 
