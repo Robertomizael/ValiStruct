@@ -18,6 +18,13 @@
     row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row);return rows;
   }
 
+  function spreadsheetName(file){
+    const original=String(file?.name||'').trim();
+    if(/\.(xlsx|xls)$/i.test(original))return original;
+    const base=original.replace(/\.[^.]*$/,'').trim()||'archivo';
+    return `${base}.xlsx`;
+  }
+
   async function save(rows,filename){
     if(!window.valistructDesktop?.createSpreadsheet)throw new Error('El generador XLSX de ValiStruct no está disponible.');
     const r=await window.valistructDesktop.createSpreadsheet(toCsv(rows),'xlsx',{});
@@ -33,7 +40,7 @@
       ['Método',method],['Propósito',purpose]
     ];
     Object.entries(meta).forEach(([k,v])=>rows.push([k,v]));
-    rows.push([],['INSTRUCCIONES','Complete únicamente las celdas de respuesta y observaciones. No cambie VALISTRUCT_PROFILE, VALISTRUCT_SCHEMA ni los encabezados de la matriz. Guarde este mismo archivo .xlsx y súbalo directamente a ValiStruct.'],[]);
+    rows.push([],['INSTRUCCIONES','Complete únicamente las celdas de respuesta y observaciones. No cambie los encabezados de la matriz. Guarde este mismo archivo .xlsx y súbalo directamente a ValiStruct.'],[]);
     return rows;
   }
 
@@ -70,25 +77,55 @@
   function metadata(rows){const out={};for(const r of rows.slice(0,30)){if(r?.length>=2&&String(r[0]).trim())out[norm(r[0])]=String(r[1]??'').trim();}return out;}
   function matrixInfo(rows){
     const idx=rows.findIndex(r=>{const h=(r||[]).map(norm);return h.includes('item')&&h.some(x=>/^(?:juez|experto)\s*\d+$/.test(x));});
-    if(idx<0)throw new Error('No se encontró la matriz de respuestas. Los encabezados pudieron ser modificados.');
+    if(idx<0)throw new Error('No se encontró la matriz de respuestas. Conserve los encabezados Ítem y Juez/Experto 1…n.');
     const h=rows[idx].map(norm);const cols=[];
     h.forEach((x,i)=>{const m=x.match(/^(?:juez|experto)\s*(\d+)$/);if(m)cols.push({i,n:Number(m[1])});});cols.sort((a,b)=>a.n-b.n);
     if(cols.length<2)throw new Error('La matriz debe conservar al menos dos columnas de jueces/expertos.');
     cols.forEach((c,i)=>{if(c.n!==i+1)throw new Error('Las columnas de jueces/expertos deben conservar numeración consecutiva desde 1.');});
-    const itemIdx=h.indexOf('item');const items=rows.slice(idx+1).filter(r=>String(r?.[itemIdx]??'').trim()).length;
-    return{judges:cols.length,items};
+    const itemIdx=h.indexOf('item');
+    const dataRows=rows.slice(idx+1).filter(r=>String(r?.[itemIdx]??'').trim());
+    return{judges:cols.length,items:dataRows.length,headerIndex:idx,headers:h,dataRows};
+  }
+
+  function inferProfile(meta,matrix){
+    const explicit=norm(meta['valistruct profile']);
+    if(explicit)return explicit;
+    const method=norm(meta['metodo']||meta['modalidad']);
+    if(method.includes('lawshe')||method.includes('cvr'))return'lawshe';
+    if(method.includes('delphi'))return'delphi';
+    if(method.includes('cvi'))return'cvi';
+    if(matrix.headers.includes('ronda')&&matrix.headers.some(x=>/^experto\s*\d+$/.test(x)))return'delphi';
+    if(matrix.headers.some(x=>/^juez\s*\d+$/.test(x))){
+      const values=matrix.dataRows.flatMap(r=>r.slice(0)).map(norm);
+      if(values.some(v=>['esencial','util pero no esencial','no necesario'].includes(v)))return'lawshe';
+      return'cvi';
+    }
+    return'';
   }
 
   async function validateUpload(file,expected){
-    if(!/\.xlsx$/i.test(file.name))throw new Error('Use una plantilla .xlsx generada por ValiStruct.');
-    const r=await window.valistructDesktop.parseSpreadsheet(file.name,new Uint8Array(await file.arrayBuffer()));
-    if(!r?.ok||typeof r.csv!=='string')throw new Error(r?.error||'No fue posible leer el XLSX.');
-    const rows=parseCsv(r.csv.replace(/^\uFEFF/,''));const meta=metadata(rows);const profile=norm(meta['valistruct profile']);const schema=String(meta['valistruct schema']||'').trim();
-    if(profile!==expected)throw new Error(`La plantilla corresponde a ${profile||'un perfil no identificado'}, no a ${expected}.`);
-    if(schema!==SCHEMA)throw new Error('La plantilla no corresponde al esquema XLSX vigente de ValiStruct. Descargue una plantilla nueva.');
-    const m=matrixInfo(rows);const expectedJudges=Number(meta['numero de jueces']||meta['numero de expertos']);const expectedItems=Number(meta['numero de items']);
-    if(Number.isFinite(expectedJudges)&&expectedJudges!==m.judges)throw new Error('El número de columnas de jueces/expertos fue modificado respecto de la plantilla original.');
-    if(Number.isFinite(expectedItems)&&expectedItems!==m.items)throw new Error('El número de ítems fue modificado respecto de la plantilla original.');
+    if(!file||typeof file.arrayBuffer!=='function')throw new Error('No se recibió un archivo de Excel válido.');
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    if(!bytes.length)throw new Error('El archivo está vacío.');
+    const r=await window.valistructDesktop.parseSpreadsheet(spreadsheetName(file),bytes);
+    if(!r?.ok||typeof r.csv!=='string')throw new Error(r?.error||'No fue posible leer el archivo de Excel.');
+    const rows=parseCsv(r.csv.replace(/^\uFEFF/,''));
+    const meta=metadata(rows);
+    const m=matrixInfo(rows);
+    const profile=inferProfile(meta,m);
+    if(profile&&profile!==expected)throw new Error(`La plantilla corresponde a ${profile}, no a ${expected}.`);
+
+    // New templates carry schema markers. Legacy ValiStruct templates are accepted
+    // when their actual matrix structure is valid; schema markers are advisory,
+    // not a prerequisite for scientific processing.
+    const schema=String(meta['valistruct schema']||'').trim();
+    if(schema&&schema!==SCHEMA)console.warn(`[ValiStruct] Esquema XLSX legado detectado (${schema}); se validará por estructura.`);
+
+    const expectedJudges=Number(meta['numero de jueces']||meta['numero de expertos']);
+    const expectedItems=Number(meta['numero de items']);
+    if(Number.isFinite(expectedJudges)&&expectedJudges>0&&expectedJudges!==m.judges)throw new Error('El número de columnas de jueces/expertos no coincide con los metadatos del archivo.');
+    if(Number.isFinite(expectedItems)&&expectedItems>0&&expectedItems!==m.items)throw new Error('El número de ítems no coincide con los metadatos del archivo.');
+    return{profile:profile||expected,legacy:!schema,matrix:m};
   }
 
   const downloads={cviDownloadXlsx:'cvi',lawsheDownloadXlsx:'lawshe',delphiDownloadXlsx:'delphi'};
@@ -102,6 +139,10 @@
     const input=e.target,expected=uploads[input?.id];if(!expected)return;
     if(input.dataset.valistructValidated==='1'){delete input.dataset.valistructValidated;return;}
     e.stopImmediatePropagation();const file=input.files?.[0];if(!file)return;
-    validateUpload(file,expected).then(()=>{input.dataset.valistructValidated='1';input.dispatchEvent(new Event('change',{bubbles:true}));}).catch(err=>{alert(`No fue posible importar ${expected}: ${err.message}`);input.value='';});
+    validateUpload(file,expected).then(result=>{
+      input.dataset.valistructValidated='1';
+      input.dataset.valistructLegacy=result.legacy?'1':'0';
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    }).catch(err=>{alert(`No fue posible importar ${expected}: ${err.message}`);input.value='';});
   },true);
 })();
