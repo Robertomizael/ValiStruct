@@ -17,6 +17,13 @@
   }
   const norm=v=>String(v??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[._-]+/g,' ').replace(/\s+/g,' ');
 
+  function spreadsheetName(file){
+    const original=String(file?.name||'').trim();
+    if(/\.(xlsx|xls)$/i.test(original))return original;
+    const base=original.replace(/\.[^.]*$/,'').trim()||'archivo';
+    return `${base}.xlsx`;
+  }
+
   async function saveXlsx(rows,filename){
     if(!window.valistructDesktop?.createSpreadsheet)throw new Error('El generador XLSX de ValiStruct no está disponible.');
     const result=await window.valistructDesktop.createSpreadsheet(toCsv(rows),'xlsx',{});
@@ -62,16 +69,18 @@
   }
 
   async function readXlsx(file){
-    if(!/\.xlsx$/i.test(file.name))throw new Error('Use una plantilla .xlsx de ValiStruct.');
-    const result=await window.valistructDesktop.parseSpreadsheet(file.name,new Uint8Array(await file.arrayBuffer()));
-    if(!result?.ok||typeof result.csv!=='string')throw new Error(result?.error||'No fue posible leer el XLSX.');
+    if(!file||typeof file.arrayBuffer!=='function')throw new Error('No se recibió un archivo de Excel válido.');
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    if(!bytes.length)throw new Error('El archivo está vacío.');
+    const result=await window.valistructDesktop.parseSpreadsheet(spreadsheetName(file),bytes);
+    if(!result?.ok||typeof result.csv!=='string')throw new Error(result?.error||'No fue posible leer el archivo de Excel.');
     return parseCsv(result.csv.replace(/^\uFEFF/,''));
   }
 
-  function metadata(rows){const out={}; for(const r of rows.slice(0,20)){if(r?.length>=2&&String(r[0]).trim())out[norm(r[0])]=String(r[1]??'').trim();}return out;}
+  function metadata(rows){const out={}; for(const r of rows.slice(0,30)){if(r?.length>=2&&String(r[0]).trim())out[norm(r[0])]=String(r[1]??'').trim();}return out;}
   function matrix(rows,expertPrefix){
     const idx=rows.findIndex(r=>{const h=(r||[]).map(norm);return h.includes('item')&&h.some(x=>new RegExp(`^(?:juez|experto)\\s*\\d+$`).test(x));});
-    if(idx<0)throw new Error('No se encontró la matriz de respuestas. No cambie los encabezados de la plantilla.');
+    if(idx<0)throw new Error('No se encontró la matriz de respuestas. Conserve los encabezados Ítem y Juez/Experto 1…n.');
     const h=rows[idx].map(norm),itemIdx=h.indexOf('item'),obsIdx=h.findIndex(x=>['observaciones','observacion','comentarios','comentario'].includes(x)),roundIdx=h.indexOf('ronda');
     const judges=h.map((x,i)=>new RegExp(`^(?:juez|experto)\\s*(\\d+)$`).exec(x)?{i,n:Number(RegExp.$1)}:null).filter(Boolean).sort((a,b)=>a.n-b.n);
     const data=rows.slice(idx+1).filter(r=>r&&r.some(v=>String(v??'').trim()!=='')).map(r=>({item:String(r[itemIdx]??'').trim(),round:roundIdx>=0?Number(r[roundIdx])||1:1,ratings:judges.map(c=>String(r[c.i]??'').trim()),observation:obsIdx>=0?String(r[obsIdx]??'').trim():''})).filter(x=>x.item);
@@ -103,7 +112,7 @@
   }
 
   function addControls(hostId,prefix,downloadFn,importFn,label){
-    const host=q(hostId);if(!host||q(`${prefix}XlsxControls`))return;const box=document.createElement('div');box.id=`${prefix}XlsxControls`;box.className='import-box';box.innerHTML=`<div><h3>Flujo XLSX para expertos</h3><p>Descargue la plantilla, envíela a los expertos y vuelva a cargar el mismo archivo completado. ValiStruct validará la estructura antes del análisis.</p></div><div class="button-row compact"><button type="button" id="${prefix}DownloadXlsx">Descargar plantilla XLSX</button><label class="file-button">Subir XLSX completado<input id="${prefix}UploadXlsx" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label></div>`;host.insertAdjacentElement('afterend',box);
+    const host=q(hostId);if(!host||q(`${prefix}XlsxControls`))return;const box=document.createElement('div');box.id=`${prefix}XlsxControls`;box.className='import-box';box.innerHTML=`<div><h3>Flujo XLSX para expertos</h3><p>Descargue la plantilla, envíela a los expertos y vuelva a cargar el mismo archivo completado. ValiStruct validará la estructura antes del análisis.</p></div><div class="button-row compact"><button type="button" id="${prefix}DownloadXlsx">Descargar plantilla XLSX</button><label class="file-button">Subir XLSX completado<input id="${prefix}UploadXlsx" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden></label></div>`;host.insertAdjacentElement('afterend',box);
     q(`${prefix}DownloadXlsx`)?.addEventListener('click',async()=>{try{await downloadFn();}catch(e){alert(e.message);}});q(`${prefix}UploadXlsx`)?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{await importFn(f);}catch(err){alert(`No fue posible importar ${label}: ${err.message}`);}finally{e.target.value='';}});
   }
 
