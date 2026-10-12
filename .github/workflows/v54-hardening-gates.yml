@@ -31,6 +31,8 @@ jobs:
       - name: JavaScript syntax
         run: |
           node --check desktop/v54-desktop-session-auth.js
+          node --check desktop/v54-macos-window-lifecycle.js
+          node --check desktop/v54-release-coherence.js
           node --check desktop/v54-analysis-workflow.js
           node --check desktop/v54-diagnostics-interpretation.js
           node --check desktop/v54-cfa-professional-path.js
