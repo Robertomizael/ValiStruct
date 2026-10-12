@@ -83,7 +83,17 @@
     if(cols.length<2)throw new Error('La matriz debe conservar al menos dos columnas de jueces/expertos.');
     cols.forEach((c,i)=>{if(c.n!==i+1)throw new Error('Las columnas de jueces/expertos deben conservar numeración consecutiva desde 1.');});
     const itemIdx=h.indexOf('item');
-    const dataRows=rows.slice(idx+1).filter(r=>String(r?.[itemIdx]??'').trim());
+    const numberIdx=h.findIndex(x=>['no item','numero item','numero de item'].includes(x));
+    const dataRows=[];
+    for(const r of rows.slice(idx+1)){
+      const row=(r||[]).map(v=>String(v??'').trim());
+      const firstNonEmpty=row.find(v=>v!=='')||'';
+      if(!row.some(Boolean))break;
+      if(norm(firstNonEmpty)==='identificacion de expertos'||norm(row[itemIdx])==='correo/identificador opcional')break;
+      if(numberIdx>=0 && !/^\d+$/.test(row[numberIdx]||''))break;
+      if(!row[itemIdx])break;
+      dataRows.push(r);
+    }
     return{judges:cols.length,items:dataRows.length,headerIndex:idx,headers:h,dataRows};
   }
 
@@ -93,7 +103,9 @@
     const method=norm(meta['metodo']||meta['modalidad']);
     if(method.includes('lawshe')||method.includes('cvr'))return'lawshe';
     if(method.includes('delphi'))return'delphi';
+    if(method.includes('aiken'))return'aiken';
     if(method.includes('cvi'))return'cvi';
+    if(matrix.headers.includes('criterio')&&matrix.headers.some(x=>/^juez\s*\d+$/.test(x)))return'aiken';
     if(matrix.headers.includes('ronda')&&matrix.headers.some(x=>/^experto\s*\d+$/.test(x)))return'delphi';
     if(matrix.headers.some(x=>/^juez\s*\d+$/.test(x))){
       const values=matrix.dataRows.flatMap(r=>r.slice(0)).map(norm);
@@ -115,9 +127,6 @@
     const profile=inferProfile(meta,m);
     if(profile&&profile!==expected)throw new Error(`La plantilla corresponde a ${profile}, no a ${expected}.`);
 
-    // New templates carry schema markers. Legacy ValiStruct templates are accepted
-    // when their actual matrix structure is valid; schema markers are advisory,
-    // not a prerequisite for scientific processing.
     const schema=String(meta['valistruct schema']||'').trim();
     if(schema&&schema!==SCHEMA)console.warn(`[ValiStruct] Esquema XLSX legado detectado (${schema}); se validará por estructura.`);
 
