@@ -31,6 +31,7 @@
     "files": [
       "main.js",
       "main-patched.js",
+      "v54-macos-window-lifecycle.js",
       "renderer-fixes.js",
       "v54-desktop-session-auth.js",
       "content-validity-xlsx-renderer.js",
