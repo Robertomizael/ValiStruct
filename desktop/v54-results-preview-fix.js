@@ -15,6 +15,7 @@
     hub.addEventListener('click',event=>{
       const btn=event.target.closest?.('.vs-all-view');
       if(!btn) return;
+      if(btn.dataset.vsPreviewBypass==='1') return;
       event.preventDefault();
       event.stopImmediatePropagation();
 
@@ -73,12 +74,6 @@
       preview.hidden=false;
       btn.textContent='Ocultar vista previa';
     },true);
-
-    // Bypass our capture handler only for the synthetic click used above.
-    hub.addEventListener('click',event=>{
-      const btn=event.target.closest?.('.vs-all-view');
-      if(btn?.dataset.vsPreviewBypass==='1') event.stopPropagation();
-    },false);
   }
 
   const start=()=>{
