@@ -9,7 +9,7 @@
     const node = canvas.querySelector('.sem-node.selected');
     if (node) return (node.querySelector('text')?.textContent || '').trim();
     const edge = canvas.querySelector('.sem-edge.selected, .selected.sem-edge');
-    return (edge?.querySelector('text')?.textContent || '').trim();
+    return (edge?.parentElement?.querySelector('.edge-label')?.textContent || '').trim();
   }
 
   function ensureDialog() {
@@ -41,7 +41,8 @@
 
   function applyRename(value) {
     const clean = String(value ?? '').trim();
-    if (!clean) return;
+    const selectedEdge = canvas.querySelector('.sem-edge.selected, .selected.sem-edge');
+    if (!clean && !selectedEdge) return;
     const nativePrompt = window.prompt;
     try {
       window.prompt = () => clean;
@@ -62,6 +63,11 @@
     input.value = selectedLabel();
     overlay.style.display = 'flex';
     requestAnimationFrame(() => { input.focus(); input.select(); });
+  }
+
+  function cancelDragState(){
+    try{ canvas.dispatchEvent(new Event('pointercancel',{bubbles:true,cancelable:true})); }catch(_){ }
+    try{ window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,cancelable:true})); }catch(_){ }
   }
 
   renameButton.addEventListener('click', event => {
@@ -90,9 +96,29 @@
     }
   });
 
+  // app.js prevents the browser dblclick event while dragging with Pointer
+  // Events. Detect two pointerdown events on the same node instead.
+  let lastDown={id:null,time:0};
+  canvas.addEventListener('pointerdown', event => {
+    const node=event.target.closest?.('.sem-node');
+    if(!node) return;
+    const id=node.dataset.id||'';
+    const now=performance.now();
+    if(id && lastDown.id===id && now-lastDown.time<=450){
+      lastDown={id:null,time:0};
+      cancelDragState();
+      setTimeout(openEditor,0);
+      return;
+    }
+    lastDown={id,time:now};
+  }, true);
+
+  // Keep the native dblclick path as a fallback in environments where it is
+  // emitted normally.
   canvas.addEventListener('dblclick', event => {
     if (!event.target.closest?.('.sem-node')) return;
     event.preventDefault();
+    cancelDragState();
     setTimeout(openEditor, 0);
   });
 })();
