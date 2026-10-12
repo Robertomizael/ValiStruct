@@ -4,6 +4,8 @@ const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+require('./v54-macos-window-lifecycle.js');
+
 // Inject post-load renderer improvements in the same main world as app.js.
 // This keeps the production app.js untouched while allowing focused hotfixes.
 app.on('web-contents-created', (_event, contents) => {
