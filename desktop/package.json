@@ -43,6 +43,7 @@
       "v54-diagnostics-interpretation.js",
       "v54-cfa-professional-path.js",
       "v54-results-hub.js",
+      "v54-latencia-editing.js",
       "preload.js",
       "ux-shell.js",
       "ux-shell.css",
