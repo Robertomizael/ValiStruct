@@ -35,8 +35,9 @@ def test_existing_scientific_engines_are_not_replaced_by_xlsx_layer():
     assert 'function evaluateDelphi()' not in renderer
 
 
-def test_xlsx_import_validates_expected_response_domains():
+def test_xlsx_import_validates_expected_response_domains_and_structure():
     src = (ROOT / 'desktop' / 'content-validity-xlsx-renderer.js').read_text(encoding='utf-8')
     assert 'validateNumericRatings' in src
     assert 'Esencial, Útil pero no esencial o No necesario' in src
-    assert 'No cambie los encabezados de la plantilla' in src
+    assert 'No se encontró la matriz de respuestas' in src
+    assert 'juez|experto' in src
