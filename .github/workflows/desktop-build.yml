@@ -14,6 +14,7 @@ on:
       - feature/v5-3-simplificacion
       - feature/v5-4-fase2d-privacidad-importacion
       - feature/v5-4-fase3-hardening
+      - feature/v5-4-integration-safe-20261014
     paths:
       - "desktop/**"
       - "navigation-v51.js"
@@ -44,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.12.0"
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: true
@@ -64,9 +65,12 @@ jobs:
       - name: Build integrated Windows runtime
         shell: pwsh
         run: ./desktop/scripts/build_runtime_windows.ps1
-      - name: Install desktop dependencies
+      - name: Install desktop dependencies reproducibly
         working-directory: desktop
-        run: npm install
+        run: npm ci
+      - name: Audit npm dependency graph
+        working-directory: desktop
+        run: npm audit --audit-level=high
       - name: Build Windows installer
         working-directory: desktop
         run: npm run dist:win
@@ -79,13 +83,21 @@ jobs:
           compression-level: 0
 
   build-macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            artifact: valistruct-desktop-macos-arm64-autonomous
+          - runner: macos-15-intel
+            artifact: valistruct-desktop-macos-intel-autonomous
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.12.0"
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: true
@@ -105,9 +117,12 @@ jobs:
       - name: Build integrated macOS runtime
         shell: bash -el {0}
         run: bash ./desktop/scripts/build_runtime_macos.sh
-      - name: Install desktop dependencies
+      - name: Install desktop dependencies reproducibly
         working-directory: desktop
-        run: npm install
+        run: npm ci
+      - name: Audit npm dependency graph
+        working-directory: desktop
+        run: npm audit --audit-level=high
       - name: Build unpacked macOS app
         working-directory: desktop
         env:
@@ -130,7 +145,7 @@ jobs:
       - name: Upload macOS autonomous DMG
         uses: actions/upload-artifact@v4
         with:
-          name: valistruct-desktop-macos-autonomous
+          name: ${{ matrix.artifact }}
           path: desktop/dist/*.dmg
           if-no-files-found: error
           compression-level: 0
