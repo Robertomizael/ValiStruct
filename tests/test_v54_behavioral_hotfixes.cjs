@@ -99,6 +99,38 @@ test('right-click relation selection uses click, not mousedown',()=>{
   assert.ok(!events.includes('mousedown'));
 });
 
+test('Latencia context menu prioritizes node when node and relation overlap',()=>{
+  const source=fs.readFileSync(path.join(root,'desktop/v54-context-menu.js'),'utf8');
+  const start=source.indexOf('function semHitAt');
+  const end=source.indexOf("document.addEventListener('contextmenu'",start);
+  assert.ok(start>=0&&end>start);
+  const events=[];
+  class FakeMouseEvent{constructor(type,init={}){this.type=type;Object.assign(this,init);}}
+  const node={
+    classList:{contains(){return true;}},
+    dispatchEvent(evt){events.push(`node:${evt.type}`);}
+  };
+  const edge={dispatchEvent(evt){events.push(`edge:${evt.type}`);}};
+  const document={
+    elementsFromPoint(){
+      return [{closest(sel){
+        if(sel.includes('.sem-node'))return node;
+        if(sel.includes('.sem-edge'))return edge;
+        return null;
+      }}];
+    },
+    getElementById(){return null;}
+  };
+  const window={dispatchEvent(){events.push('window-mouseup');}};
+  const context=vm.createContext({document,window,MouseEvent:FakeMouseEvent,Event:class{constructor(type){this.type=type;}}});
+  vm.runInContext(source.slice(start,end)+'\nthis.semHitAt=semHitAt;this.selectSemHit=selectSemHit;',context);
+  const hit=context.semHitAt(10,10);
+  assert.equal(hit.node,node);
+  assert.equal(hit.edge,edge);
+  context.selectSemHit(hit.node,hit.edge);
+  assert.ok(!events.includes('edge:click'));
+});
+
 test('Latencia editing contains pointer-based double activation fallback',()=>{
   const source=fs.readFileSync(path.join(root,'desktop/v54-latencia-editing.js'),'utf8');
   assert.match(source,/addEventListener\('pointerdown'/);
