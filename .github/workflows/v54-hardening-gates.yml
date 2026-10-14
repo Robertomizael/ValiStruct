@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "feature/v5-4-fase3-hardening"
+      - "feature/v5-4-integration-safe-20261014"
   workflow_dispatch:
 
 concurrency:
