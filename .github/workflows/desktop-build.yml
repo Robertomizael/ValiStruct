@@ -1,4 +1,5 @@
 name: ValiStruct Desktop Autonomous Build
+# Safe integration experimental artifact trigger
 
 on:
   workflow_dispatch:
