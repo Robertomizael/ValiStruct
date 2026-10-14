@@ -1,51 +1,65 @@
-name: ValiStruct v5.4 temporary lockfile repair
+name: ValiStruct v5.4 finalize validated lockfile repair
 
 on:
   push:
     branches:
       - feature/v5-4-integration-safe-20261014
-    paths:
-      - ".github/workflows/v54-lockfile-repair.yml"
-  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  repair-lockfile:
+  finalize-lockfile:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout safe integration branch
+        uses: actions/checkout@v4
         with:
-          node-version: "22.12.0"
-      - name: Regenerate package lock only
+          ref: feature/v5-4-integration-safe-20261014
+          fetch-depth: 0
+
+      - name: Use Node 22.12.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+
+      - name: Regenerate validated desktop lockfile
         working-directory: desktop
-        run: npm install --package-lock-only --ignore-scripts
-      - name: Verify clean reproducible install
+        run: |
+          rm -rf node_modules
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Prove npm ci reproducibility
         working-directory: desktop
-        run: npm ci --ignore-scripts
-      - name: Verify lockfile matches hardened top-level dependencies
+        run: |
+          rm -rf node_modules
+          npm ci --ignore-scripts
+
+      - name: Verify hardened top-level dependencies
         working-directory: desktop
-        shell: bash
         run: |
           node - <<'NODE'
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
-          const lock = JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
           const root = lock.packages && lock.packages[''];
-          if (!root) throw new Error('Missing root package in package-lock.json');
+          if (!root) throw new Error('package-lock root package missing');
           for (const section of ['dependencies','devDependencies']) {
             const a = pkg[section] || {};
             const b = root[section] || {};
-            for (const [name, spec] of Object.entries(a)) {
-              if (b[name] !== spec) throw new Error(`${section}.${name} mismatch: package=${spec} lock=${b[name]}`);
+            if (JSON.stringify(a) !== JSON.stringify(b)) {
+              console.error(section, {packageJson:a, lockfile:b});
+              process.exit(1);
             }
           }
-          console.log('Top-level lockfile dependency specs match package.json');
+          console.log('package.json and package-lock.json top-level dependencies are synchronized');
           NODE
-      - name: Upload repaired lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: valistruct-v54-repaired-package-lock
-          path: desktop/package-lock.json
-          if-no-files-found: error
-          retention-days: 3
+
+      - name: Commit repaired lockfile and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop/package-lock.json
+          git rm .github/workflows/v54-lockfile-repair.yml
+          git commit -m "build(v5.4): commit validated reproducible desktop lockfile"
+          git push origin HEAD:feature/v5-4-integration-safe-20261014
