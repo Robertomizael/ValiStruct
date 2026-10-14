@@ -71,7 +71,10 @@
 
   function selectSemHit(node,edge){
     stopSemDrag();
-    if(edge){
+    // If a node and an edge overlap under the pointer, the node must win.
+    // The context menu is node-oriented in that situation; selecting the edge
+    // could otherwise delete or rename a different relation.
+    if(edge && !node){
       try{ edge.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,button:0})); }catch(_){ }
       return;
     }
