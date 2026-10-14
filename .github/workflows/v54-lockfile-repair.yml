@@ -1,0 +1,51 @@
+name: ValiStruct v5.4 temporary lockfile repair
+
+on:
+  push:
+    branches:
+      - feature/v5-4-integration-safe-20261014
+    paths:
+      - ".github/workflows/v54-lockfile-repair.yml"
+  workflow_dispatch:
+
+jobs:
+  repair-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.12.0"
+      - name: Regenerate package lock only
+        working-directory: desktop
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Verify clean reproducible install
+        working-directory: desktop
+        run: npm ci --ignore-scripts
+      - name: Verify lockfile matches hardened top-level dependencies
+        working-directory: desktop
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const root = lock.packages && lock.packages[''];
+          if (!root) throw new Error('Missing root package in package-lock.json');
+          for (const section of ['dependencies','devDependencies']) {
+            const a = pkg[section] || {};
+            const b = root[section] || {};
+            for (const [name, spec] of Object.entries(a)) {
+              if (b[name] !== spec) throw new Error(`${section}.${name} mismatch: package=${spec} lock=${b[name]}`);
+            }
+          }
+          console.log('Top-level lockfile dependency specs match package.json');
+          NODE
+      - name: Upload repaired lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-v54-repaired-package-lock
+          path: desktop/package-lock.json
+          if-no-files-found: error
+          retention-days: 3
