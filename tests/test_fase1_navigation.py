@@ -19,8 +19,6 @@ def page():
         pg.goto(URL,wait_until="load")
         pg.evaluate("localStorage.removeItem('valistruct_institutional_ui')")
         pg.reload(wait_until="load")
-        # Avoid smooth-scroll/actionability animation queues during navigation
-        # regression loops; this does not change showSection semantics.
         pg.evaluate("window.scrollTo=()=>{}")
         yield pg,errors
         browser.close()
@@ -44,8 +42,6 @@ def test_scientific_menu_is_reduced_without_deleting_modules(page):
     assert len(configured)<=25
     for section in expected:
         assert pg.locator(f'.nav button[data-section="{section}"]').count()==1
-    # Accordions may collapse some valid entries; the number simultaneously
-    # displayed must never exceed the scientific inventory.
     assert visible_nav_buttons(pg).count()<=len(expected)
     assert pg.locator(".vs-v53-admin").is_hidden()
     assert pg.locator(".vs-v53-qa-nav").is_hidden()
@@ -57,15 +53,12 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
       .filter(x=>x.visibility==='integrated').map(x=>({id:x.id,parent:x.parent}))""")
     for item in integrated:
         parent=item["parent"];child=item["id"]
-        # Parent is always one visible menu click away.
         parent_button=pg.locator(f'.nav button[data-section="{parent}"]')
         assert parent_button.is_visible(),(parent,child)
         parent_button.evaluate("(el)=>el.click()")
         pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=parent,timeout=4000)
         tool=pg.locator(f'#{parent} .vs-v53-tools [data-vs-target="{child}"]')
         assert tool.is_visible(),(parent,child)
-        # Programmatic click exercises the real listener without Playwright
-        # waiting on scroll/actionability animations from the app shell.
         tool.evaluate("(el)=>el.click()")
         pg.wait_for_function("(id)=>document.getElementById(id)?.classList.contains('visible')",arg=child,timeout=4000)
         assert pg.locator(f'.nav button[data-section="{parent}"]').evaluate(
@@ -76,19 +69,19 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
 def test_external_validation_is_explicitly_preparing(page):
     pg,errors=page
     assert "En preparación" in pg.locator('[data-vs-target="stability"]').inner_text()
-    # Etapa 4: stability-v54.js activates "stability"; criterion and
-    # performance remain explicitly in preparation.
-    for section in ["criterion","performance"]:
-        # open parent accordion when necessary
-        group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Validación externa"))
-        if not group.evaluate("(el)=>el.open"):
-            group.locator("summary").evaluate("(el)=>el.click()")
-        btn=pg.locator(f'.nav button[data-section="{section}"]')
-        assert "En preparación" in btn.inner_text()
-        btn.evaluate("(el)=>el.click()")
-        panel=pg.locator(f"#{section}")
-        assert panel.locator(".vs-v53-preparing").inner_text()=="En preparación"
-        assert "aún no realiza cálculos" in panel.locator(".vs-v53-preparing-note").inner_text()
+    # Etapa IV: stability-v54.js and criterion-v54.js activate their modules.
+    # Performance remains explicitly in preparation.
+    section="performance"
+    group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Validación externa"))
+    if not group.evaluate("(el)=>el.open"):
+        group.locator("summary").evaluate("(el)=>el.click()")
+    btn=pg.locator(f'.nav button[data-section="{section}"]')
+    assert "En preparación" in btn.inner_text()
+    btn.evaluate("(el)=>el.click()")
+    panel=pg.locator(f"#{section}")
+    assert panel.locator(".vs-v53-preparing").inner_text()=="En preparación"
+    assert "aún no realiza cálculos" in panel.locator(".vs-v53-preparing-note").inner_text()
+    assert "ETAPA IV" in panel.locator(".vs-v52-eyebrow").inner_text()
     assert not errors,repr(errors)
 
 def test_institutional_and_qa_modules_are_not_normal_navigation(page):
@@ -104,8 +97,6 @@ def test_institutional_and_qa_modules_are_not_normal_navigation(page):
     toggle.evaluate("(el)=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}))}")
     admin_group=pg.locator(".vs-v53-admin")
     assert admin_group.is_visible()
-    # The institutional group is intentionally revealed collapsed; expand it
-    # before asserting visibility of its individual tools.
     if not admin_group.evaluate("(el)=>el.open"):
         admin_group.locator("summary").evaluate("(el)=>el.click()")
     assert pg.locator('.nav button[data-section="auth"]').is_visible()
@@ -122,7 +113,6 @@ def test_no_legacy_version_badge_is_visible(page):
 
 def test_stability_module_is_available_after_isolated_mount(page):
     pg,errors=page
-    # stability-v54.js is loaded after window "load"; wait for its mount.
     pg.wait_for_function(
         "()=>document.querySelector('.nav button[data-section=\"stability\"]')?.dataset.status==='ready'",
         timeout=4000)
@@ -133,4 +123,20 @@ def test_stability_module_is_available_after_isolated_mount(page):
     panel=pg.locator("#stability")
     assert panel.locator(".vs-v53-preparing").count()==0
     assert panel.locator("#stabilityResults").count()==1
+    assert not errors,repr(errors)
+
+def test_criterion_module_is_available_after_isolated_mount(page):
+    pg,errors=page
+    pg.wait_for_function(
+        "()=>document.querySelector('.nav button[data-section=\"criterion\"]')?.dataset.status==='ready'",
+        timeout=4000)
+    btn=pg.locator('.nav button[data-section="criterion"]')
+    assert "Disponible" in btn.text_content()
+    assert "En preparación" not in btn.text_content()
+    btn.evaluate("(el)=>el.click()")
+    panel=pg.locator("#criterion")
+    assert panel.locator(".vs-v53-preparing").count()==0
+    assert panel.locator("#criterionResults").count()==1
+    assert panel.locator("#runCriterion").count()==1
+    assert "ETAPA IV" in panel.locator(".vs-v52-eyebrow").inner_text()
     assert not errors,repr(errors)
