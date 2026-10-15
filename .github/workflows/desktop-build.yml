@@ -16,6 +16,7 @@ on:
       - feature/v5-4-fase2d-privacidad-importacion
       - feature/v5-4-fase3-hardening
       - feature/v5-4-integration-safe-20261014
+      - feature/v5-4-etapa4-estabilidad
     paths:
       - "desktop/**"
       - "navigation-v51.js"
@@ -26,6 +27,7 @@ on:
       - "efa-v52.js"
       - "jasp-import.js"
       - "path-v2.js"
+      - "stability-v54.js"
       - "backend/**"
       - "index.html"
       - "app.js"
