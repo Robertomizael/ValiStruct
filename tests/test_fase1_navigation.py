@@ -76,7 +76,9 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
 def test_external_validation_is_explicitly_preparing(page):
     pg,errors=page
     assert "En preparación" in pg.locator('[data-vs-target="stability"]').inner_text()
-    for section in ["stability","criterion","performance"]:
+    # Etapa 4: stability-v54.js activates "stability"; criterion and
+    # performance remain explicitly in preparation.
+    for section in ["criterion","performance"]:
         # open parent accordion when necessary
         group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Validación externa"))
         if not group.evaluate("(el)=>el.open"):
@@ -116,4 +118,19 @@ def test_no_legacy_version_badge_is_visible(page):
     texts=pg.locator("span.badge:visible").all_inner_texts()
     legacy=re.compile(r"(?:\bv?\d+\.\d+(?:\.\d+)?\b|\bRC\s*\d*\b)",re.I)
     assert not [text for text in texts if legacy.search(text)],texts
+    assert not errors,repr(errors)
+
+def test_stability_module_is_available_after_isolated_mount(page):
+    pg,errors=page
+    # stability-v54.js is loaded after window "load"; wait for its mount.
+    pg.wait_for_function(
+        "()=>document.querySelector('.nav button[data-section=\"stability\"]')?.dataset.status==='ready'",
+        timeout=4000)
+    btn=pg.locator('.nav button[data-section="stability"]')
+    assert "Disponible" in btn.text_content()
+    assert "En preparación" not in btn.text_content()
+    btn.evaluate("(el)=>el.click()")
+    panel=pg.locator("#stability")
+    assert panel.locator(".vs-v53-preparing").count()==0
+    assert panel.locator("#stabilityResults").count()==1
     assert not errors,repr(errors)
