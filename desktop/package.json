@@ -85,6 +85,10 @@
         "to": "app/participant-data.js"
       },
       {
+        "from": "../stability-v54.js",
+        "to": "app/stability-v54.js"
+      },
+      {
         "from": "../jasp-import.js",
         "to": "app/jasp-import.js"
       },
