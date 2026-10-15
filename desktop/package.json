@@ -52,76 +52,25 @@
       "excel-import.js"
     ],
     "extraResources": [
-      {
-        "from": "../index.html",
-        "to": "app/index.html"
-      },
-      {
-        "from": "../app.js",
-        "to": "app/app.js"
-      },
-      {
-        "from": "../navigation-v51.js",
-        "to": "app/navigation-v51.js"
-      },
-      {
-        "from": "../v52-shell.js",
-        "to": "app/v52-shell.js"
-      },
-      {
-        "from": "../v52.css",
-        "to": "app/v52.css"
-      },
-      {
-        "from": "../efa-v52.css",
-        "to": "app/efa-v52.css"
-      },
-      {
-        "from": "../efa-v52.js",
-        "to": "app/efa-v52.js"
-      },
-      {
-        "from": "../participant-data.js",
-        "to": "app/participant-data.js"
-      },
-      {
-        "from": "../stability-v54.js",
-        "to": "app/stability-v54.js"
-      },
-      {
-        "from": "../jasp-import.js",
-        "to": "app/jasp-import.js"
-      },
-      {
-        "from": "../path-v2.js",
-        "to": "app/path-v2.js"
-      },
-      {
-        "from": "../styles.css",
-        "to": "app/styles.css"
-      },
-      {
-        "from": "../manifest.webmanifest",
-        "to": "app/manifest.webmanifest"
-      },
-      {
-        "from": "../icons",
-        "to": "app/icons"
-      },
-      {
-        "from": "../backend",
-        "to": "backend"
-      },
-      {
-        "from": "runtime/valistruct-runtime.tar.gz",
-        "to": "runtime/valistruct-runtime.tar.gz"
-      }
+      {"from": "../index.html", "to": "app/index.html"},
+      {"from": "../app.js", "to": "app/app.js"},
+      {"from": "../navigation-v51.js", "to": "app/navigation-v51.js"},
+      {"from": "../v52-shell.js", "to": "app/v52-shell.js"},
+      {"from": "../v52.css", "to": "app/v52.css"},
+      {"from": "../efa-v52.css", "to": "app/efa-v52.css"},
+      {"from": "../efa-v52.js", "to": "app/efa-v52.js"},
+      {"from": "../participant-data.js", "to": "app/participant-data.js"},
+      {"from": "../stability-v54.js", "to": "app/stability-v54.js"},
+      {"from": "../criterion-v54.js", "to": "app/criterion-v54.js"},
+      {"from": "../jasp-import.js", "to": "app/jasp-import.js"},
+      {"from": "../path-v2.js", "to": "app/path-v2.js"},
+      {"from": "../styles.css", "to": "app/styles.css"},
+      {"from": "../manifest.webmanifest", "to": "app/manifest.webmanifest"},
+      {"from": "../icons", "to": "app/icons"},
+      {"from": "../backend", "to": "backend"},
+      {"from": "runtime/valistruct-runtime.tar.gz", "to": "runtime/valistruct-runtime.tar.gz"}
     ],
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
+    "win": {"target": ["nsis"]},
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -129,9 +78,7 @@
       "createStartMenuShortcut": true
     },
     "mac": {
-      "target": [
-        "dmg"
-      ],
+      "target": ["dmg"],
       "category": "public.app-category.education",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
