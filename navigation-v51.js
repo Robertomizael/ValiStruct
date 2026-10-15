@@ -44,19 +44,24 @@
   credit.innerHTML = '<strong>Dr. Roberto Joel Tirado Reyes</strong><br>Autor conceptual y director científico';
   nav.appendChild(credit);
 
-  /* Cargador aislado de Etapa IV. Se ejecuta al terminar de cargar la página,
-     cuando v52-shell.js ya creó el panel stability. Si el archivo no existe,
-     el resto de ValiStruct continúa sin alteración. */
+  /* Cargadores aislados de Etapa IV. Si un archivo no existe, el resto de
+     ValiStruct continúa sin alteración. */
   window.addEventListener('load', () => {
-    if (window.ValiStructStability) {
-      window.ValiStructStability.mount(window);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'stability-v54.js';
-    script.dataset.valistructModule = 'stability-v54';
-    script.addEventListener('load', () => window.ValiStructStability?.mount(window));
-    script.addEventListener('error', () => console.warn('ValiStruct: módulo de estabilidad no disponible; núcleo sin cambios.'));
-    document.head.appendChild(script);
+    const loadModule=(globalName,file,datasetName,label)=>{
+      if(window[globalName]){ window[globalName].mount?.(window); return; }
+      const script=document.createElement('script');
+      script.src=file;
+      script.dataset.valistructModule=datasetName;
+      script.addEventListener('load',()=>window[globalName]?.mount?.(window));
+      script.addEventListener('error',()=>console.warn('ValiStruct: módulo de '+label+' no disponible; núcleo sin cambios.'));
+      document.head.appendChild(script);
+    };
+    loadModule('ValiStructStability','stability-v54.js','stability-v54','estabilidad');
+    loadModule('ValiStructCriterion','criterion-v54.js','criterion-v54','validez de criterio');
+
+    /* Corrección visual localizada del shell preparatorio restante. */
+    const performance=document.getElementById('performance');
+    const eyebrow=performance?.querySelector('.vs-v52-eyebrow');
+    if(eyebrow) eyebrow.textContent='ETAPA IV · VALIDACIÓN EXTERNA';
   }, {once:true});
 })();
