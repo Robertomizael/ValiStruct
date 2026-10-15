@@ -8,7 +8,7 @@
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
 
-  const finite=v=>Number.isFinite(Number(v));
+  const finite=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v));
   const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -133,7 +133,7 @@
     function columns(){const data=dataset(win),ia=data.columns.indexOf(main.value),ib=data.columns.indexOf(ref.value);if(ia<0||ib<0)throw new Error('Seleccione dos variables existentes.');if(ia===ib)throw new Error('La puntuación principal y el criterio deben ser variables diferentes.');return {data,x:data.rows.map(r=>r[ia]),y:data.rows.map(r=>r[ib])};}
     function run(){
       try{
-        const {data,x,y}=columns(),p=proc.value,pairs=pairedNumeric(x,y);if(pairs.length<3)throw new Error('Se requieren al menos 3 pares numéricos completos.');
+        const {x,y}=columns(),p=proc.value,pairs=pairedNumeric(x,y);if(pairs.length<3)throw new Error('Se requieren al menos 3 pares numéricos completos.');
         const excluded=Math.min(x.length,y.length)-pairs.length;let result={procedure:p,main:main.value,criterion:ref.value,n:pairs.length,excluded};
         if(p==='concurrent'||p==='predictive'){
           const mode=$('criterionCorrelation').value;
