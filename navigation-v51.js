@@ -32,8 +32,8 @@
   makeGroup('Etapa I · Validación interna', ['aiken','efa','cfa','reliability','diagnostics','multidiag','missingpro','advanced'], true);
   const external = document.createElement('div');
   external.className = 'nav-v51-coming';
-  external.setAttribute('aria-label', 'Etapa II en construcción');
-  external.textContent = 'Etapa II · Estabilidad, criterio, rendimiento (en construcción)';
+  external.setAttribute('aria-label', 'Etapa IV de validación externa');
+  external.textContent = 'Etapa IV · Estabilidad, criterio y rendimiento';
   nav.appendChild(external);
   makeGroup('Datos y resultados', ['dataimport','legacyimport','projects','qualitydashboard','resultcenter','reportapa','articletables','history','encryption','privacy'], true);
   const motor = byId.get('motorpro');
@@ -43,4 +43,20 @@
   credit.className = 'nav-v51-credit';
   credit.innerHTML = '<strong>Dr. Roberto Joel Tirado Reyes</strong><br>Autor conceptual y director científico';
   nav.appendChild(credit);
+
+  /* Cargador aislado de Etapa IV. Se ejecuta al terminar de cargar la página,
+     cuando v52-shell.js ya creó el panel stability. Si el archivo no existe,
+     el resto de ValiStruct continúa sin alteración. */
+  window.addEventListener('load', () => {
+    if (window.ValiStructStability) {
+      window.ValiStructStability.mount(window);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'stability-v54.js';
+    script.dataset.valistructModule = 'stability-v54';
+    script.addEventListener('load', () => window.ValiStructStability?.mount(window));
+    script.addEventListener('error', () => console.warn('ValiStruct: módulo de estabilidad no disponible; núcleo sin cambios.'));
+    document.head.appendChild(script);
+  }, {once:true});
 })();
