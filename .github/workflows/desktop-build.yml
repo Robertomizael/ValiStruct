@@ -17,6 +17,7 @@ on:
       - feature/v5-4-fase3-hardening
       - feature/v5-4-integration-safe-20261014
       - feature/v5-4-etapa4-estabilidad
+      - feature/v5-4-etapa4-criterio
     paths:
       - "desktop/**"
       - "navigation-v51.js"
@@ -28,6 +29,7 @@ on:
       - "jasp-import.js"
       - "path-v2.js"
       - "stability-v54.js"
+      - "criterion-v54.js"
       - "backend/**"
       - "index.html"
       - "app.js"
