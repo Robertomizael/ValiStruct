@@ -8,6 +8,7 @@ on:
       - "feature/v5-4-etapa4-estabilidad"
       - "feature/v5-4-etapa4-criterio"
       - "feature/v5-4-etapa4-estabilidad-ux-template"
+      - "feature/v5-4-etapa4-rendimiento-baremacion"
   workflow_dispatch:
 
 concurrency:
@@ -37,6 +38,7 @@ jobs:
           node --check stability-v54.js
           node --check stability-template-v54.js
           node --check criterion-v54.js
+          node --check performance-v54.js
           node --check desktop/v54-desktop-session-auth.js
           node --check desktop/v54-macos-window-lifecycle.js
           node --check desktop/v54-release-coherence.js
@@ -57,6 +59,7 @@ jobs:
           node --test tests/test_v54_behavioral_hotfixes.cjs
           node --test tests/test_v54_stability.cjs
           node --test tests/test_v54_criterion.cjs
+          node --test tests/test_v54_performance.cjs
 
       - name: Run v5.4 hardening contracts
         run: |
