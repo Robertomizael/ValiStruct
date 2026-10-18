@@ -61,6 +61,7 @@
       {"from": "../efa-v52.js", "to": "app/efa-v52.js"},
       {"from": "../participant-data.js", "to": "app/participant-data.js"},
       {"from": "../stability-v54.js", "to": "app/stability-v54.js"},
+      {"from": "../stability-template-v54.js", "to": "app/stability-template-v54.js"},
       {"from": "../criterion-v54.js", "to": "app/criterion-v54.js"},
       {"from": "../jasp-import.js", "to": "app/jasp-import.js"},
       {"from": "../path-v2.js", "to": "app/path-v2.js"},
