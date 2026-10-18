@@ -41,6 +41,7 @@
       if(status)status.textContent='Cargando '+file.name+'…';
       const csv=await fileToCsv(file),format=(file.name.split('.').pop()||'csv').toLowerCase();
       const s=root.ValiStructParticipantData.setCsv(csv,{source:file.name,format});
+      root.dispatchEvent(new CustomEvent('valistruct:participant-data',{detail:{revision:s.revision,n:s.n,source:s.source}}));
       if(status)status.textContent='Base cargada: '+s.source+' · '+s.n+' participantes · '+s.variables.length+' variables.';
     }catch(err){if(status)status.textContent='No fue posible cargar la base: '+(err?.message||err);}
   }
