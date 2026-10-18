@@ -69,18 +69,20 @@ def test_every_integrated_module_is_reachable_from_parent_in_two_clicks(page):
 def test_external_validation_is_explicitly_preparing(page):
     pg,errors=page
     assert "En preparación" in pg.locator('[data-vs-target="stability"]').inner_text()
-    # Etapa IV: stability-v54.js and criterion-v54.js activate their modules.
-    # Performance remains explicitly in preparation.
+    # Etapa IV: stability-v54.js, criterion-v54.js and performance-v54.js activate
+    # their modules. Performance was the last one in preparation; it must now be
+    # labelled as available and no longer carry the "no calculations" note.
     section="performance"
     group=pg.locator(".vs-v52-group").filter(has=pg.locator("summary",has_text="Validación externa"))
     if not group.evaluate("(el)=>el.open"):
         group.locator("summary").evaluate("(el)=>el.click()")
+    pg.wait_for_function("document.getElementById('performance')?.dataset.v54Performance === 'ready'")
     btn=pg.locator(f'.nav button[data-section="{section}"]')
-    assert "En preparación" in btn.inner_text()
+    assert "Disponible" in btn.inner_text()
+    assert "En preparación" not in btn.inner_text()
     btn.evaluate("(el)=>el.click()")
     panel=pg.locator(f"#{section}")
-    assert panel.locator(".vs-v53-preparing").inner_text()=="En preparación"
-    assert "aún no realiza cálculos" in panel.locator(".vs-v53-preparing-note").inner_text()
+    assert panel.locator(".vs-v53-preparing-note").count()==0
     assert "ETAPA IV" in panel.locator(".vs-v52-eyebrow").inner_text()
     assert not errors,repr(errors)
 

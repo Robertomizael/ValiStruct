@@ -52,17 +52,26 @@ def test_module_isolation_external_navigation_and_accordions(page):
     assert "ROC" in p.locator("#performance").inner_text()
     assert not errors,repr(errors)
 
+# v5.4 Etapa IV: performance-v54.js replaces the v5.2 placeholder form (which never
+# calculated) with the real ROC/norming module. These two tests keep their original
+# intent -- honest methodological framing and reuse of the shared participant base --
+# against the implemented module instead of the retired placeholder.
+def wait_performance_ready(page):
+    page.wait_for_function("document.getElementById('performance')?.dataset.v54Performance === 'ready'")
+
 def test_external_configuration_is_honest_and_never_calculates(page):
     p,errors=page
     open_group(p,"Validación externa")
     p.locator('.nav button[data-section="performance"]').click()
+    wait_performance_ready(p)
     panel=p.locator("#performance")
-    assert "implementación" in panel.locator(".vs-v52-method-note").inner_text()
-    panel.locator(".vs-v52-variable").fill("Total")
-    panel.locator(".vs-v52-reference").fill("Diagnostico")
-    panel.locator(".vs-v52-save").click()
-    assert "Cálculo pendiente" in panel.locator(".vs-v52-config-status").inner_text()
-    assert panel.locator("button",has_text="Calcular").count()==0
+    assert panel.locator(".vs-v52-config-status").count()==0
+    assert "no equivalen automáticamente a puntos de corte clínicos" in panel.inner_text()
+    # Without data the module must refuse to calculate, never fabricate results.
+    panel.locator("#runPerformance").click()
+    assert "No fue posible calcular" in panel.locator("#performanceStatus").inner_text()
+    assert panel.locator("#performanceResults").inner_text().strip()==""
+    assert panel.locator("#downloadPerformanceCsv").is_disabled()
     assert not errors,repr(errors)
 
 def test_shared_data_is_preserved_from_phase_one(page):
@@ -76,9 +85,13 @@ def test_shared_data_is_preserved_from_phase_one(page):
     p.wait_for_function("window.ValiStructParticipantData?.summary?.n === 3")
     open_group(p,"Validación externa")
     p.locator('.nav button[data-section="performance"]').click()
-    assert "3 participantes" in p.locator("#performance .vs-v52-linked-data").inner_text()
-    p.locator("#performance .vs-v52-variable").fill("Total")
-    p.locator("#performance .vs-v52-reference").fill("Diagnostico")
-    p.locator("#performance .vs-v52-save").click()
-    assert "Configuración" in p.locator("#performance .vs-v52-config-status").inner_text()
+    wait_performance_ready(p)
+    panel=p.locator("#performance")
+    p.wait_for_function("document.getElementById('performanceDataStatus')?.textContent.includes('3 participantes')")
+    panel.locator("#performanceScore").select_option("Total")
+    panel.locator("#performanceCriterion").select_option("Diagnostico")
+    panel.locator("#runPerformance").click()
+    assert "Análisis completado" in panel.locator("#performanceStatus").inner_text()
+    # Positives (10, 7) all exceed the negative (5): AUC must be exactly 1.
+    assert "1.000" in panel.locator("#performanceResults .result-card").first.inner_text()
     assert not errors,repr(errors)
