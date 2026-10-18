@@ -100,3 +100,13 @@
   function start(){enhanceStability();enhanceCriterion();let tries=0;const timer=setInterval(()=>{tries++;enhanceStability();enhanceCriterion();if(tries>80)clearInterval(timer);},150);}
   if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })(typeof window!=='undefined'?window:null);
+
+/* Load the isolated Stage IV performance module without changing index.html. */
+(function(root){
+  if(!root||!root.document||root.ValiStructPerformance)return;
+  const load=()=>{
+    if(root.ValiStructPerformance||document.querySelector('script[data-valistruct-performance]'))return;
+    const s=document.createElement('script');s.src='performance-v54.js';s.dataset.valistructPerformance='v54';document.head.appendChild(s);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
+})(typeof window!=='undefined'?window:null);
