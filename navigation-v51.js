@@ -56,8 +56,17 @@
       script.addEventListener('error',()=>console.warn('ValiStruct: módulo de '+label+' no disponible; núcleo sin cambios.'));
       document.head.appendChild(script);
     };
+    const loadPassive=(file,datasetName,label)=>{
+      if(document.querySelector('script[data-valistruct-module="'+datasetName+'"]')) return;
+      const script=document.createElement('script');
+      script.src=file;
+      script.dataset.valistructModule=datasetName;
+      script.addEventListener('error',()=>console.warn('ValiStruct: mejora de '+label+' no disponible; núcleo sin cambios.'));
+      document.head.appendChild(script);
+    };
     loadModule('ValiStructStability','stability-v54.js','stability-v54','estabilidad');
     loadModule('ValiStructCriterion','criterion-v54.js','criterion-v54','validez de criterio');
+    loadPassive('stability-template-v54.js','stability-template-v54','plantilla de estabilidad');
 
     /* Corrección visual localizada del shell preparatorio restante. */
     const performance=document.getElementById('performance');
