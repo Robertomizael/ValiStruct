@@ -1,5 +1,5 @@
 name: ValiStruct Desktop Autonomous Build
-# Safe integration experimental artifact trigger — validated lockfile rebuild
+# Safe integration experimental artifact trigger — validated Stage IV installer rebuild
 
 on:
   workflow_dispatch:
