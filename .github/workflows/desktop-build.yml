@@ -19,6 +19,7 @@ on:
       - feature/v5-4-etapa4-estabilidad
       - feature/v5-4-etapa4-criterio
       - feature/v5-4-etapa4-estabilidad-ux-template
+      - feature/v5-4-etapa4-rendimiento-baremacion
     paths:
       - "desktop/**"
       - "navigation-v51.js"
@@ -32,6 +33,7 @@ on:
       - "stability-v54.js"
       - "stability-template-v54.js"
       - "criterion-v54.js"
+      - "performance-v54.js"
       - "backend/**"
       - "index.html"
       - "app.js"
