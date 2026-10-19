@@ -9,6 +9,7 @@ on:
       - "feature/v5-4-etapa4-criterio"
       - "feature/v5-4-etapa4-estabilidad-ux-template"
       - "feature/v5-4-etapa4-rendimiento-baremacion"
+      - "feature/v5-4-visual-polish-v11-v12"
   workflow_dispatch:
 
 concurrency:
@@ -50,6 +51,7 @@ jobs:
           node --check desktop/v54-results-preview-fix.js
           node --check desktop/v54-latencia-editing.js
           node --check desktop/v54-context-menu.js
+          node --check desktop/v54-visual-polish.js
           node --check desktop/content-validity-xlsx-renderer.js
           node --check desktop/content-validity-xlsx-hardening.js
           node --check desktop/main-patched.js
