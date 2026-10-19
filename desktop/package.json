@@ -47,6 +47,7 @@
       "v54-results-preview-fix.js",
       "v54-latencia-editing.js",
       "v54-context-menu.js",
+      "v54-visual-polish.js",
       "preload.js",
       "ux-shell.js",
       "ux-shell.css",
