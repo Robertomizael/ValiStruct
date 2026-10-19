@@ -53,6 +53,8 @@ jobs:
           node --check desktop/content-validity-xlsx-renderer.js
           node --check desktop/content-validity-xlsx-hardening.js
           node --check desktop/main-patched.js
+          node --check desktop/main.js
+          node --check desktop/backend-lifecycle.js
 
       - name: Run behavioral hotfix checks
         run: |
@@ -60,6 +62,7 @@ jobs:
           node --test tests/test_v54_stability.cjs
           node --test tests/test_v54_criterion.cjs
           node --test tests/test_v54_performance.cjs
+          node --test tests/test_v54_backend_lifecycle.cjs
 
       - name: Run v5.4 hardening contracts
         run: |

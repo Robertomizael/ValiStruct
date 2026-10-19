@@ -1796,13 +1796,20 @@ def toggle_incident(incident_id):
 # -----------------------------
 @app.get("/version")
 def version_info():
-    return jsonify({
+    info = {
         "ok": True,
         "app": "ValiStruct",
         "version": "3.0.0-rc.6",
         "project_format": "3.0",
         "release_channel": "release-candidate"
-    })
+    }
+    # M3: identificador de la instancia de escritorio que lanzó este proceso.
+    # Permite a Electron distinguir su propio backend de uno huérfano. No es el
+    # token de sesión y no interviene en ningún cálculo.
+    instance_id = os.environ.get("VALISTRUCT_DESKTOP_INSTANCE_ID", "").strip()
+    if instance_id:
+        info["instance_id"] = instance_id
+    return jsonify(info)
 
 @app.get("/rc-check")
 def rc_check():

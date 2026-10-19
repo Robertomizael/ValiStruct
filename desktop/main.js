@@ -8,10 +8,28 @@ const fs = require('fs');
 const http = require('http');
 const tar = require('tar');
 const XLSX = require('xlsx');
+const backendLifecycle = require('./backend-lifecycle.js');
 
 let backendProcess = null;
 let desktopSessionToken = null;
 let runtimeInfo = null;
+let backendInstanceId = null;
+let backendExited = false;
+
+// M3: una sola instancia de ValiStruct por sesión de usuario. Una segunda
+// instancia arrancaría otro backend en el mismo puerto y podría cerrar el motor
+// de la primera; en su lugar se enfoca la ventana existente.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    if (!win.isVisible()) win.show();
+    win.focus();
+  });
+}
 
 function normalizeExcelLabel(value) {
   return String(value ?? '')
@@ -430,28 +448,34 @@ function findSystemRuntime() {
 }
 
 function waitForBackend(timeoutMs = 45000) {
-  const started = Date.now();
-  return new Promise((resolve, reject) => {
-    const probe = () => {
-      const req = http.get('http://127.0.0.1:8765/health', (res) => {
-        res.resume();
-        if (res.statusCode && res.statusCode < 500) return resolve();
-        if (Date.now() - started > timeoutMs) return reject(new Error('Backend no disponible'));
-        setTimeout(probe, 700);
-      });
-      req.on('error', () => {
-        if (Date.now() - started > timeoutMs) return reject(new Error('Backend no disponible'));
-        setTimeout(probe, 700);
-      });
-      req.setTimeout(1500, () => req.destroy());
-    };
-    probe();
+  // M3: solo se acepta el backend de esta instancia (instance_id en /version);
+  // un proceso anterior que responda en el puerto nunca se usa en silencio.
+  return backendLifecycle.waitForInstance(backendInstanceId, {
+    timeoutMs,
+    childExited: () => backendExited
   });
+}
+
+function backendIsRunning() {
+  return Boolean(backendProcess && backendProcess.exitCode === null && !backendExited);
+}
+
+function stopBackend() {
+  if (!backendProcess || backendProcess.exitCode !== null || backendExited) return;
+  const pid = backendProcess.pid;
+  if (process.platform === 'win32') {
+    // Termina también cualquier proceso hijo del intérprete.
+    spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { windowsHide: true });
+  } else {
+    try { backendProcess.kill('SIGTERM'); } catch (_) {}
+  }
 }
 
 function startBackend() {
   const runtime = runtimeInfo || findSystemRuntime();
   desktopSessionToken = crypto.randomBytes(32).toString('hex');
+  backendInstanceId = backendLifecycle.newInstanceId();
+  backendExited = false;
   if (!runtime.python) throw new Error('No se encontró el motor Python integrado.');
   if (!runtime.rscript) throw new Error('No se encontró el motor R integrado.');
 
@@ -468,6 +492,7 @@ function startBackend() {
       VALISTRUCT_PROJECT_LIBRARY_ENABLED: 'false',
       VALISTRUCT_ENV: 'development',
       VALISTRUCT_DESKTOP_SESSION_TOKEN: desktopSessionToken,
+      VALISTRUCT_DESKTOP_INSTANCE_ID: backendInstanceId,
       FLASK_RUN_PORT: '8765'
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -476,7 +501,10 @@ function startBackend() {
 
   backendProcess.stdout.on('data', (d) => console.log(`[backend] ${d}`));
   backendProcess.stderr.on('data', (d) => console.error(`[backend] ${d}`));
-  backendProcess.on('exit', (code) => console.log(`Backend finalizado: ${code}`));
+  backendProcess.on('exit', (code) => {
+    backendExited = true;
+    console.log(`Backend finalizado: ${code}`);
+  });
 }
 
 async function injectDesktopUX(win) {
@@ -537,7 +565,11 @@ ipcMain.on('valistruct:get-session-token', (event) => {
 async function createWindow() {
   try {
     runtimeInfo = await ensureBundledRuntime();
-    startBackend();
+    if (!backendIsRunning()) {
+      // M3: liberar el puerto solo si lo ocupa un motor huérfano de ValiStruct.
+      await backendLifecycle.ensurePortAvailable();
+      startBackend();
+    }
     await waitForBackend();
   } catch (err) {
     dialog.showErrorBox('ValiStruct Desktop Beta', `${err.message}\n\nEl instalador autónomo no pudo preparar el motor estadístico.`);
@@ -578,6 +610,6 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-app.on('before-quit', () => {
-  if (backendProcess && !backendProcess.killed) backendProcess.kill();
-});
+app.on('before-quit', stopBackend);
+app.on('will-quit', stopBackend);
+process.on('exit', stopBackend);
