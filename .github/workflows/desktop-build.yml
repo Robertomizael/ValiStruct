@@ -21,6 +21,7 @@ on:
       - feature/v5-4-etapa4-estabilidad-ux-template
       - feature/v5-4-etapa4-rendimiento-baremacion
       - feature/v5-4-visual-polish-v11-v12
+      - hotfix/v5-4-legibilidad-tipografica
     paths:
       - "desktop/**"
       - "navigation-v51.js"
