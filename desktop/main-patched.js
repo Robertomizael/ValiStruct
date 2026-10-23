@@ -6,6 +6,28 @@ const path = require('path');
 
 require('./v54-macos-window-lifecycle.js');
 
+// Windows can transiently keep files inside runtime-v2 busy during a reinstall,
+// first launch, antivirus scan or after a prior interrupted session. Node's
+// recursive rm supports retries for ENOTEMPTY/EBUSY/EPERM, but main.js used the
+// defaults (zero retries). Harden only the ValiStruct runtime-v2 cleanup path so
+// scientific/project files and unrelated removals keep their original behavior.
+if (process.platform === 'win32') {
+  const originalRmSync = fs.rmSync.bind(fs);
+  fs.rmSync = function valistructRmSync(target, options) {
+    const targetPath = String(target || '');
+    const isRuntimeV2 = path.basename(targetPath).toLowerCase() === 'runtime-v2';
+    const recursive = Boolean(options && typeof options === 'object' && options.recursive);
+    if (isRuntimeV2 && recursive) {
+      return originalRmSync(target, {
+        ...options,
+        maxRetries: Math.max(Number(options.maxRetries) || 0, 20),
+        retryDelay: Math.max(Number(options.retryDelay) || 0, 250)
+      });
+    }
+    return originalRmSync(target, options);
+  };
+}
+
 // Inject post-load renderer improvements in the same main world as app.js.
 // This keeps the production app.js untouched while allowing focused hotfixes.
 app.on('web-contents-created', (_event, contents) => {
