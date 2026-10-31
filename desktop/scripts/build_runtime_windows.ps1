@@ -22,6 +22,32 @@ $python = Join-Path $envDir 'python.exe'
 $rscript = Join-Path $envDir 'Scripts/Rscript.exe'
 if (!(Test-Path $rscript)) { $rscript = Join-Path $envDir 'Library/bin/Rscript.exe' }
 if (!(Test-Path $rscript)) { throw 'Rscript.exe was not found in the integrated runtime.' }
+
+# IMPORTANTE: desde este punto las pruebas de R deben ejecutarse con el mismo
+# entorno que usa desktop/main.js y la puerta de runtime reubicado. En Windows,
+# Rscript.exe puede existir pero abortar con 0xC0000135 si Library\bin y las DLL
+# de R no estan en PATH. Preparar el entorno ANTES de la primera invocacion evita
+# que el build dependa accidentalmente del PATH del runner de GitHub.
+$rHomeCandidates = @(
+  (Join-Path $envDir 'Lib\R'),
+  (Join-Path $envDir 'Library\lib\R')
+) | Where-Object { Test-Path $_ }
+$rHome = $rHomeCandidates | Select-Object -First 1
+if (!$rHome) { throw 'R_HOME no fue encontrado en el runtime integrado.' }
+$runtimePathDirs = @(
+  $envDir,
+  (Join-Path $envDir 'Scripts'),
+  (Join-Path $envDir 'Library\bin'),
+  (Join-Path $rHome 'bin\x64')
+) | Where-Object { Test-Path $_ }
+$env:PATH = (@($runtimePathDirs) + $env:PATH) -join ';'
+$env:CONDA_PREFIX = $envDir
+$env:R_HOME = $rHome
+Remove-Item Env:R_LIBS_USER -ErrorAction SilentlyContinue
+Remove-Item Env:R_LIBS -ErrorAction SilentlyContinue
+Write-Host "Rscript integrado: $rscript"
+Write-Host "R_HOME integrado : $env:R_HOME"
+
 & $rscript -e "library(jsonlite); library(lavaan); library(psych); library(naniar); cat('R runtime OK\n')"
 
 $condaRoot = $env:CONDA
