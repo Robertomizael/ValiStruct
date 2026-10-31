@@ -78,6 +78,15 @@ jobs:
       - name: Build integrated Windows runtime
         shell: pwsh
         run: ./desktop/scripts/build_runtime_windows.ps1
+      - name: Preserve validated quadprog DLL in packed runtime
+        shell: pwsh
+        run: |
+          $fixed = 'runtime-env/Lib/R/library/quadprog/libs/x64/quadprog.dll'
+          if (!(Test-Path $fixed)) { throw "Missing validated quadprog DLL: $fixed" }
+          python desktop/scripts/replace_tar_member.py `
+            desktop/runtime/valistruct-runtime.tar.gz `
+            $fixed `
+            Lib/R/library/quadprog/libs/x64/quadprog.dll
       - name: Install desktop dependencies reproducibly
         working-directory: desktop
         run: npm ci
