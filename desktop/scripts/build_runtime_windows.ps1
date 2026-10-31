@@ -83,12 +83,16 @@ $quadprogNeedsRebuild = ($LASTEXITCODE -ne 0)
 $PSNativeCommandUseErrorActionPreference = $true
 
 if ($quadprogNeedsRebuild) {
-  $quadprogVersion = '1.5-8'
+  # R normaliza la version del paquete como 1.5.8, mientras que CRAN nombra
+  # el tarball fuente como quadprog_1.5-8.tar.gz. Mantener ambos identificadores
+  # evita confundir una diferencia de formato con una version distinta.
+  $quadprogRVersion = '1.5.8'
+  $quadprogSourceVersion = '1.5-8'
   $quadprogSha256 = '22128dd6b08d3516c44ff89276719ad4fe46b36b23fdd585274fa3a93e7a49cd'
 
   $installedVersion = (& $rscript -e "cat(as.character(packageVersion('quadprog')))").Trim()
-  if ($installedVersion -ne $quadprogVersion) {
-    throw "quadprog instalado es $installedVersion; el hotfix solo esta validado para $quadprogVersion."
+  if ($installedVersion -ne $quadprogRVersion) {
+    throw "quadprog instalado es $installedVersion; el hotfix solo esta validado para $quadprogRVersion (fuente CRAN $quadprogSourceVersion)."
   }
   $rblasLib = Join-Path $rHome 'bin/x64/Rblas.lib'
   if (!(Test-Path $rblasLib)) {
@@ -103,10 +107,10 @@ if ($quadprogNeedsRebuild) {
 
   conda create -y -p $toolsDir -c conda-forge m2-make m2-sed m2-coreutils m2-bash m2-filesystem
 
-  $tarball = Join-Path $work "quadprog_$quadprogVersion.tar.gz"
+  $tarball = Join-Path $work "quadprog_$quadprogSourceVersion.tar.gz"
   $urls = @(
-    "https://cloud.r-project.org/src/contrib/quadprog_$quadprogVersion.tar.gz",
-    "https://cloud.r-project.org/src/contrib/Archive/quadprog/quadprog_$quadprogVersion.tar.gz"
+    "https://cloud.r-project.org/src/contrib/quadprog_$quadprogSourceVersion.tar.gz",
+    "https://cloud.r-project.org/src/contrib/Archive/quadprog/quadprog_$quadprogSourceVersion.tar.gz"
   )
   foreach ($u in $urls) {
     try { Invoke-WebRequest -Uri $u -OutFile $tarball -UseBasicParsing; break } catch { Write-Host "No disponible: $u" }
