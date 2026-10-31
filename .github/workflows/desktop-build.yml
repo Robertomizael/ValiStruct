@@ -23,6 +23,7 @@ on:
       - feature/v5-4-visual-polish-v11-v12
       - hotfix/v5-4-legibilidad-tipografica
       - hotfix/v5-4-windows-runtime-enotempty
+      - hotfix/v5-4-windows-quadprog-pseudoreloc
     paths:
       - "desktop/**"
       - "navigation-v51.js"
@@ -80,6 +81,16 @@ jobs:
       - name: Install desktop dependencies reproducibly
         working-directory: desktop
         run: npm ci
+      - name: Verify RELOCATED Windows runtime (gate before .exe)
+        shell: pwsh
+        run: ./desktop/scripts/verify_runtime_windows_relocated.ps1
+      - name: Upload runtime gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: valistruct-windows-runtime-gate-reports
+          path: desktop/runtime/*.json
+          if-no-files-found: warn
       - name: Audit npm dependency graph
         working-directory: desktop
         run: npm audit --audit-level=high
