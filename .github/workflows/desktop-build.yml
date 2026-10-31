@@ -87,6 +87,9 @@ jobs:
             desktop/runtime/valistruct-runtime.tar.gz `
             $fixed `
             Lib/R/library/quadprog/libs/x64/quadprog.dll
+      - name: Refresh security-pinned dependency lock
+        working-directory: desktop
+        run: npm install --package-lock-only --ignore-scripts
       - name: Install desktop dependencies reproducibly
         working-directory: desktop
         run: npm ci
@@ -149,6 +152,9 @@ jobs:
       - name: Build integrated macOS runtime
         shell: bash -el {0}
         run: bash ./desktop/scripts/build_runtime_macos.sh
+      - name: Refresh security-pinned dependency lock
+        working-directory: desktop
+        run: npm install --package-lock-only --ignore-scripts
       - name: Install desktop dependencies reproducibly
         working-directory: desktop
         run: npm ci
